@@ -11,31 +11,51 @@ const navItems = [
 
 export default function TopNav() {
   return (
-    <nav className="border-b border-slate-800 bg-slate-950 px-6 py-3">
-      <div className="flex items-center justify-between gap-6">
-        <div className="text-lg font-bold text-slate-100">
-          PipelineDesk
+    <header className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] bg-black px-4 py-2 text-[#e0e0e0]">
+      <div className="flex items-center">
+        <div className="flex h-6 w-6 items-center justify-center rounded bg-white text-sm font-bold italic text-black">
+          A
         </div>
+        <span className="ml-2 text-lg font-bold">AssetStage</span>
+      </div>
 
-        <div className="hidden items-center gap-1 md:flex">
-          {navItems.map((item) => (
-            <button
-              key={item}
-              className={`rounded-md px-3 py-2 text-sm ${
-                item === "Production"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:bg-slate-900 hover:text-slate-100"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
+      <nav className="hidden items-center space-x-6 text-sm font-medium md:flex">
+        {navItems.map((item) => (
+          <button
+            key={item}
+            className={`pb-1 transition-colors ${
+              item === "Production"
+                ? "border-b-2 border-white text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {item}
+          </button>
+        ))}
+      </nav>
 
-        <div className="rounded-full bg-slate-800 px-3 py-1 text-sm text-slate-300">
-          Admin
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-1 text-sm">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-[10px]">
+            TB
+          </div>
+          <span>TBDemo - Admin</span>
+          <svg
+            aria-hidden="true"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M19 9l-7 7-7-7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            />
+          </svg>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }

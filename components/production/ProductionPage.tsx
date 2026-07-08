@@ -37,31 +37,29 @@ export default function ProductionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden bg-[#0a0a0a] text-[#e0e0e0]">
       <TopNav />
 
-      <main className="space-y-4 p-4">
-        <ProductionToolbar />
+      <EnvironmentDropdown
+        productions={mockProductions}
+        selectedProductionId={selectedProductionId}
+        onChangeProduction={handleChangeProduction}
+      />
 
-        <EnvironmentDropdown
-          productions={mockProductions}
-          selectedProductionId={selectedProductionId}
-          onChangeProduction={handleChangeProduction}
-        />
+      <main className="flex min-h-0 flex-1 overflow-hidden">
+        <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <ProductionToolbar />
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="space-y-4">
-            <EpisodeTable
-              jobs={selectedProduction.jobs}
-              selectedJobId={selectedJob.id}
-              onSelectJob={setSelectedJob}
-            />
+          <EpisodeTable
+            jobs={selectedProduction.jobs}
+            selectedJobId={selectedJob.id}
+            onSelectJob={setSelectedJob}
+          />
 
-            <BottomTaskPanel job={selectedJob} />
-          </div>
+          <BottomTaskPanel job={selectedJob} />
+        </section>
 
-          <RightDetailsPanel job={selectedJob} />
-        </div>
+        <RightDetailsPanel job={selectedJob} />
       </main>
     </div>
   );

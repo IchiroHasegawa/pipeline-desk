@@ -19,99 +19,146 @@ export default function RightDetailsPanel({ job }: RightDetailsPanelProps) {
   const [activeTab, setActiveTab] = useState<"details" | "notes">("details");
 
   return (
-    <aside className="w-full rounded-xl border border-slate-700 bg-slate-950 p-4 lg:w-[320px]">
-      <div className="h-36 rounded-lg bg-slate-800 flex items-center justify-center text-sm text-slate-400">
-        Preview Image
-      </div>
+    <aside className="hidden w-80 shrink-0 flex-col border-l border-[#2a2a2a] bg-zinc-900 lg:flex">
+      <div
+        aria-label={`${job.jobName} focus shot`}
+        className="aspect-video w-full bg-zinc-800 bg-cover bg-center"
+        style={{ backgroundImage: `url(${job.previewImage})` }}
+      />
 
-      <div className="mt-4 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-100">
-            {job.jobName}
-          </h2>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 rounded border border-[#2a2a2a] p-2">
+            <h2 className="text-sm font-bold">{job.jobName}</h2>
+            <ProgressCircle value={getOverallProgress(job)} size={32} />
+          </div>
 
-          <p className="text-xs text-slate-400">{job.code}</p>
-        </div>
+          <div className="flex border-b border-[#2a2a2a]">
+            <button
+              onClick={() => setActiveTab("notes")}
+              className={`px-4 py-2 text-xs transition-colors ${
+                activeTab === "notes"
+                  ? "rounded-t bg-white font-bold text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Notes
+            </button>
 
-        <ProgressCircle value={getOverallProgress(job)} size={52} />
-      </div>
+            <button
+              onClick={() => setActiveTab("details")}
+              className={`px-4 py-2 text-xs transition-colors ${
+                activeTab === "details"
+                  ? "rounded-t bg-white font-bold text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              Details
+            </button>
+          </div>
 
-      <div className="mt-4 flex gap-2 border-b border-slate-800">
-        <button
-          onClick={() => setActiveTab("details")}
-          className={`px-3 py-2 text-sm ${
-            activeTab === "details"
-              ? "border-b-2 border-blue-500 text-slate-100"
-              : "text-slate-400"
-          }`}
-        >
-          Details
-        </button>
+          {activeTab === "details" && (
+            <>
+              <div className="space-y-3 rounded border border-[#2a2a2a] p-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-zinc-500">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={job.jobName}
+                    readOnly
+                    className="w-full rounded border border-[#2a2a2a] bg-black px-2 py-1 text-xs text-[#e0e0e0] outline-none"
+                  />
+                </div>
 
-        <button
-          onClick={() => setActiveTab("notes")}
-          className={`px-3 py-2 text-sm ${
-            activeTab === "notes"
-              ? "border-b-2 border-blue-500 text-slate-100"
-              : "text-slate-400"
-          }`}
-        >
-          Notes
-        </button>
-      </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-zinc-500">
+                    Description
+                  </label>
+                  <textarea
+                    value={job.description || ""}
+                    readOnly
+                    className="h-16 w-full resize-none rounded border border-[#2a2a2a] bg-black px-2 py-1 text-xs text-[#e0e0e0] outline-none"
+                  />
+                </div>
 
-      {activeTab === "details" && (
-        <div className="mt-4 space-y-3 text-sm">
-          <DetailRow label="Description" value={job.description || "No description"} />
-          <DetailRow label="Workflow" value={job.workflow} />
-          <DetailRow label="Start Date" value={job.startDate} />
-          <DetailRow label="End Date" value={job.endDate} />
+                <DetailRow label="Code" value={job.code} />
+                <DetailRow label="Workflow" value={job.workflow} />
+                <DetailRow label="Start Date" value={job.startDate} />
+                <DetailRow label="End Date" value={job.endDate} />
 
-          <div>
-            <p className="mb-2 text-xs uppercase text-slate-500">Tasks</p>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-zinc-500">
+                    Layout Posing
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    className="w-full rounded border border-[#2a2a2a] bg-black px-2 py-1 text-xs text-[#e0e0e0] outline-none"
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              {job.tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center justify-between rounded-md bg-slate-900 px-3 py-2"
-                >
-                  <span className="text-slate-300">{task.name}</span>
-                  <span className="text-xs text-slate-400">
-                    {task.progress}%
+              <div className="border-t border-[#2a2a2a] pt-2">
+                <div className="mb-2 flex items-center justify-between border-b border-[#2a2a2a] pb-1">
+                  <span className="text-xs font-bold text-zinc-400">
+                    Harmony Settings
                   </span>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
-      {activeTab === "notes" && (
-        <div className="mt-4 space-y-2">
-          {job.notes.length > 0 ? (
-            job.notes.map((note, index) => (
-              <div
-                key={index}
-                className="rounded-md bg-slate-900 p-3 text-sm text-slate-300"
-              >
-                {note}
+                <div className="space-y-2">
+                  <DetailRow label="env" value="Roger_et_ses_humains" />
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase text-zinc-500">
+                      job
+                    </span>
+                    <div className="rounded border border-[#2a2a2a] bg-black px-2 py-1 text-xs">
+                      {job.jobName}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase text-zinc-500">
+                      harmonyVersion
+                    </span>
+                    <div className="h-4" />
+                  </div>
+                </div>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-slate-400">No notes available.</p>
+            </>
+          )}
+
+          {activeTab === "notes" && (
+            <div className="space-y-2">
+              {job.notes.length > 0 ? (
+                job.notes.map((note, index) => (
+                  <div
+                    key={index}
+                    className="rounded border border-[#2a2a2a] bg-black p-3 text-xs text-zinc-300"
+                  >
+                    {note}
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-zinc-400">No notes available.</p>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </aside>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-xs uppercase text-slate-500">{label}</p>
-      <p className="text-slate-300">{value}</p>
+    <div className="space-y-0.5">
+      <span className="text-[10px] font-bold uppercase text-zinc-500">
+        {label}
+      </span>
+      <div className="text-xs text-zinc-400">{value}</div>
     </div>
   );
 }
