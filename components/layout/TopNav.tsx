@@ -14,9 +14,9 @@ export default function TopNav() {
     <header className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] bg-black px-4 py-2 text-[#e0e0e0]">
       <div className="flex items-center">
         <div className="flex h-6 w-6 items-center justify-center rounded bg-white text-sm font-bold italic text-black">
-          A
+          P
         </div>
-        <span className="ml-2 text-lg font-bold">AssetStage</span>
+        <span className="ml-2 text-lg font-bold">Production OS</span>
       </div>
 
       <nav className="hidden items-center space-x-6 text-sm font-medium md:flex">
