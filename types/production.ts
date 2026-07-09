@@ -1,36 +1,46 @@
 export type TaskStatus =
   | "Unassigned"
   | "In Progress"
+  | "Pending"
+  | "To Validate"
   | "Review"
   | "Approved"
-  | "Rejected";
+  | "Rejected"
+  | "Standby";
 
 export type ProductionTask = {
   id: string;
   name: string;
   progress: number;
   status: TaskStatus;
-  startDate: string;
-  endDate: string;
-  assignee?: string;
+  assignee: string;
+  startDate?: string;
+  endDate?: string;
 };
 
-export type EpisodeJob = {
+export type Scene = {
   id: string;
-  jobName: string;
+  sceneName: string;
   previewImage: string;
   description?: string;
+  note: string;
+  tasks: ProductionTask[];
+};
+
+export type Episode = {
+  id: string;
+  episodeName: string;
+  previewImage: string;
+  description: string;
   code: string;
-  workflow: string;
   startDate: string;
   endDate: string;
-  tasks: ProductionTask[];
-  notes: string[];
+  scenes: Scene[];
 };
 
 export type ProductionEnvironment = {
   id: string;
   name: string;
   description: string;
-  jobs: EpisodeJob[];
+  episodes: Episode[];
 };
