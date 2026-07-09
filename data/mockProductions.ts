@@ -137,4 +137,22 @@ export const mockProductions: ProductionEnvironment[] = [
     description: "Feature film, live action and animation hybrid",
     episodes: [],
   },
+
+  {
+    id: "the-doll",
+    name: "The_Doll",
+    description: "Short-form 2D animation production",
+    episodes: [
+      {
+        id: "td-001",
+        episodeName: "TD_001",
+        previewImage: "/previews/td-001.jpg",
+        description: "Production tracking for episode TD_001",
+        code: "TBA_JOB00091",
+        startDate: "11/01/2020",
+        endDate: "11/20/2020",
+        scenes: [],
+      },
+    ],
+  },
 ];

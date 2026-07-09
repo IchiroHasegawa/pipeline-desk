@@ -15,7 +15,7 @@ export default function EpisodeDropdown({
     <select
       value={selectedEpisodeId}
       onChange={(event) => onChangeEpisode(event.target.value)}
-      className="min-w-40 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none"
+      className="rounded border border-zinc-700 bg-black px-2 py-1 text-xs text-[#e0e0e0] outline-none focus:border-zinc-500"
     >
       <option value="ALL">ALL</option>
 

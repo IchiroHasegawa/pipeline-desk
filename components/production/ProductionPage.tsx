@@ -30,6 +30,9 @@ export default function ProductionPage() {
     mockProductions[0]?.episodes[0]?.id ?? null
   );
 
+  // Reserved for Phase 2 scene selection; Phase 1 only needs to clear it.
+  const [, setSelectedSceneId] = useState<string | null>(null);
+
   const selectedEnvironment = useMemo(() => {
     return (
       environments.find(
@@ -53,59 +56,41 @@ export default function ProductionPage() {
   }, [selectedEnvironment, episodeFilterId]);
 
   const selectedEpisode = useMemo(() => {
-    if (!selectedEnvironment) {
+    if (!selectedEnvironment || selectedEpisodeId === null) {
       return null;
     }
 
     return (
       selectedEnvironment.episodes.find(
         (episode) => episode.id === selectedEpisodeId
-      ) ??
-      selectedEnvironment.episodes[0] ??
-      null
+      ) ?? null
     );
   }, [selectedEnvironment, selectedEpisodeId]);
 
   function handleEnvironmentChange(environmentId: string) {
-    const nextEnvironment = environments.find(
-      (environment) => environment.id === environmentId
-    );
-
     setSelectedEnvironmentId(environmentId);
 
-    // Return to the complete episode overview.
+    // Return to the complete episode overview and clear detail selections.
     setEpisodeFilterId("ALL");
-
-    // Select the first episode in the new environment.
-    setSelectedEpisodeId(
-      nextEnvironment?.episodes[0]?.id ?? null
-    );
+    setSelectedEpisodeId(null);
+    setSelectedSceneId(null);
   }
 
-  function handleEpisodeFilterChange(
-    episodeId: "ALL" | string
-  ) {
+  function handleEpisodeFilterChange(episodeId: "ALL" | string) {
     setEpisodeFilterId(episodeId);
+    setSelectedSceneId(null);
 
     if (episodeId !== "ALL") {
       setSelectedEpisodeId(episodeId);
       return;
     }
 
-    const selectedEpisodeStillExists =
-      selectedEnvironment?.episodes.some(
-        (episode) => episode.id === selectedEpisodeId
-      );
-
-    if (!selectedEpisodeStillExists) {
-      setSelectedEpisodeId(
-        selectedEnvironment?.episodes[0]?.id ?? null
-      );
-    }
+    setSelectedEpisodeId(null);
   }
 
   function handleSelectEpisode(episode: Episode) {
     setSelectedEpisodeId(episode.id);
+    setSelectedSceneId(null);
   }
 
   return (
@@ -120,9 +105,7 @@ export default function ProductionPage() {
         />
 
         <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-400">
-            Episode:
-          </label>
+          <label className="text-xs text-gray-400">Episode:</label>
 
           <EpisodeDropdown
             episodes={selectedEnvironment?.episodes ?? []}
@@ -148,9 +131,7 @@ export default function ProductionPage() {
             />
           )}
 
-          {selectedEpisode && (
-            <BottomTaskPanel episode={selectedEpisode} />
-          )}
+          {selectedEpisode && <BottomTaskPanel episode={selectedEpisode} />}
         </section>
 
         {selectedEpisode && selectedEnvironment && (
@@ -164,11 +145,7 @@ export default function ProductionPage() {
   );
 }
 
-function EmptyMessage({
-  message,
-}: {
-  message: string;
-}) {
+function EmptyMessage({ message }: { message: string }) {
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center text-sm text-zinc-500">
       {message}
