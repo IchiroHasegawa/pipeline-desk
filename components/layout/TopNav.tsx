@@ -37,9 +37,9 @@ export default function TopNav() {
       <div className="flex items-center space-x-4">
         <div className="flex items-center space-x-2 rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-1 text-sm">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-[10px]">
-            TB
+            P
           </div>
-          <span>TBDemo - Admin</span>
+          <span>PDemo - Admin</span>
           <svg
             aria-hidden="true"
             className="h-4 w-4"
