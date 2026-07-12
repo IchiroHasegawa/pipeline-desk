@@ -4,6 +4,8 @@ import type {
   ProductionTask,
   Project,
   Scene,
+  Asset,
+  AssetCategory
 } from "@/types/production";
 
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +17,7 @@ type ProjectRecord = {
   description: string | null;
   thumbnail_url: string | null;
   status: string;
+  created_at: string;
 };
 
 type ProductionTaskRecord = {
@@ -26,6 +29,7 @@ type ProductionTaskRecord = {
   start_date: string | null;
   end_date: string | null;
   sort_order: number | null;
+  created_at: string;
 };
 
 type SceneNoteRecord = {
@@ -46,6 +50,7 @@ type SceneRecord = {
   priority: number;
   production_tasks: ProductionTaskRecord[] | null;
   scene_notes: SceneNoteRecord[] | null;
+  created_at: string;
 };
 
 type EpisodeRecord = {
@@ -62,6 +67,7 @@ type EpisodeRecord = {
   job_workflow: string | null;
   scene_workflow: string | null;
   scenes: SceneRecord[] | null;
+  created_at: string;
 };
 
 type ProductionEnvironmentRecord = {
@@ -72,6 +78,7 @@ type ProductionEnvironmentRecord = {
   thumbnail_url: string | null;
   status: string;
   episodes: EpisodeRecord[] | null;
+  created_at: string;
 };
 
 const productionEnvironmentSelect = `
@@ -81,6 +88,7 @@ const productionEnvironmentSelect = `
   description,
   thumbnail_url,
   status,
+  created_at,
   episodes (
     id,
     environment_id,
@@ -94,6 +102,7 @@ const productionEnvironmentSelect = `
     status,
     job_workflow,
     scene_workflow,
+    created_at,
     scenes (
       id,
       scene_name,
@@ -104,6 +113,7 @@ const productionEnvironmentSelect = `
       workflow,
       number_of_frames,
       priority,
+      created_at,
       production_tasks (
         id,
         name,
@@ -112,7 +122,8 @@ const productionEnvironmentSelect = `
         assignee,
         start_date,
         end_date,
-        sort_order
+        sort_order,
+        created_at
       ),
       scene_notes (
         id,
@@ -123,9 +134,9 @@ const productionEnvironmentSelect = `
   )
 `;
 
-function compareBySortOrderThenName<T>(
+function compareBySortOrderThenCreatedAt<T>(
   getSortOrder: (item: T) => number | null,
-  getName: (item: T) => string
+  getCreatedAt: (item: T) => string
 ) {
   return (first: T, second: T) => {
     const firstSortOrder = getSortOrder(first) ?? Number.MAX_SAFE_INTEGER;
@@ -135,7 +146,7 @@ function compareBySortOrderThenName<T>(
       return firstSortOrder - secondSortOrder;
     }
 
-    return getName(first).localeCompare(getName(second));
+    return getCreatedAt(first).localeCompare(getCreatedAt(second));
   };
 }
 
@@ -148,6 +159,7 @@ function mapProductionTask(record: ProductionTaskRecord): ProductionTask {
     assignee: record.assignee ?? "Unassigned",
     startDate: record.start_date ?? undefined,
     endDate: record.end_date ?? undefined,
+    createdAt: record.created_at,
   };
 }
 
@@ -158,9 +170,9 @@ function mapScene(record: SceneRecord): Scene {
 
   const tasks = [...(record.production_tasks ?? [])]
     .sort(
-      compareBySortOrderThenName(
+      compareBySortOrderThenCreatedAt(
         (task) => task.sort_order,
-        (task) => task.name
+        (task) => task.created_at
       )
     )
     .map(mapProductionTask);
@@ -176,15 +188,16 @@ function mapScene(record: SceneRecord): Scene {
     numberOfFrames: record.number_of_frames,
     priority: record.priority,
     tasks,
+    createdAt: record.created_at,
   };
 }
 
 function mapEpisode(record: EpisodeRecord): Episode {
   const scenes = [...(record.scenes ?? [])]
     .sort(
-      compareBySortOrderThenName(
+      compareBySortOrderThenCreatedAt(
         (scene) => scene.sort_order,
-        (scene) => scene.scene_name
+        (scene) => scene.created_at
       )
     )
     .map(mapScene);
@@ -201,6 +214,7 @@ function mapEpisode(record: EpisodeRecord): Episode {
     jobWorkflow: record.job_workflow ?? undefined,
     sceneWorkflow: record.scene_workflow ?? undefined,
     scenes,
+    createdAt: record.created_at,
   };
 }
 
@@ -209,9 +223,9 @@ function mapProductionEnvironment(
 ): ProductionEnvironment {
   const episodes = [...(record.episodes ?? [])]
     .sort(
-      compareBySortOrderThenName(
+      compareBySortOrderThenCreatedAt(
         (episode) => episode.sort_order,
-        (episode) => episode.episode_name
+        (episode) => episode.created_at
       )
     )
     .map(mapEpisode);
@@ -224,6 +238,7 @@ function mapProductionEnvironment(
     thumbnailUrl: record.thumbnail_url ?? "",
     status: record.status as "Active" | "Retired",
     episodes,
+    createdAt: record.created_at,
   };
 }
 
@@ -239,11 +254,12 @@ export async function getProjects(): Promise<Project[]> {
       description,
       thumbnail_url,
       status,
+      created_at,
       production_environments (
         ${productionEnvironmentSelect}
       )
     `)
-    .order("title", { ascending: true })
+    .order("created_at", { ascending: true })
     .returns<(ProjectRecord & { production_environments: ProductionEnvironmentRecord[] | null })[]>();
 
   if (error) {
@@ -252,7 +268,7 @@ export async function getProjects(): Promise<Project[]> {
 
   return (data ?? []).map((record) => {
     const environments = [...(record.production_environments ?? [])]
-      .sort((first, second) => first.name.localeCompare(second.name))
+      .sort((first, second) => first.created_at.localeCompare(second.created_at))
       .map(mapProductionEnvironment);
 
     return {
@@ -263,11 +279,12 @@ export async function getProjects(): Promise<Project[]> {
       thumbnailUrl: record.thumbnail_url ?? "",
       status: record.status as "Active" | "Retired",
       environments,
+      createdAt: record.created_at,
     };
   });
 }
 
-export async function createProject(project: Omit<Project, 'id' | 'environments'>): Promise<Project> {
+export async function createProject(project: Omit<Project, 'id' | 'environments' | 'createdAt'>): Promise<Project> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -285,7 +302,8 @@ export async function createProject(project: Omit<Project, 'id' | 'environments'
       project_code,
       description,
       thumbnail_url,
-      status
+      status,
+      created_at
     `)
     .single<ProjectRecord>();
 
@@ -301,6 +319,7 @@ export async function createProject(project: Omit<Project, 'id' | 'environments'
     thumbnailUrl: data.thumbnail_url ?? "",
     status: data.status as "Active" | "Retired",
     environments: [],
+    createdAt: data.created_at,
   };
 }
 
@@ -357,7 +376,7 @@ export async function getProductionEnvironments(): Promise<
   const { data, error } = await supabase
     .from("production_environments")
     .select(productionEnvironmentSelect)
-    .order("name", { ascending: true })
+    .order("created_at", { ascending: true })
     .returns<ProductionEnvironmentRecord[]>();
 
   if (error) {
@@ -374,7 +393,7 @@ export async function getEnvironmentsByProject(projectId: string): Promise<Produ
     .from("production_environments")
     .select(productionEnvironmentSelect)
     .eq("project_id", projectId)
-    .order("name", { ascending: true })
+    .order("created_at", { ascending: true })
     .returns<ProductionEnvironmentRecord[]>();
 
   if (error) {
@@ -384,7 +403,7 @@ export async function getEnvironmentsByProject(projectId: string): Promise<Produ
   return (data ?? []).map(mapProductionEnvironment);
 }
 
-export async function createEnvironment(environment: Omit<ProductionEnvironment, 'id' | 'episodes'>): Promise<ProductionEnvironment> {
+export async function createEnvironment(environment: Omit<ProductionEnvironment, 'id' | 'episodes' | 'createdAt'>): Promise<ProductionEnvironment> {
   const supabase = createClient();
 
   const { data, error } = await supabase
@@ -402,7 +421,8 @@ export async function createEnvironment(environment: Omit<ProductionEnvironment,
       name,
       description,
       thumbnail_url,
-      status
+      status,
+      created_at
     `)
     .single<ProductionEnvironmentRecord>();
 
@@ -418,10 +438,11 @@ export async function createEnvironment(environment: Omit<ProductionEnvironment,
     thumbnailUrl: data.thumbnail_url ?? "",
     status: data.status as "Active" | "Retired",
     episodes: [],
+    createdAt: data.created_at,
   };
 }
 
-export async function updateEnvironment(id: string, updates: Partial<Omit<ProductionEnvironment, 'id' | 'episodes' | 'projectId'>>): Promise<void> {
+export async function updateEnvironment(id: string, updates: Partial<Omit<ProductionEnvironment, 'id' | 'episodes' | 'projectId' | 'createdAt'>>): Promise<void> {
   const supabase = createClient();
   const dbUpdates: {
     name?: string;
@@ -479,7 +500,7 @@ export async function deleteEnvironment(id: string): Promise<void> {
   }
 }
 
-export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes'>[]): Promise<void> {
+export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes' | 'createdAt'>[]): Promise<void> {
   const supabase = createClient();
   
   const records = jobs.map((job) => ({
@@ -576,7 +597,7 @@ export async function deleteJob(id: string): Promise<void> {
   }
 }
 
-export async function createScenes(jobId: string, scenes: Omit<Scene, 'id' | 'tasks'>[]): Promise<void> {
+export async function createScenes(jobId: string, scenes: Omit<Scene, 'id' | 'tasks' | 'createdAt'>[]): Promise<void> {
   const supabase = createClient();
   
   const records = scenes.map((scene) => ({
@@ -662,6 +683,25 @@ export async function deleteScene(id: string): Promise<void> {
   if (error) {
     throw new Error(`Failed to delete scene: ${error.message}`);
   }
+}
+
+export async function getAssets(): Promise<Asset[]> {
+  // STUB
+  return [];
+}
+
+export async function createAsset(_asset: Partial<Asset>): Promise<void> {
+  // STUB
+}
+
+export async function getAssetCategories(): Promise<AssetCategory[]> {
+  // STUB
+  return [];
+}
+
+export async function createAssetCategory(name: string): Promise<AssetCategory> {
+  // STUB
+  return { id: 'temp', name, createdAt: new Date().toISOString() };
 }
 
 

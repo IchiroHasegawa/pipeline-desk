@@ -22,6 +22,7 @@ export default function ProjectDropdown({
         onChange={(event) => onChangeProject(event.target.value)}
         className="rounded border border-zinc-700 bg-black px-2 py-1 text-xs text-[#e0e0e0] outline-none focus:border-zinc-500"
       >
+        <option value="ALL">ALL PROJECTS</option>
         {projects.map((project) => (
           <option key={project.id} value={project.id}>
             {project.title}

@@ -7,7 +7,7 @@ const navItems = [
   { name: "Overview", href: "#" },
   { name: "Production", href: "/production" },
   { name: "Open Tasks", href: "#" },
-  { name: "Assets", href: "#" },
+  { name: "Assets", href: "/assets/manage" },
   { name: "Review", href: "#" },
   { name: "Reports", href: "#" },
   { name: "Views", href: "#" },

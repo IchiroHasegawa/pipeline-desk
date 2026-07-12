@@ -84,9 +84,9 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-[#0a0a0a] p-6">
-      <div className="mx-auto w-full max-w-3xl space-y-6">
-        <h2 className="text-xl font-bold text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg border border-[#2a2a2a] bg-[#121212] p-6 shadow-2xl">
+        <h2 className="text-xl font-bold text-white mb-6">
           {isEditing ? "Edit Scene" : "Create Scene(s)"}
         </h2>
 
@@ -96,96 +96,108 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            {!isEditing && (
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div>
+            <h3 className="mb-4 text-sm font-bold uppercase text-zinc-400 border-b border-zinc-800 pb-2">
+              Scene Information
+            </h3>
+            <div className="grid gap-6 md:grid-cols-2">
+              {!isEditing && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-zinc-500">Number of Scenes *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={sceneCount}
+                    onChange={(e) => setSceneCount(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                  />
+                </div>
+              )}
+  
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-zinc-500">Number of Scenes *</label>
+                <label className="text-xs font-bold uppercase text-zinc-500">
+                  {isEditing ? "Scene Name *" : "First Scene Name *"}
+                </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   required
-                  value={sceneCount}
-                  onChange={(e) => setSceneCount(Math.max(1, parseInt(e.target.value) || 1))}
+                  value={sceneName}
+                  onChange={(e) => setSceneName(e.target.value)}
+                  placeholder="e.g., Scene_001"
                   className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
                 />
               </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-zinc-500">
-                {isEditing ? "Scene Name *" : "First Scene Name *"}
-              </label>
-              <input
-                type="text"
-                required
-                value={sceneName}
-                onChange={(e) => setSceneName(e.target.value)}
-                placeholder="e.g., Scene_001"
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-zinc-500">Workflow</label>
-              <select
-                value={workflow}
-                onChange={(e) => setWorkflow(e.target.value)}
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-              >
-                <option value="Basic">Basic</option>
-                <option value="Single Approval">Single Approval</option>
-                <option value="Double Approval">Double Approval</option>
-                <option value="Complete">Complete</option>
-                <option value="Custom">Custom</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-zinc-500">Number of Frames</label>
-              <input
-                type="number"
-                min="1"
-                value={numberOfFrames}
-                onChange={(e) => setNumberOfFrames(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase text-zinc-500">Priority</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(parseInt(e.target.value))}
-                className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-              >
-                <option value="1">1 - Critical</option>
-                <option value="2">2 - High</option>
-                <option value="3">3 - Medium</option>
-                <option value="4">4 - Normal</option>
-                <option value="5">5 - Low</option>
-              </select>
+  
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold uppercase text-zinc-500">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="h-24 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                />
+              </div>
+  
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-bold uppercase text-zinc-500">Default Thumbnail URL</label>
+                <input
+                  type="url"
+                  value={previewImage}
+                  onChange={(e) => setPreviewImage(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-zinc-500">Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="h-24 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase text-zinc-500">Default Thumbnail URL</label>
-            <input
-              type="url"
-              value={previewImage}
-              onChange={(e) => setPreviewImage(e.target.value)}
-              placeholder="https://..."
-              className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-            />
+          <div>
+            <h3 className="mb-4 text-sm font-bold uppercase text-zinc-400 border-b border-zinc-800 pb-2">
+              Production Settings
+            </h3>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-zinc-500">Workflow</label>
+                <select
+                  value={workflow}
+                  onChange={(e) => setWorkflow(e.target.value)}
+                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                >
+                  <option value="Basic">Basic</option>
+                  <option value="Single Approval">Single Approval</option>
+                  <option value="Double Approval">Double Approval</option>
+                  <option value="Complete">Complete</option>
+                  <option value="Custom">Custom</option>
+                </select>
+              </div>
+  
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-zinc-500">Number of Frames</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={numberOfFrames}
+                  onChange={(e) => setNumberOfFrames(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                />
+              </div>
+  
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-zinc-500">Priority</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(parseInt(e.target.value))}
+                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                >
+                  <option value="1">1 - Critical</option>
+                  <option value="2">2 - High</option>
+                  <option value="3">3 - Medium</option>
+                  <option value="4">4 - Normal</option>
+                  <option value="5">5 - Low</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

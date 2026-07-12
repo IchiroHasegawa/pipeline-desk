@@ -1,17 +1,25 @@
 import { Filter, ListFilter, MoreHorizontal, Plus, Upload } from "lucide-react";
 
-export default function ProductionToolbar() {
-  return (
-    <div className="flex shrink-0 items-center justify-between px-4 py-3">
-      <div className="flex items-center gap-4">
-        <button className="flex items-center gap-1 text-xs text-gray-300 transition-colors hover:text-white">
-          <Plus className="h-4 w-4" />
-          <span>Add Job</span>
-        </button>
+type ProductionToolbarProps = {
+  viewLevel: "PROJECT" | "ENVIRONMENT" | "JOB" | "SCENE";
+  onAdd: () => void;
+};
 
-        <button className="flex items-center gap-1 text-xs text-gray-300 transition-colors hover:text-white">
+export default function ProductionToolbar({ viewLevel, onAdd }: ProductionToolbarProps) {
+  const addLabel = 
+    viewLevel === "PROJECT" ? "Add Project" :
+    viewLevel === "ENVIRONMENT" ? "Add Environment" :
+    viewLevel === "JOB" ? "Add Job" : "Add Scene";
+
+  return (
+    <div className="flex shrink-0 items-center justify-between px-4 py-3 border-b border-[#2a2a2a]">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={onAdd}
+          className="flex items-center gap-1 text-xs text-gray-300 transition-colors hover:text-white"
+        >
           <Plus className="h-4 w-4" />
-          <span>Add Tasks</span>
+          <span>{addLabel}</span>
         </button>
 
         <div className="h-4 w-px bg-zinc-700" />

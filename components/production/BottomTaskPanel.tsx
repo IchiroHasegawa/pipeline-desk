@@ -154,7 +154,7 @@ function createEpisodeTaskSummary(
 
         startDate: "—",
 
-        endDate: "—",
+        endDate: "—", createdAt: new Date().toISOString(),
       };
     }
   );

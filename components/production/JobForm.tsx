@@ -48,6 +48,7 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
 
   const [numberOfJobs, setNumberOfJobs] = useState(1);
   const [startDate, setStartDate] = useState(job?.startDate ?? new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(job?.endDate ?? "");
   const [daysBetweenJobs, setDaysBetweenJobs] = useState(0);
   
   const [jobName, setJobName] = useState(job?.episodeName ?? "");
@@ -81,6 +82,7 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
           description,
           previewImage,
           startDate,
+          endDate,
           jobWorkflow,
           sceneWorkflow,
         });
@@ -88,8 +90,13 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
         const jobNames = generateJobNames(jobName, numberOfJobs);
         const jobsToCreate = jobNames.map((name, index) => {
           const date = new Date(startDate);
+          const eDate = endDate ? new Date(endDate) : null;
+          
           if (daysBetweenJobs > 0 && index > 0) {
             date.setDate(date.getDate() + (daysBetweenJobs * index));
+            if (eDate) {
+              eDate.setDate(eDate.getDate() + (daysBetweenJobs * index));
+            }
           }
           
           return {
@@ -100,8 +107,8 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
             status: "Active" as const,
             jobWorkflow,
             sceneWorkflow,
-            code: "", // Code generation can be added later if needed
-            endDate: "", // End date can be calculated later if needed
+            code: "", 
+            endDate: eDate ? eDate.toISOString().split("T")[0] : "", 
           };
         });
 
@@ -178,17 +185,30 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
             )}
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-300">
-              Start Date <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500 [color-scheme:dark]"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-300">
+                Start Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500 [color-scheme:dark]"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-zinc-300">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500 [color-scheme:dark]"
+              />
+            </div>
           </div>
 
           <div>

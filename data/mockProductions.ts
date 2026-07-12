@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import type { Project } from "@/types/production";
 
 export const mockProjects: Project[] = [

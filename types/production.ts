@@ -16,6 +16,7 @@ export type ProductionTask = {
   assignee: string;
   startDate?: string;
   endDate?: string;
+  createdAt: string;
 };
 
 export type Scene = {
@@ -29,6 +30,7 @@ export type Scene = {
   numberOfFrames: number;
   priority: number;
   tasks: ProductionTask[];
+  createdAt: string;
 };
 
 export type Episode = {
@@ -43,6 +45,7 @@ export type Episode = {
   jobWorkflow?: string;
   sceneWorkflow?: string;
   scenes: Scene[];
+  createdAt: string;
 };
 
 export type ProductionEnvironment = {
@@ -53,6 +56,7 @@ export type ProductionEnvironment = {
   thumbnailUrl: string;
   status: "Active" | "Retired";
   episodes: Episode[];
+  createdAt: string;
 };
 
 export type Project = {
@@ -63,4 +67,50 @@ export type Project = {
   thumbnailUrl: string;
   status: "Active" | "Retired";
   environments: ProductionEnvironment[];
+  createdAt: string;
+};
+
+export type AssetCategory = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
+export type AssetFile = {
+  id: string;
+  assetId: string;
+  fileName: string;
+  fileUrl: string;
+  fileFormat: string;
+  sizeBytes: number;
+  createdAt: string;
+};
+
+export type Asset = {
+  id: string;
+  assetName: string;
+  assetCode: string;
+  description: string;
+  priority: number;
+  categoryId: string | null;
+  category?: AssetCategory;
+  assetType: string;
+  workflow: string;
+  tags: string[];
+  previewUrl: string;
+  status: "Active" | "Retired";
+  files?: AssetFile[];
+  tasks?: ProductionTask[];
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type AssetAssignment = {
+  id: string;
+  assetId: string;
+  projectId?: string;
+  environmentId?: string;
+  episodeId?: string;
+  sceneId?: string;
+  createdAt: string;
 };
