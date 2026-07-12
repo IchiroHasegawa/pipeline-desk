@@ -105,7 +105,7 @@ export default function EpisodeTable({
             </th>
 
             <th className="sticky top-0 z-10 bg-[#121212] px-2 py-2 shadow-[0_1px_0_#2a2a2a]">
-              Episode Name ▲
+              Job Name ▲
             </th>
 
             <th className="sticky top-0 z-10 bg-[#121212] px-2 py-2 shadow-[0_1px_0_#2a2a2a]">

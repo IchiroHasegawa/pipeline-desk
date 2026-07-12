@@ -133,7 +133,7 @@ export default function RightDetailsPanel({
               <div className="space-y-3 rounded border border-[#2a2a2a] p-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase text-zinc-500">
-                    Episode Name
+                    Job Name
                   </label>
 
                   <input
@@ -207,7 +207,7 @@ export default function RightDetailsPanel({
                   />
 
                   <DetailRow
-                    label="Episode"
+                    label="Job"
                     value={
                       episode.episodeName
                     }

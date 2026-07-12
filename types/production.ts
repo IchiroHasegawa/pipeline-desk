@@ -24,6 +24,10 @@ export type Scene = {
   previewImage: string;
   description?: string;
   note: string;
+  status: "Active" | "Retired";
+  workflow?: string;
+  numberOfFrames: number;
+  priority: number;
   tasks: ProductionTask[];
 };
 
@@ -35,12 +39,28 @@ export type Episode = {
   code: string;
   startDate: string;
   endDate: string;
+  status: "Active" | "Retired";
+  jobWorkflow?: string;
+  sceneWorkflow?: string;
   scenes: Scene[];
 };
 
 export type ProductionEnvironment = {
   id: string;
+  projectId: string;
   name: string;
   description: string;
+  thumbnailUrl: string;
+  status: "Active" | "Retired";
   episodes: Episode[];
+};
+
+export type Project = {
+  id: string;
+  title: string;
+  projectCode: string;
+  description: string;
+  thumbnailUrl: string;
+  status: "Active" | "Retired";
+  environments: ProductionEnvironment[];
 };

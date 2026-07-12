@@ -195,7 +195,7 @@ export default function BottomTaskPanel({
         </button>
 
         <TabButton
-          label="Episode Tasks"
+          label="Job Tasks"
           active={
             activeTab === "tasks"
           }
@@ -252,7 +252,7 @@ export default function BottomTaskPanel({
             )}
           </div>
         ) : (
-          <EmptyText text="This episode does not have any scene tasks yet." />
+          <EmptyText text="This job does not have any scene tasks yet." />
         ))}
 
       {activeTab ===

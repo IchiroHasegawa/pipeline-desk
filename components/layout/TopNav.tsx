@@ -1,15 +1,22 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
 const navItems = [
-  "Overview",
-  "Production",
-  "Open Tasks",
-  "Assets",
-  "Review",
-  "Reports",
-  "Views",
-  "Settings",
+  { name: "Overview", href: "#" },
+  { name: "Production", href: "/production" },
+  { name: "Open Tasks", href: "#" },
+  { name: "Assets", href: "#" },
+  { name: "Review", href: "#" },
+  { name: "Reports", href: "#" },
+  { name: "Views", href: "#" },
+  { name: "Settings", href: "/settings" },
 ];
 
 export default function TopNav() {
+  const pathname = usePathname();
+
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] bg-black px-4 py-2 text-[#e0e0e0]">
       <div className="flex items-center">
@@ -20,18 +27,34 @@ export default function TopNav() {
       </div>
 
       <nav className="hidden items-center space-x-6 text-sm font-medium md:flex">
-        {navItems.map((item) => (
-          <button
-            key={item}
-            className={`pb-1 transition-colors ${
-              item === "Production"
-                ? "border-b-2 border-white text-white"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            {item}
-          </button>
-        ))}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (item.name === "Production" && pathname === "/");
+          
+          if (item.href === "#") {
+            return (
+              <button
+                key={item.name}
+                className={`pb-1 transition-colors text-gray-400 hover:text-white`}
+              >
+                {item.name}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`pb-1 transition-colors ${
+                isActive
+                  ? "border-b-2 border-white text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="flex items-center space-x-4">

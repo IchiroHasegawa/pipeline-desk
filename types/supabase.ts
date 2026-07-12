@@ -11,28 +11,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      production_environments: {
+      projects: {
         Row: {
           id: string;
-          name: string;
+          title: string;
+          project_code: string;
           description: string | null;
+          thumbnail_url: string | null;
+          status: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          name: string;
+          title: string;
+          project_code: string;
           description?: string | null;
+          thumbnail_url?: string | null;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          name?: string;
+          title?: string;
+          project_code?: string;
           description?: string | null;
+          thumbnail_url?: string | null;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: never[];
+      };
+      production_environments: {
+        Row: {
+          id: string;
+          project_id: string;
+          name: string;
+          description: string | null;
+          thumbnail_url: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          name: string;
+          description?: string | null;
+          thumbnail_url?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          name?: string;
+          description?: string | null;
+          thumbnail_url?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
       };
       episodes: {
         Row: {
@@ -45,6 +88,9 @@ export type Database = {
           start_date: string | null;
           end_date: string | null;
           sort_order: number | null;
+          status: string;
+          job_workflow: string | null;
+          scene_workflow: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -58,6 +104,9 @@ export type Database = {
           start_date?: string | null;
           end_date?: string | null;
           sort_order?: number | null;
+          status?: string;
+          job_workflow?: string | null;
+          scene_workflow?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -71,9 +120,13 @@ export type Database = {
           start_date?: string | null;
           end_date?: string | null;
           sort_order?: number | null;
+          status?: string;
+          job_workflow?: string | null;
+          scene_workflow?: string | null;
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: never[];
       };
       scenes: {
         Row: {
@@ -83,6 +136,10 @@ export type Database = {
           description: string | null;
           preview_image: string | null;
           sort_order: number | null;
+          status: string;
+          workflow: string | null;
+          number_of_frames: number;
+          priority: number;
           created_at: string;
           updated_at: string;
         };
@@ -93,6 +150,10 @@ export type Database = {
           description?: string | null;
           preview_image?: string | null;
           sort_order?: number | null;
+          status?: string;
+          workflow?: string | null;
+          number_of_frames?: number;
+          priority?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -103,9 +164,14 @@ export type Database = {
           description?: string | null;
           preview_image?: string | null;
           sort_order?: number | null;
+          status?: string;
+          workflow?: string | null;
+          number_of_frames?: number;
+          priority?: number;
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: never[];
       };
       production_tasks: {
         Row: {
@@ -147,6 +213,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: never[];
       };
       scene_notes: {
         Row: {
@@ -170,6 +237,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: never[];
       };
     };
     Views: Record<string, never>;
