@@ -73,6 +73,7 @@ export type Project = {
 export type AssetCategory = {
   id: string;
   name: string;
+  sortOrder?: number;
   createdAt: string;
 };
 
@@ -92,6 +93,7 @@ export type Asset = {
   assetCode: string;
   description: string;
   priority: number;
+  sortOrder?: number;
   categoryId: string | null;
   category?: AssetCategory;
   assetType: string;

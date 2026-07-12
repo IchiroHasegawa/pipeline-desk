@@ -1,47 +1,176 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import TopNav from "@/components/layout/TopNav";
-import AssetAssemblyLeftPanel from "@/components/assets/AssetAssemblyLeftPanel";
+import AuthGate from "@/components/auth/AuthGate";
+import AssetAssemblyLeftPanel, { ProductionTarget } from "@/components/assets/AssetAssemblyLeftPanel";
 import AssetAssemblyRightPanel from "@/components/assets/AssetAssemblyRightPanel";
-import { getAssets } from "@/lib/data/productionRepository";
-import type { Asset } from "@/types/production";
+import { getAssets, getAssetCategories, getProjects } from "@/lib/data/productionRepository";
+import { mockProjects } from "@/data/mockProductions";
+import type { Asset, AssetCategory, Project } from "@/types/production";
+import { DevelopmentFallbackWarning, LoadingMessage, ErrorMessage } from "@/components/ui/LoadingState";
 
-type AssignmentTarget = {
-  type: "project" | "environment" | "episode" | "scene";
-  id: string;
-  name: string;
+type DataSource = "supabase" | "mock";
+
+type LoadState = {
+  isLoading: boolean;
+  errorMessage: string | null;
+  dataSource: DataSource;
 };
 
 export default function AssetsAssemblyPage() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [selectedTarget, setSelectedTarget] = useState<AssignmentTarget | null>(null);
-
-  useEffect(() => {
-    getAssets().then(setAssets).catch(console.error);
-  }, []);
-
   return (
     <div className="flex h-screen w-full flex-col bg-black text-white">
       <TopNav />
-      
-      <div className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] bg-[#121212] px-4 py-2">
-        <h1 className="text-sm font-bold uppercase tracking-wider text-zinc-300">
-          Assets Assembly
-        </h1>
-      </div>
-
-      <main className="flex min-h-0 flex-1">
-        <AssetAssemblyLeftPanel 
-          selectedTarget={selectedTarget}
-          onSelectTarget={setSelectedTarget}
-        />
-        
-        <AssetAssemblyRightPanel 
-          target={selectedTarget}
-          assets={assets}
-        />
-      </main>
+      <AuthGate>
+        <AssetsAssemblyContent />
+      </AuthGate>
     </div>
+  );
+}
+
+function AssetsAssemblyContent() {
+  const isMountedRef = useRef(true);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [categories, setCategories] = useState<AssetCategory[]>([]);
+  
+  const [selectedProductionTargets, setSelectedProductionTargets] = useState<Map<string, ProductionTarget>>(new Map());
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
+  
+  const [loadState, setLoadState] = useState<LoadState>({
+    isLoading: true,
+    errorMessage: null,
+    dataSource: "supabase",
+  });
+
+  const loadData = useCallback(async () => {
+    if (!isMountedRef.current) return;
+    
+    setLoadState((current) => ({
+      ...current,
+      isLoading: true,
+      errorMessage: null,
+    }));
+
+    try {
+      const [loadedProjects, loadedAssets, loadedCategories] = await Promise.all([
+        getProjects(),
+        getAssets(),
+        getAssetCategories(),
+      ]);
+
+      if (!isMountedRef.current) return;
+
+      setProjects(loadedProjects);
+      setAssets(loadedAssets);
+      setCategories(loadedCategories);
+      
+      setLoadState({
+        isLoading: false,
+        errorMessage: null,
+        dataSource: "supabase",
+      });
+    } catch (error) {
+      if (!isMountedRef.current) return;
+      console.error("Failed to load assembly data from Supabase", error);
+
+      const errorMessage = error instanceof Error ? error.message : "Failed to load assembly data.";
+
+      if (process.env.NODE_ENV === "development") {
+        setProjects(mockProjects);
+        setAssets([]);
+        setCategories([]);
+        setLoadState({
+          isLoading: false,
+          errorMessage,
+          dataSource: "mock",
+        });
+        return;
+      }
+
+      setLoadState({
+        isLoading: false,
+        errorMessage,
+        dataSource: "supabase",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadData]);
+
+  const handleToggleTarget = (target: ProductionTarget, checked: boolean) => {
+    setSelectedProductionTargets((prev) => {
+      const newMap = new Map(prev);
+      if (checked) newMap.set(target.id, target);
+      else newMap.delete(target.id);
+      return newMap;
+    });
+  };
+
+  const handleToggleAsset = (id: string, checked: boolean) => {
+    setSelectedAssetIds((prev) => {
+      const newSet = new Set(prev);
+      if (checked) newSet.add(id);
+      else newSet.delete(id);
+      return newSet;
+    });
+  };
+
+  const handleToggleAllInCategory = (categoryAssets: Asset[], checked: boolean) => {
+    setSelectedAssetIds((prev) => {
+      const newSet = new Set(prev);
+      categoryAssets.forEach((a) => {
+        if (checked) newSet.add(a.id);
+        else newSet.delete(a.id);
+      });
+      return newSet;
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedProductionTargets(new Map());
+    setSelectedAssetIds(new Set());
+  };
+
+  return (
+    <>
+      {loadState.dataSource === "mock" && loadState.errorMessage && (
+        <DevelopmentFallbackWarning
+          errorMessage={loadState.errorMessage}
+          onRetry={loadData}
+        />
+      )}
+
+      {loadState.isLoading ? (
+        <LoadingMessage message="Loading assembly data..." />
+      ) : loadState.errorMessage && loadState.dataSource !== "mock" ? (
+        <ErrorMessage message={loadState.errorMessage} onRetry={loadData} />
+      ) : (
+        <main className="flex min-h-0 flex-1 overflow-hidden">
+          <AssetAssemblyLeftPanel
+            projects={projects}
+            selectedTargets={new Set(selectedProductionTargets.keys())}
+            onToggleTarget={handleToggleTarget}
+          />
+          <AssetAssemblyRightPanel
+            assets={assets}
+            categories={categories}
+            selectedProductionTargets={Array.from(selectedProductionTargets.values())}
+            selectedAssetIds={selectedAssetIds}
+            onToggleAsset={handleToggleAsset}
+            onToggleAllInCategory={handleToggleAllInCategory}
+            onClearSelection={handleClearSelection}
+          />
+        </main>
+      )}
+    </>
   );
 }

@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { X, UploadCloud } from "lucide-react";
-import type { AssetCategory } from "@/types/production";
+import type { Asset, AssetCategory } from "@/types/production";
 import { createAsset, createAssetCategory } from "@/lib/data/productionRepository";
 
 type AssetFormProps = {
   onClose: () => void;
+  onCreated: (asset: Asset) => void;
   categories: AssetCategory[];
 };
 
-export default function AssetForm({ onClose, categories }: AssetFormProps) {
+export default function AssetForm({ onClose, onCreated, categories }: AssetFormProps) {
   const [activeTab, setActiveTab] = useState<"info" | "files" | "assembly">("info");
   const [assetName, setAssetName] = useState("");
   const [assetCode, setAssetCode] = useState("");
@@ -68,7 +69,7 @@ export default function AssetForm({ onClose, categories }: AssetFormProps) {
         finalCategoryId = newCat.id;
       }
 
-      await createAsset({
+      const createdAsset = await createAsset({
         assetName,
         assetCode,
         description,
@@ -76,10 +77,10 @@ export default function AssetForm({ onClose, categories }: AssetFormProps) {
         categoryId: finalCategoryId || null,
         assetType,
         workflow,
-        tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+        tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
         status: "Active",
       });
-      onClose();
+      onCreated(createdAsset);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save asset.");
       setIsSubmitting(false);
@@ -309,3 +310,5 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
     </button>
   );
 }
+
+

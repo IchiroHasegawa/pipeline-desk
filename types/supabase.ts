@@ -239,6 +239,135 @@ export type Database = {
         };
         Relationships: never[];
       };
+      asset_categories: {
+        Row: {
+          id: string;
+          name: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
+      assets: {
+        Row: {
+          id: string;
+          asset_name: string;
+          asset_code: string;
+          description: string | null;
+          priority: number;
+          category_id: string | null;
+          asset_type: string;
+          workflow: string | null;
+          tags: string[] | null;
+          preview_url: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          asset_name: string;
+          asset_code: string;
+          description?: string | null;
+          priority?: number;
+          category_id?: string | null;
+          asset_type: string;
+          workflow?: string | null;
+          tags?: string[] | null;
+          preview_url?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          asset_name?: string;
+          asset_code?: string;
+          description?: string | null;
+          priority?: number;
+          category_id?: string | null;
+          asset_type?: string;
+          workflow?: string | null;
+          tags?: string[] | null;
+          preview_url?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
+      asset_files: {
+        Row: {
+          id: string;
+          asset_id: string;
+          file_name: string;
+          file_url: string;
+          file_format: string;
+          file_size_bytes: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          asset_id: string;
+          file_name: string;
+          file_url: string;
+          file_format: string;
+          file_size_bytes?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          asset_id?: string;
+          file_name?: string;
+          file_url?: string;
+          file_format?: string;
+          file_size_bytes?: number;
+          created_at?: string;
+        };
+        Relationships: never[];
+      };
+      asset_assignments: {
+        Row: {
+          id: string;
+          asset_id: string;
+          project_id: string | null;
+          environment_id: string | null;
+          episode_id: string | null;
+          scene_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          asset_id: string;
+          project_id?: string | null;
+          environment_id?: string | null;
+          episode_id?: string | null;
+          scene_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          asset_id?: string;
+          project_id?: string | null;
+          environment_id?: string | null;
+          episode_id?: string | null;
+          scene_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: never[];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -246,3 +375,5 @@ export type Database = {
     CompositeTypes: Record<string, never>;
   };
 };
+
+

@@ -1,5 +1,5 @@
 CREATE TABLE asset_assignments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
     project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
     environment_id UUID REFERENCES production_environments(id) ON DELETE CASCADE,

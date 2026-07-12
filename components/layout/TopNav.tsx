@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 
 const navItems = [
   { name: "Overview", href: "#" },
   { name: "Production", href: "/production" },
   { name: "Open Tasks", href: "#" },
-  { name: "Assets", href: "/assets/manage" },
   { name: "Review", href: "#" },
   { name: "Reports", href: "#" },
   { name: "Views", href: "#" },
@@ -16,6 +16,7 @@ const navItems = [
 
 export default function TopNav() {
   const pathname = usePathname();
+  const assetsActive = pathname.startsWith("/assets");
 
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] bg-black px-4 py-2 text-[#e0e0e0]">
@@ -27,14 +28,82 @@ export default function TopNav() {
       </div>
 
       <nav className="hidden items-center space-x-6 text-sm font-medium md:flex">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.name === "Production" && pathname === "/");
-          
+        {navItems.slice(0, 3).map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.name === "Production" && pathname === "/");
+
           if (item.href === "#") {
             return (
               <button
                 key={item.name}
-                className={`pb-1 transition-colors text-gray-400 hover:text-white`}
+                className="pb-1 text-gray-400 transition-colors hover:text-white"
+              >
+                {item.name}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`pb-1 transition-colors ${
+                isActive
+                  ? "border-b-2 border-white text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
+
+        <div className="group relative pb-1">
+          <Link
+            href="/assets/manage"
+            className={`flex items-center gap-1 transition-colors ${
+              assetsActive
+                ? "border-b-2 border-white text-white"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Assets
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Link>
+
+          <div className="invisible absolute left-0 top-full z-50 min-w-36 translate-y-2 rounded border border-[#2a2a2a] bg-zinc-950 py-1 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-1 group-hover:opacity-100">
+            <Link
+              href="/assets/manage"
+              className={`block px-3 py-2 text-xs transition-colors ${
+                pathname === "/assets/manage"
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              Manage
+            </Link>
+            <Link
+              href="/assets/assembly"
+              className={`block px-3 py-2 text-xs transition-colors ${
+                pathname === "/assets/assembly"
+                  ? "bg-zinc-800 text-white"
+                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              }`}
+            >
+              Assembly
+            </Link>
+          </div>
+        </div>
+
+        {navItems.slice(3).map((item) => {
+          const isActive = pathname === item.href;
+
+          if (item.href === "#") {
+            return (
+              <button
+                key={item.name}
+                className="pb-1 text-gray-400 transition-colors hover:text-white"
               >
                 {item.name}
               </button>

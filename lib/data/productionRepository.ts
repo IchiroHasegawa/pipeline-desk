@@ -685,23 +685,203 @@ export async function deleteScene(id: string): Promise<void> {
   }
 }
 
-export async function getAssets(): Promise<Asset[]> {
-  // STUB
-  return [];
+type AssetCategoryRecord = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+type AssetFileRecord = {
+  id: string;
+  asset_id: string;
+  file_name: string;
+  file_url: string;
+  file_format: string;
+  file_size_bytes: number;
+  created_at: string;
+};
+
+type AssetRecord = {
+  id: string;
+  asset_name: string;
+  asset_code: string;
+  description: string | null;
+  priority: number | null;
+  category_id: string | null;
+  asset_type: string | null;
+  workflow: string | null;
+  tags: string[] | null;
+  preview_url: string | null;
+  status: string | null;
+  created_at: string;
+  updated_at: string | null;
+  asset_categories: AssetCategoryRecord | null;
+  asset_files: AssetFileRecord[] | null;
+};
+
+const assetSelect = `
+  id,
+  asset_name,
+  asset_code,
+  description,
+  priority,
+  category_id,
+  asset_type,
+  workflow,
+  tags,
+  preview_url,
+  status,
+  created_at,
+  updated_at,
+  asset_categories (
+    id,
+    name,
+    created_at
+  ),
+  asset_files (
+    id,
+    asset_id,
+    file_name,
+    file_url,
+    file_format,
+    file_size_bytes,
+    created_at
+  )
+`;
+
+function mapAssetCategory(record: AssetCategoryRecord): AssetCategory {
+  return {
+    id: record.id,
+    name: record.name,
+    createdAt: record.created_at,
+  };
 }
 
-export async function createAsset(_asset: Partial<Asset>): Promise<void> {
-  // STUB
+function mapAssetFile(record: AssetFileRecord) {
+  return {
+    id: record.id,
+    assetId: record.asset_id,
+    fileName: record.file_name,
+    fileUrl: record.file_url,
+    fileFormat: record.file_format,
+    sizeBytes: record.file_size_bytes,
+    createdAt: record.created_at,
+  };
+}
+
+function mapAsset(record: AssetRecord): Asset {
+  return {
+    id: record.id,
+    assetName: record.asset_name,
+    assetCode: record.asset_code,
+    description: record.description ?? "",
+    priority: record.priority ?? 4,
+    categoryId: record.category_id,
+    category: record.asset_categories
+      ? mapAssetCategory(record.asset_categories)
+      : undefined,
+    assetType: record.asset_type ?? "General",
+    workflow: record.workflow ?? "Basic",
+    tags: record.tags ?? [],
+    previewUrl: record.preview_url ?? "",
+    status: record.status === "Retired" ? "Retired" : "Active",
+    files: [...(record.asset_files ?? [])]
+      .sort((first, second) => first.created_at.localeCompare(second.created_at))
+      .map(mapAssetFile),
+    tasks: [],
+    createdAt: record.created_at,
+    updatedAt: record.updated_at ?? undefined,
+  };
+}
+
+export async function getAssets(): Promise<Asset[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("assets")
+    .select(assetSelect)
+    .order("created_at", { ascending: true })
+    .returns<AssetRecord[]>();
+
+  if (error) {
+    throw new Error(`Failed to load assets: ${error.message}`);
+  }
+
+  return (data ?? []).map(mapAsset);
+}
+
+export async function createAsset(
+  asset: Pick<
+    Asset,
+    | "assetName"
+    | "assetCode"
+    | "description"
+    | "priority"
+    | "categoryId"
+    | "assetType"
+    | "workflow"
+    | "tags"
+    | "status"
+  > & { previewUrl?: string }
+): Promise<Asset> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("assets")
+    .insert({
+      asset_name: asset.assetName.trim(),
+      asset_code: asset.assetCode.trim(),
+      description: asset.description.trim() || null,
+      priority: asset.priority,
+      category_id: asset.categoryId,
+      asset_type: asset.assetType.trim() || "General",
+      workflow: asset.workflow || "Basic",
+      tags: asset.tags,
+      preview_url: asset.previewUrl ?? null,
+      status: asset.status,
+    })
+    .select(assetSelect)
+    .single<AssetRecord>();
+
+  if (error) {
+    throw new Error(`Failed to create asset: ${error.message}`);
+  }
+
+  return mapAsset(data);
 }
 
 export async function getAssetCategories(): Promise<AssetCategory[]> {
-  // STUB
-  return [];
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("asset_categories")
+    .select("id, name, created_at")
+    .order("created_at", { ascending: true })
+    .returns<AssetCategoryRecord[]>();
+
+  if (error) {
+    throw new Error(`Failed to load asset categories: ${error.message}`);
+  }
+
+  return (data ?? []).map(mapAssetCategory);
 }
 
 export async function createAssetCategory(name: string): Promise<AssetCategory> {
-  // STUB
-  return { id: 'temp', name, createdAt: new Date().toISOString() };
+  const supabase = createClient();
+  const categoryName = name.trim();
+
+  const { data, error } = await supabase
+    .from("asset_categories")
+    .insert({ name: categoryName })
+    .select("id, name, created_at")
+    .single<AssetCategoryRecord>();
+
+  if (error) {
+    throw new Error(`Failed to create asset category: ${error.message}`);
+  }
+
+  return mapAssetCategory(data);
 }
+
 
 

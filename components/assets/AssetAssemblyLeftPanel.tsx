@@ -1,131 +1,221 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Folder, Box } from "lucide-react";
-import type { Project } from "@/types/production";
-import { getProjects } from "@/lib/data/productionRepository";
+import { useMemo, useState } from "react";
+import { Search, Folder, Box, CheckSquare, Square } from "lucide-react";
+import type { Project, ProductionEnvironment, Episode, Scene } from "@/types/production";
+import ProjectDropdown from "@/components/production/ProjectDropdown";
+import EnvironmentDropdown from "@/components/production/EnvironmentDropdown";
+import EpisodeDropdown from "@/components/production/EpisodeDropdown";
+import ProgressCircle from "@/components/production/ProgressCircle";
 
-type AssignmentTarget = {
-  type: "project" | "environment" | "episode" | "scene";
+export type ProductionTargetItem = Project | ProductionEnvironment | Episode | Scene;
+
+export type ProductionTarget = {
   id: string;
+  type: "project" | "environment" | "episode" | "scene";
   name: string;
+  item: ProductionTargetItem;
 };
 
 type AssetAssemblyLeftPanelProps = {
-  selectedTarget: AssignmentTarget | null;
-  onSelectTarget: (target: AssignmentTarget) => void;
+  projects: Project[];
+  selectedTargets: Set<string>;
+  onToggleTarget: (target: ProductionTarget, checked: boolean) => void;
 };
 
-export default function AssetAssemblyLeftPanel({ selectedTarget, onSelectTarget }: AssetAssemblyLeftPanelProps) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
-  const [expandedEnvs, setExpandedEnvs] = useState<Set<string>>(new Set());
-  const [expandedEpisodes, setExpandedEpisodes] = useState<Set<string>>(new Set());
+export default function AssetAssemblyLeftPanel({ projects, selectedTargets, onToggleTarget }: AssetAssemblyLeftPanelProps) {
+  const [selectedProjectId, setSelectedProjectId] = useState("ALL");
+  const [selectedEnvironmentId, setSelectedEnvironmentId] = useState("ALL");
+  const [episodeFilterId, setEpisodeFilterId] = useState<"ALL" | string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    getProjects().then(setProjects).catch(console.error);
-  }, []);
+  const viewLevel = 
+    selectedProjectId === "ALL" ? "PROJECT" :
+    selectedEnvironmentId === "ALL" ? "ENVIRONMENT" :
+    episodeFilterId === "ALL" ? "JOB" : "SCENE";
 
-  const toggleExpand = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) => {
-    setter(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) newSet.delete(id);
-      else newSet.add(id);
-      return newSet;
-    });
+  const selectedProject = useMemo(() => {
+    if (selectedProjectId === "ALL") return null;
+    return projects.find((p) => p.id === selectedProjectId) ?? null;
+  }, [projects, selectedProjectId]);
+
+  const selectedEnvironment = useMemo(() => {
+    if (!selectedProject || selectedEnvironmentId === "ALL") return null;
+    return selectedProject.environments.find((e) => e.id === selectedEnvironmentId) ?? null;
+  }, [selectedProject, selectedEnvironmentId]);
+
+  const selectedEpisode = useMemo(() => {
+    if (!selectedEnvironment || episodeFilterId === "ALL") return null;
+    return selectedEnvironment.episodes.find((e) => e.id === episodeFilterId) ?? null;
+  }, [selectedEnvironment, episodeFilterId]);
+
+  function handleProjectChange(projectId: string) {
+    setSelectedProjectId(projectId);
+    setSelectedEnvironmentId("ALL");
+    setEpisodeFilterId("ALL");
+    setSearchQuery("");
+  }
+
+  function handleEnvironmentChange(envId: string) {
+    setSelectedEnvironmentId(envId);
+    setEpisodeFilterId("ALL");
+    setSearchQuery("");
+  }
+
+  function handleEpisodeChange(epId: "ALL" | string) {
+    setEpisodeFilterId(epId);
+    setSearchQuery("");
+  }
+
+  const itemsToRender = useMemo(() => {
+    let items: ProductionTarget[] = [];
+    if (viewLevel === "PROJECT") {
+      items = projects.map(p => ({ id: p.id, type: "project", name: p.title, item: p }));
+    } else if (viewLevel === "ENVIRONMENT" && selectedProject) {
+      items = selectedProject.environments.map(e => ({ id: e.id, type: "environment", name: e.name, item: e }));
+    } else if (viewLevel === "JOB" && selectedEnvironment) {
+      items = selectedEnvironment.episodes.map(e => ({ id: e.id, type: "episode", name: e.episodeName, item: e }));
+    } else if (viewLevel === "SCENE" && selectedEpisode) {
+      items = selectedEpisode.scenes.map(s => ({ id: s.id, type: "scene", name: s.sceneName, item: s }));
+    }
+    
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(i => i.name.toLowerCase().includes(q));
+    }
+    return items;
+  }, [viewLevel, projects, selectedProject, selectedEnvironment, selectedEpisode, searchQuery]);
+
+  // Helper to get progress and thumbnail based on type
+  const getItemDetails = (type: string, item: ProductionTargetItem) => {
+    let progress = 0;
+    let thumb = "";
+    if (type === "project") {
+      thumb = (item as Project).thumbnailUrl || "";
+    } else if (type === "environment") {
+      thumb = (item as ProductionEnvironment).thumbnailUrl || "";
+    } else if (type === "episode") {
+      thumb = (item as Episode).previewImage || "";
+      const allTasks = (item as Episode).scenes.flatMap((s: Scene) => s.tasks || []);
+      if (allTasks.length > 0) {
+        progress = Math.round(allTasks.reduce((acc, t) => acc + t.progress, 0) / allTasks.length);
+      }
+    } else if (type === "scene") {
+      thumb = (item as Scene).previewImage || "";
+      const tasks = (item as Scene).tasks || [];
+      if (tasks.length > 0) {
+        progress = Math.round(tasks.reduce((acc, t) => acc + t.progress, 0) / tasks.length);
+      }
+    }
+    return { progress, thumb };
   };
 
-  const isSelected = (type: string, id: string) => selectedTarget?.type === type && selectedTarget.id === id;
-
   return (
-    <aside className="w-80 shrink-0 border-r border-[#2a2a2a] bg-[#121212] overflow-y-auto">
-      <div className="p-4 border-b border-[#2a2a2a] sticky top-0 bg-[#121212] z-10">
-        <h2 className="text-xs font-bold uppercase text-zinc-500">Production Hierarchy</h2>
-        <p className="text-[10px] text-zinc-400 mt-1">Select a level to assign assets to</p>
+    <aside className="w-[30%] shrink-0 border-r border-[#2a2a2a] bg-[#121212] flex flex-col h-full min-w-[300px]">
+      <div className="p-4 border-b border-[#2a2a2a] bg-[#121212] shrink-0 h-16 flex flex-col justify-center">
+        <h2 className="text-sm font-bold uppercase text-zinc-500">Production List</h2>
       </div>
-      
-      <div className="p-2">
-        {projects.map(project => (
-          <div key={project.id} className="mb-1 text-sm">
-            <div className={`flex items-center gap-1 rounded px-2 py-1.5 transition-colors cursor-pointer ${
-              isSelected("project", project.id) ? "bg-blue-600 text-white" : "text-zinc-300 hover:bg-zinc-800"
-            }`}>
-              <button 
-                onClick={(e) => { e.stopPropagation(); toggleExpand(setExpandedProjects, project.id); }}
-                className="w-4 h-4 flex items-center justify-center shrink-0"
+
+      <div className="flex shrink-0 flex-col gap-2 border-b border-[#2a2a2a] bg-[#121212] px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <ProjectDropdown
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onChangeProject={handleProjectChange}
+          />
+          {viewLevel !== "PROJECT" && (
+            <EnvironmentDropdown
+              productions={selectedProject?.environments ?? []}
+              selectedProductionId={selectedEnvironmentId}
+              onChangeProduction={handleEnvironmentChange}
+            />
+          )}
+          {(viewLevel === "JOB" || viewLevel === "SCENE") && (
+            <EpisodeDropdown
+              episodes={selectedEnvironment?.episodes ?? []}
+              selectedEpisodeId={episodeFilterId}
+              onChangeEpisode={handleEpisodeChange}
+            />
+          )}
+        </div>
+
+        <div className="relative mt-2">
+          <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-zinc-500" />
+          <input
+            type="text"
+            placeholder="Quick search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded border border-[#2a2a2a] bg-zinc-900 pl-8 pr-3 py-1.5 text-xs text-[#e0e0e0] outline-none focus:border-zinc-500"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-2">
+        {itemsToRender.length === 0 ? (
+          <div className="text-zinc-500 text-center mt-8 text-sm">No items are available at this level.</div>
+        ) : (
+          itemsToRender.map((target) => {
+            const isSelected = selectedTargets.has(target.id);
+            const { progress, thumb } = getItemDetails(target.type, target.item);
+
+            return (
+              <div
+                key={target.id}
+                onClick={() => {
+                  if (target.type === "project") handleProjectChange(target.id);
+                  else if (target.type === "environment") handleEnvironmentChange(target.id);
+                  else if (target.type === "episode") handleEpisodeChange(target.id);
+                }}
+                className={`group flex items-center justify-between gap-3 p-2 rounded mb-1 cursor-pointer transition-colors ${
+                  isSelected ? "bg-blue-600/10 border border-blue-500/50" : "bg-transparent border border-transparent hover:bg-zinc-800"
+                }`}
               >
-                {expandedProjects.has(project.id) ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              </button>
-              <Folder className="w-3.5 h-3.5 shrink-0 text-zinc-500" />
-              <span className="truncate" onClick={() => onSelectTarget({ type: "project", id: project.id, name: project.title })}>
-                {project.title}
-              </span>
-            </div>
-
-            {expandedProjects.has(project.id) && (
-              <div className="ml-4 pl-2 border-l border-[#2a2a2a] mt-1 space-y-1">
-                {project.environments?.map(env => (
-                  <div key={env.id}>
-                    <div className={`flex items-center gap-1 rounded px-2 py-1.5 transition-colors cursor-pointer ${
-                      isSelected("environment", env.id) ? "bg-blue-600/80 text-white" : "text-zinc-400 hover:bg-zinc-800"
-                    }`}>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleExpand(setExpandedEnvs, env.id); }}
-                        className="w-4 h-4 flex items-center justify-center shrink-0"
-                      >
-                        {expandedEnvs.has(env.id) ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                      </button>
-                      <Folder className="w-3.5 h-3.5 shrink-0 text-zinc-600" />
-                      <span className="truncate" onClick={() => onSelectTarget({ type: "environment", id: env.id, name: env.name })}>
-                        {env.name}
-                      </span>
-                    </div>
-
-                    {expandedEnvs.has(env.id) && (
-                      <div className="ml-4 pl-2 border-l border-[#2a2a2a] mt-1 space-y-1">
-                        {env.episodes?.map(episode => (
-                          <div key={episode.id}>
-                            <div className={`flex items-center gap-1 rounded px-2 py-1.5 transition-colors cursor-pointer ${
-                              isSelected("episode", episode.id) ? "bg-blue-600/60 text-white" : "text-zinc-500 hover:bg-zinc-800"
-                            }`}>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); toggleExpand(setExpandedEpisodes, episode.id); }}
-                                className="w-4 h-4 flex items-center justify-center shrink-0"
-                              >
-                                {expandedEpisodes.has(episode.id) ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                              </button>
-                              <Box className="w-3.5 h-3.5 shrink-0 text-zinc-600" />
-                              <span className="truncate" onClick={() => onSelectTarget({ type: "episode", id: episode.id, name: episode.episodeName })}>
-                                {episode.episodeName}
-                              </span>
-                            </div>
-
-                            {expandedEpisodes.has(episode.id) && (
-                              <div className="ml-4 pl-2 border-l border-[#2a2a2a] mt-1 space-y-1">
-                                {episode.scenes?.map(scene => (
-                                  <div 
-                                    key={scene.id} 
-                                    onClick={() => onSelectTarget({ type: "scene", id: scene.id, name: scene.sceneName })}
-                                    className={`flex items-center gap-1 rounded px-2 py-1.5 transition-colors cursor-pointer ml-4 ${
-                                      isSelected("scene", scene.id) ? "bg-blue-600/40 text-white" : "text-zinc-500 hover:bg-zinc-800"
-                                    }`}
-                                  >
-                                    <Box className="w-3.5 h-3.5 shrink-0 text-zinc-700" />
-                                    <span className="truncate text-xs">{scene.sceneName}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleTarget(target, !isSelected);
+                    }}
+                    className="text-zinc-400 hover:text-white transition-colors shrink-0"
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-4 h-4 text-blue-500" />
+                    ) : (
+                      <Square className="w-4 h-4" />
                     )}
+                  </button>
+
+                  {thumb ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={thumb} alt="" className="w-10 h-6 object-cover rounded bg-zinc-800 shrink-0" />
+                    </>
+                  ) : (
+                    <div className="w-10 h-6 rounded bg-zinc-800 flex items-center justify-center shrink-0">
+                      {target.type === "project" || target.type === "environment" ? (
+                        <Folder className="w-3.5 h-3.5 text-zinc-500" />
+                      ) : (
+                        <Box className="w-3.5 h-3.5 text-zinc-500" />
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-bold text-zinc-200 truncate">{target.name}</span>
+                    <span className="text-[10px] uppercase text-zinc-500">{target.type === "episode" ? "job" : target.type}</span>
                   </div>
-                ))}
+                </div>
+
+                {(target.type === "episode" || target.type === "scene") && (
+                  <div className="shrink-0 mr-2">
+                    <ProgressCircle value={progress} size={24} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          })
+        )}
       </div>
     </aside>
   );

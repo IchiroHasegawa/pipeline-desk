@@ -1,5 +1,5 @@
 CREATE TABLE asset_files (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
     file_name TEXT NOT NULL,
     file_url TEXT NOT NULL,
