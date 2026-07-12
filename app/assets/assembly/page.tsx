@@ -5,7 +5,14 @@ import TopNav from "@/components/layout/TopNav";
 import AuthGate from "@/components/auth/AuthGate";
 import AssetAssemblyLeftPanel, { ProductionTarget } from "@/components/assets/AssetAssemblyLeftPanel";
 import AssetAssemblyRightPanel from "@/components/assets/AssetAssemblyRightPanel";
-import { getAssets, getAssetCategories, getProjects } from "@/lib/data/productionRepository";
+import { 
+  getAssets, 
+  getAssetCategories, 
+  getProjects, 
+  loadAssociationsForTargets, 
+  assignAssetsToTargets, 
+  removeAssetLinks 
+} from "@/lib/data/productionRepository";
 import { mockProjects } from "@/data/mockProductions";
 import type { Asset, AssetCategory, Project } from "@/types/production";
 import { DevelopmentFallbackWarning, LoadingMessage, ErrorMessage } from "@/components/ui/LoadingState";
@@ -38,6 +45,10 @@ function AssetsAssemblyContent() {
   const [selectedProductionTargets, setSelectedProductionTargets] = useState<Map<string, ProductionTarget>>(new Map());
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
   
+  const [assignedAssetIds, setAssignedAssetIds] = useState<Set<string>>(new Set());
+  const [isAssociating, setIsAssociating] = useState(false);
+  const [associationMessage, setAssociationMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
   const [loadState, setLoadState] = useState<LoadState>({
     isLoading: true,
     errorMessage: null,
@@ -140,6 +151,79 @@ function AssetsAssemblyContent() {
     setSelectedAssetIds(new Set());
   };
 
+  useEffect(() => {
+    async function fetchAssociations() {
+      if (selectedProductionTargets.size === 0) {
+        setAssignedAssetIds(new Set());
+        return;
+      }
+      try {
+        const targetList = Array.from(selectedProductionTargets.values());
+        const assigned = await loadAssociationsForTargets(targetList);
+        setAssignedAssetIds(assigned);
+      } catch (error) {
+        console.error("Failed to load associations", error);
+      }
+    }
+    void fetchAssociations();
+  }, [selectedProductionTargets]);
+
+  const handleAssignAssets = async () => {
+    if (selectedAssetIds.size === 0 || selectedProductionTargets.size === 0) return;
+    
+    setIsAssociating(true);
+    setAssociationMessage(null);
+    try {
+      const targetList = Array.from(selectedProductionTargets.values());
+      const result = await assignAssetsToTargets(Array.from(selectedAssetIds), targetList);
+      
+      // Reload associations
+      const assigned = await loadAssociationsForTargets(targetList);
+      setAssignedAssetIds(assigned);
+      
+      setAssociationMessage({
+        type: 'success',
+        text: `${result.createdCount} new Asset associations created. ${result.skippedCount > 0 ? `${result.skippedCount} existing associations skipped.` : ''}`
+      });
+      setTimeout(() => setAssociationMessage(null), 5000);
+    } catch (error) {
+      setAssociationMessage({
+        type: 'error',
+        text: "Unable to create Asset associations."
+      });
+    } finally {
+      setIsAssociating(false);
+    }
+  };
+
+  const handleRemoveAssociations = async () => {
+    if (selectedAssetIds.size === 0 || selectedProductionTargets.size === 0) return;
+    
+    setIsAssociating(true);
+    setAssociationMessage(null);
+    try {
+      const targetList = Array.from(selectedProductionTargets.values());
+      const deletedCount = await removeAssetLinks(Array.from(selectedAssetIds), targetList);
+      
+      // Reload associations
+      const assigned = await loadAssociationsForTargets(targetList);
+      setAssignedAssetIds(assigned);
+      
+      setAssociationMessage({
+        type: 'success',
+        text: `${deletedCount} Asset associations removed.`
+      });
+      setTimeout(() => setAssociationMessage(null), 5000);
+    } catch (error) {
+      setAssociationMessage({
+        type: 'error',
+        text: "Unable to remove Asset associations."
+      });
+    } finally {
+      setIsAssociating(false);
+    }
+  };
+
   return (
     <>
       {loadState.dataSource === "mock" && loadState.errorMessage && (
@@ -165,9 +249,14 @@ function AssetsAssemblyContent() {
             categories={categories}
             selectedProductionTargets={Array.from(selectedProductionTargets.values())}
             selectedAssetIds={selectedAssetIds}
+            assignedAssetIds={assignedAssetIds}
+            isAssociating={isAssociating}
+            associationMessage={associationMessage}
             onToggleAsset={handleToggleAsset}
             onToggleAllInCategory={handleToggleAllInCategory}
             onClearSelection={handleClearSelection}
+            onAssignAssets={handleAssignAssets}
+            onRemoveAssociations={handleRemoveAssociations}
           />
         </main>
       )}

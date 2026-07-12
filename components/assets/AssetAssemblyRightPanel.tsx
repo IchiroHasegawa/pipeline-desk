@@ -10,9 +10,14 @@ type AssetAssemblyRightPanelProps = {
   categories: AssetCategory[];
   selectedProductionTargets: ProductionTarget[];
   selectedAssetIds: Set<string>;
+  assignedAssetIds: Set<string>;
+  isAssociating: boolean;
+  associationMessage: { type: 'success' | 'error', text: string } | null;
   onToggleAsset: (id: string, checked: boolean) => void;
   onToggleAllInCategory: (categoryAssets: Asset[], checked: boolean) => void;
   onClearSelection: () => void;
+  onAssignAssets: () => void;
+  onRemoveAssociations: () => void;
 };
 
 export default function AssetAssemblyRightPanel({
@@ -20,19 +25,33 @@ export default function AssetAssemblyRightPanel({
   categories,
   selectedProductionTargets,
   selectedAssetIds,
+  assignedAssetIds,
+  isAssociating,
+  associationMessage,
   onToggleAsset,
   onToggleAllInCategory,
   onClearSelection,
+  onAssignAssets,
+  onRemoveAssociations,
 }: AssetAssemblyRightPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterMode, setFilterMode] = useState<"all" | "assigned" | "unassigned">("all");
+  const [showConfirmRemove, setShowConfirmRemove] = useState(false);
 
   const filteredAssets = useMemo(() => {
-    return assets.filter(
-      (a) =>
+    return assets.filter((a) => {
+      const matchesSearch =
         a.assetName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.assetCode.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [assets, searchQuery]);
+        a.assetCode.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      if (!matchesSearch) return false;
+      
+      if (filterMode === "assigned") return assignedAssetIds.has(a.id);
+      if (filterMode === "unassigned") return !assignedAssetIds.has(a.id);
+      
+      return true;
+    });
+  }, [assets, searchQuery, filterMode, assignedAssetIds]);
 
   const sortedCategories = useMemo(() => {
     return [...categories].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -92,20 +111,53 @@ export default function AssetAssemblyRightPanel({
 
       <div className="flex shrink-0 items-center justify-between border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-2">
         <div className="flex items-center gap-6">
-          <div className="text-xs">
-            <span className="text-zinc-500">Selected Production Items: </span>
-            <span className="font-bold text-white">{selectedProductionTargets.length}</span>
+          <div className="flex flex-col">
+             <div className="text-xs">
+               <span className="text-zinc-500">Production items: </span>
+               <span className="font-bold text-white">{selectedProductionTargets.length}</span>
+             </div>
+             <div className="text-xs">
+               <span className="text-zinc-500">Assets: </span>
+               <span className="font-bold text-white">{selectedAssetIds.size}</span>
+             </div>
+             <div className="text-xs">
+               <span className="text-zinc-500">Potential associations: </span>
+               <span className="font-bold text-blue-400">{selectedProductionTargets.length * selectedAssetIds.size}</span>
+             </div>
           </div>
-          <div className="text-xs">
-            <span className="text-zinc-500">Selected Assets: </span>
-            <span className="font-bold text-white">{selectedAssetIds.size}</span>
+          
+          <div className="flex bg-zinc-900 rounded p-1 ml-4 border border-[#2a2a2a]">
+            <button 
+              onClick={() => setFilterMode("all")}
+              className={`px-3 py-1 text-xs rounded transition-colors ${filterMode === 'all' ? 'bg-zinc-700 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+            >
+              All Assets
+            </button>
+            <button 
+              onClick={() => setFilterMode("assigned")}
+              className={`px-3 py-1 text-xs rounded transition-colors ${filterMode === 'assigned' ? 'bg-zinc-700 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+            >
+              Assigned
+            </button>
+            <button 
+              onClick={() => setFilterMode("unassigned")}
+              className={`px-3 py-1 text-xs rounded transition-colors ${filterMode === 'unassigned' ? 'bg-zinc-700 text-white font-bold' : 'text-zinc-400 hover:text-zinc-200'}`}
+            >
+              Unassigned
+            </button>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {associationMessage && (
+            <span className={`text-xs font-medium px-2 py-1 rounded border ${associationMessage.type === 'success' ? 'bg-green-900/20 text-green-400 border-green-900/50' : 'bg-red-900/20 text-red-400 border-red-900/50'}`}>
+              {associationMessage.text}
+            </span>
+          )}
+          
           <button
             onClick={onClearSelection}
-            disabled={selectedAssetIds.size === 0 && selectedProductionTargets.length === 0}
+            disabled={selectedAssetIds.size === 0 && selectedProductionTargets.length === 0 || isAssociating}
             className="flex items-center gap-1 rounded border border-[#2a2a2a] px-3 py-1 text-xs font-bold text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:opacity-50"
           >
             <XCircle className="h-3.5 w-3.5" />
@@ -113,24 +165,46 @@ export default function AssetAssemblyRightPanel({
           </button>
           
           <button
-            disabled
-            className="flex items-center gap-1 rounded border border-red-900/50 px-3 py-1 text-xs font-bold text-red-500 opacity-50 cursor-not-allowed"
-            title="Remove Association is disabled in Stage 1"
+            onClick={() => setShowConfirmRemove(true)}
+            disabled={selectedAssetIds.size === 0 || selectedProductionTargets.length === 0 || isAssociating}
+            className="flex items-center gap-1 rounded border border-red-900/50 px-3 py-1 text-xs font-bold text-red-500 hover:bg-red-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Remove Association
           </button>
 
           <button
-            disabled
-            className="flex items-center gap-1 rounded bg-blue-600 px-3 py-1 text-xs font-bold text-white opacity-50 cursor-not-allowed"
-            title="Assign Selected Assets is disabled in Stage 1"
+            onClick={onAssignAssets}
+            disabled={selectedAssetIds.size === 0 || selectedProductionTargets.length === 0 || isAssociating}
+            className="flex items-center gap-1 rounded bg-blue-600 px-3 py-1 text-xs font-bold text-white hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Link className="h-3.5 w-3.5" />
-            Assign Selected Assets
+            {isAssociating ? "Saving..." : "Assign Selected Assets"}
           </button>
         </div>
       </div>
+      
+      {showConfirmRemove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#121212] border border-[#2a2a2a] rounded-lg p-6 max-w-md w-full shadow-2xl space-y-4">
+             <h3 className="text-lg font-bold text-white">Remove Asset Associations?</h3>
+             <p className="text-zinc-400 text-sm">
+               This will remove the selected relationships.
+             </p>
+             <p className="text-zinc-400 text-sm">
+               Assets, Production items, Tasks, Notes, and Files will not be deleted.
+             </p>
+             <div className="flex justify-end gap-3 pt-4">
+               <button onClick={() => setShowConfirmRemove(false)} className="px-4 py-2 rounded text-sm font-bold text-zinc-300 hover:bg-zinc-800 border border-[#2a2a2a]">
+                 Cancel
+               </button>
+               <button onClick={() => { setShowConfirmRemove(false); onRemoveAssociations(); }} className="px-4 py-2 rounded text-sm font-bold bg-red-600 text-white hover:bg-red-500">
+                 Remove Associations
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-auto p-6 space-y-8">
         {assets.length === 0 ? (
@@ -185,6 +259,14 @@ export default function AssetAssemblyRightPanel({
                               <Square className="w-4 h-4 text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-sm" />
                             )}
                           </div>
+                          
+                          {assignedAssetIds.has(asset.id) && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <span className="bg-blue-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">
+                                Assigned
+                              </span>
+                            </div>
+                          )}
 
                           {asset.previewUrl ? (
                             <div

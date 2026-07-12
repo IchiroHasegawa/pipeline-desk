@@ -101,10 +101,39 @@ export type Asset = {
   tags: string[];
   previewUrl: string;
   status: "Active" | "Retired";
+  notes?: { id: string; content: string; createdAt: string }[];
   files?: AssetFile[];
   tasks?: ProductionTask[];
   createdAt: string;
   updatedAt?: string;
+};
+
+export type AssetProjectLink = {
+  id: string;
+  assetId: string;
+  projectId: string;
+  createdAt: string;
+};
+
+export type AssetEnvironmentLink = {
+  id: string;
+  assetId: string;
+  environmentId: string;
+  createdAt: string;
+};
+
+export type AssetJobLink = {
+  id: string;
+  assetId: string;
+  episodeId: string;
+  createdAt: string;
+};
+
+export type AssetSceneLink = {
+  id: string;
+  assetId: string;
+  sceneId: string;
+  createdAt: string;
 };
 
 export type AssetAssignment = {

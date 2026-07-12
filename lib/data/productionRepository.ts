@@ -789,6 +789,7 @@ function mapAsset(record: AssetRecord): Asset {
       .sort((first, second) => first.created_at.localeCompare(second.created_at))
       .map(mapAssetFile),
     tasks: [],
+    notes: [],
     createdAt: record.created_at,
     updatedAt: record.updated_at ?? undefined,
   };
@@ -883,5 +884,192 @@ export async function createAssetCategory(name: string): Promise<AssetCategory> 
   return mapAssetCategory(data);
 }
 
+export type AssignResult = {
+  createdCount: number;
+  skippedCount: number;
+  failedCount?: number;
+  message?: string;
+};
 
+export type TargetDescriptor = {
+  id: string;
+  type: "project" | "environment" | "episode" | "scene";
+};
 
+export async function assignAssetsToTargets(
+  assetIds: string[],
+  targets: TargetDescriptor[]
+): Promise<AssignResult> {
+  const supabase = createClient();
+  let createdCount = 0;
+  let skippedCount = 0;
+  
+  if (assetIds.length === 0 || targets.length === 0) {
+    return { createdCount: 0, skippedCount: 0 };
+  }
+
+  const projects = targets.filter(t => t.type === "project");
+  const envs = targets.filter(t => t.type === "environment");
+  const jobs = targets.filter(t => t.type === "episode");
+  const scenes = targets.filter(t => t.type === "scene");
+
+  try {
+    if (projects.length > 0) {
+      const inserts = projects.flatMap(p => assetIds.map(aid => ({ asset_id: aid, project_id: p.id })));
+      const { data, error } = await supabase.from("asset_project_links")
+        .upsert(inserts, { onConflict: "asset_id,project_id", ignoreDuplicates: true })
+        .select();
+      if (error) throw error;
+      if (data) {
+        createdCount += data.length;
+        skippedCount += (inserts.length - data.length);
+      }
+    }
+    
+    if (envs.length > 0) {
+      const inserts = envs.flatMap(p => assetIds.map(aid => ({ asset_id: aid, environment_id: p.id })));
+      const { data, error } = await supabase.from("asset_environment_links")
+        .upsert(inserts, { onConflict: "asset_id,environment_id", ignoreDuplicates: true })
+        .select();
+      if (error) throw error;
+      if (data) {
+        createdCount += data.length;
+        skippedCount += (inserts.length - data.length);
+      }
+    }
+    
+    if (jobs.length > 0) {
+      const inserts = jobs.flatMap(p => assetIds.map(aid => ({ asset_id: aid, episode_id: p.id })));
+      const { data, error } = await supabase.from("asset_job_links")
+        .upsert(inserts, { onConflict: "asset_id,episode_id", ignoreDuplicates: true })
+        .select();
+      if (error) throw error;
+      if (data) {
+        createdCount += data.length;
+        skippedCount += (inserts.length - data.length);
+      }
+    }
+    
+    if (scenes.length > 0) {
+      const inserts = scenes.flatMap(p => assetIds.map(aid => ({ asset_id: aid, scene_id: p.id })));
+      const { data, error } = await supabase.from("asset_scene_links")
+        .upsert(inserts, { onConflict: "asset_id,scene_id", ignoreDuplicates: true })
+        .select();
+      if (error) throw error;
+      if (data) {
+        createdCount += data.length;
+        skippedCount += (inserts.length - data.length);
+      }
+    }
+
+    return { createdCount, skippedCount };
+  } catch (error) {
+    console.error("Failed to assign assets", error);
+    return { createdCount, skippedCount, failedCount: 1, message: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+export async function removeAssetLinks(
+  assetIds: string[],
+  targets: TargetDescriptor[]
+): Promise<number> {
+  const supabase = createClient();
+  let deletedCount = 0;
+  
+  if (assetIds.length === 0 || targets.length === 0) {
+    return 0;
+  }
+
+  const projects = targets.filter(t => t.type === "project");
+  const envs = targets.filter(t => t.type === "environment");
+  const jobs = targets.filter(t => t.type === "episode");
+  const scenes = targets.filter(t => t.type === "scene");
+
+  try {
+    if (projects.length > 0) {
+       const { data, error } = await supabase.from("asset_project_links")
+         .delete()
+         .in("project_id", projects.map(p => p.id))
+         .in("asset_id", assetIds)
+         .select();
+       if (error) throw error;
+       if (data) deletedCount += data.length;
+    }
+    
+    if (envs.length > 0) {
+       const { data, error } = await supabase.from("asset_environment_links")
+         .delete()
+         .in("environment_id", envs.map(p => p.id))
+         .in("asset_id", assetIds)
+         .select();
+       if (error) throw error;
+       if (data) deletedCount += data.length;
+    }
+    
+    if (jobs.length > 0) {
+       const { data, error } = await supabase.from("asset_job_links")
+         .delete()
+         .in("episode_id", jobs.map(p => p.id))
+         .in("asset_id", assetIds)
+         .select();
+       if (error) throw error;
+       if (data) deletedCount += data.length;
+    }
+    
+    if (scenes.length > 0) {
+       const { data, error } = await supabase.from("asset_scene_links")
+         .delete()
+         .in("scene_id", scenes.map(p => p.id))
+         .in("asset_id", assetIds)
+         .select();
+       if (error) throw error;
+       if (data) deletedCount += data.length;
+    }
+    
+    return deletedCount;
+  } catch (error) {
+    console.error("Failed to remove asset links", error);
+    throw error;
+  }
+}
+
+export async function loadAssociationsForTargets(targets: TargetDescriptor[]): Promise<Set<string>> {
+  const supabase = createClient();
+  const assignedAssetIds = new Set<string>();
+
+  if (targets.length === 0) return assignedAssetIds;
+
+  const projects = targets.filter(t => t.type === "project");
+  const envs = targets.filter(t => t.type === "environment");
+  const jobs = targets.filter(t => t.type === "episode");
+  const scenes = targets.filter(t => t.type === "scene");
+
+  const promises = [];
+
+  if (projects.length > 0) {
+    promises.push(supabase.from("asset_project_links").select("asset_id").in("project_id", projects.map(p => p.id)));
+  }
+  if (envs.length > 0) {
+    promises.push(supabase.from("asset_environment_links").select("asset_id").in("environment_id", envs.map(p => p.id)));
+  }
+  if (jobs.length > 0) {
+    promises.push(supabase.from("asset_job_links").select("asset_id").in("episode_id", jobs.map(p => p.id)));
+  }
+  if (scenes.length > 0) {
+    promises.push(supabase.from("asset_scene_links").select("asset_id").in("scene_id", scenes.map(p => p.id)));
+  }
+
+  const results = await Promise.all(promises);
+
+  for (const { data, error } of results) {
+    if (error) {
+      console.error("Failed to load associations", error);
+      continue;
+    }
+    if (data) {
+      data.forEach(row => assignedAssetIds.add(row.asset_id));
+    }
+  }
+
+  return assignedAssetIds;
+}

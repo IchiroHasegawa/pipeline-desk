@@ -368,6 +368,150 @@ export type Database = {
         };
         Relationships: never[];
       };
+      asset_project_links: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_project_links_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_project_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      };
+      asset_environment_links: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          environment_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          environment_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          environment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_environment_links_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_environment_links_environment_id_fkey"
+            columns: ["environment_id"]
+            isOneToOne: false
+            referencedRelation: "production_environments"
+            referencedColumns: ["id"]
+          },
+        ]
+      };
+      asset_job_links: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          episode_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          episode_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          episode_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_job_links_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_job_links_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      };
+      asset_scene_links: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          scene_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          scene_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          scene_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_scene_links_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_scene_links_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
