@@ -23,3 +23,23 @@ Before editing:
 15. Run npm run build after implementation.
 16. Report all modified files.
 17. Provide browser testing instructions.
+
+For Production OS development:
+
+When a request asks you to inspect, analyze, or create an implementation plan:
+
+1. Inspect the repository.
+2. Create the implementation plan.
+3. Do not edit files.
+4. Do not execute implementation automatically.
+5. Stop after presenting the plan.
+6. Wait until the user explicitly writes:
+   "The plan is approved. Begin implementation."
+
+Never treat a request for an inspection or implementation plan as approval to modify files.
+
+When implementing a large feature:
+- implement only the explicitly approved phase
+- do not automatically continue to later phases
+- do not modify unrelated files
+- preserve the approved Production OS design

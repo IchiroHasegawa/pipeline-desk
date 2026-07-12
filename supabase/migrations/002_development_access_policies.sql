@@ -1,5 +1,8 @@
--- THESE POLICIES ARE FOR LOCAL DEVELOPMENT ONLY.
--- REMOVE THEM BEFORE PUBLIC DEPLOYMENT.
+-- ==============================================================================
+-- PROJECT NOTE (Authentication Stage 1):
+-- These temporary anonymous data policies must be removed and replaced with
+-- strict authenticated role policies in Authentication Stage 2.
+-- ==============================================================================
 --
 -- They temporarily allow the anon role to read and mutate production-tracking
 -- records while authentication is not implemented. Replace these with
