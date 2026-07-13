@@ -137,7 +137,7 @@ export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
                                 {file.originalFileName || file.fileName}
                               </span>
                               <span className="text-[10px] text-zinc-500">
-                                {file.fileRole || "Unknown"} • {(file.sizeBytes / 1024 / 1024).toFixed(2)} MB • {file.uploadStatus || "Complete"}
+                                {file.fileRole || "Unknown"} • {(file.sizeBytes / 1024 / 1024).toFixed(2)} MB • {file.recordStatus || "Active"}
                               </span>
                             </div>
                           </div>

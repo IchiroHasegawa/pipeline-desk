@@ -371,8 +371,11 @@ export type Database = {
           file_role: string | null;
           version_number: number | null;
           drive_created_time: string | null;
-          upload_status: string | null;
+          record_status: string | null;
           source_file_id: string | null;
+          current_file_id: string | null;
+          display_name: string | null;
+          restored_from_file_id: string | null;
           updated_at: string | null;
         };
         Insert: {
@@ -392,8 +395,11 @@ export type Database = {
           file_role?: string | null;
           version_number?: number | null;
           drive_created_time?: string | null;
-          upload_status?: string | null;
+          record_status?: string | null;
           source_file_id?: string | null;
+          current_file_id?: string | null;
+          display_name?: string | null;
+          restored_from_file_id?: string | null;
           updated_at?: string | null;
         };
         Update: {
@@ -413,8 +419,11 @@ export type Database = {
           file_role?: string | null;
           version_number?: number | null;
           drive_created_time?: string | null;
-          upload_status?: string | null;
+          record_status?: string | null;
           source_file_id?: string | null;
+          current_file_id?: string | null;
+          display_name?: string | null;
+          restored_from_file_id?: string | null;
           updated_at?: string | null;
         };
         Relationships: never[];

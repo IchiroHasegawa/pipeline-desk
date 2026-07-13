@@ -14,7 +14,7 @@ type AssetFileManagerProps = {
 };
 
 type SortOption = "Newest" | "Oldest" | "Name A-Z" | "Name Z-A" | "Largest" | "Smallest";
-type TabOption = "All Files" | "Source" | "Preview" | "Versions";
+type TabOption = "All Files" | "Source" | "Preview" | "Versions" | "Recovery Center";
 
 export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileManagerProps) {
   const [activeTab, setActiveTab] = useState<TabOption>("All Files");
@@ -35,10 +35,10 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
 
   const files = asset.files || [];
 
-  // Grouping
-  const sourceFiles = files.filter(f => f.fileRole === "Source");
-  const previewFiles = files.filter(f => f.fileRole === "Preview");
-  const versionFiles = files.filter(f => f.fileRole === "Version" || f.fileRole === "Versions");
+  const versionFiles = files.filter(f => (f.fileRole === "Version" || f.fileRole === "Versions") && f.recordStatus !== "Trashed" && f.recordStatus !== "Missing");
+  const sourceFiles = files.filter(f => f.fileRole === "Source" && f.recordStatus !== "Trashed" && f.recordStatus !== "Missing");
+  const previewFiles = files.filter(f => f.fileRole === "Preview" && f.recordStatus !== "Trashed" && f.recordStatus !== "Missing");
+  const recoveryFiles = files.filter(f => f.recordStatus === "Trashed" || f.recordStatus === "Missing");
 
   const toggleExpand = (id: string) => {
     setExpandedSources(prev => {
@@ -58,7 +58,11 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
   const handleVerify = async () => {
     setIsVerifying(true);
     try {
-      await fetch(`/api/assets/${asset.id}/files/verify`, { method: "POST" });
+      if (activeTab === "Recovery Center") {
+         await fetch(`/api/assets/${asset.id}/files/reconcile`, { method: "POST" });
+      } else {
+         await fetch(`/api/assets/${asset.id}/files/verify`, { method: "POST" });
+      }
       router.refresh();
     } finally {
       setIsVerifying(false);
@@ -94,6 +98,8 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
       toShow = [...previewFiles];
     } else if (activeTab === "Versions") {
       toShow = [...versionFiles];
+    } else if (activeTab === "Recovery Center") {
+      toShow = [...recoveryFiles];
     }
 
     if (searchQuery) {
@@ -114,7 +120,7 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
       if (sortBy === "Name Z-A") return (b.originalFileName || b.fileName).localeCompare(a.originalFileName || a.fileName);
       return 0;
     });
-  }, [files, activeTab, searchQuery, sortBy, previewFiles, sourceFiles, versionFiles]);
+  }, [activeTab, searchQuery, sortBy, previewFiles, sourceFiles, versionFiles, recoveryFiles]);
 
   const renderFileRow = (file: AssetFile, isNested = false) => {
     const versions = versionFiles.filter(v => v.sourceFileId === file.id);
@@ -127,17 +133,28 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <FileIcon className="h-5 w-5 text-zinc-500 shrink-0" />
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-medium text-zinc-200 truncate">{file.originalFileName || file.fileName}</span>
+              <div className="flex items-center gap-2 truncate">
+                <span className="text-sm font-medium text-zinc-200 truncate">{file.displayName || file.originalFileName || file.fileName}</span>
+                {file.fileRole === "Source" && file.currentFileId && file.currentFileId !== file.id && (
+                   <span className="bg-yellow-500/20 text-yellow-400 text-[10px] uppercase px-1.5 py-0.5 rounded font-bold shrink-0">Historical</span>
+                )}
+                {file.fileRole === "Versions" && sourceFiles.find(s => s.currentFileId === file.id) && (
+                   <span className="bg-green-500/20 text-green-400 text-[10px] uppercase px-1.5 py-0.5 rounded font-bold shrink-0">Current</span>
+                )}
+                {file.fileRole === "Source" && (!file.currentFileId || file.currentFileId === file.id) && (
+                   <span className="bg-green-500/20 text-green-400 text-[10px] uppercase px-1.5 py-0.5 rounded font-bold shrink-0">Current</span>
+                )}
+              </div>
               <span className="text-xs text-zinc-500">
                 {file.fileRole} {file.versionNumber ? `(v${file.versionNumber})` : ""} • 
                 {(file.sizeBytes / 1024 / 1024).toFixed(2)} MB • 
-                {file.uploadStatus} • 
+                {file.recordStatus} • 
                 {new Date(file.createdAt).toLocaleDateString()}
               </span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {file.uploadStatus === "Complete" && (
+            {file.recordStatus === "Active" && (
               <>
                 <button 
                   onClick={() => window.open(`/api/assets/${asset.id}/files/${file.id}/open`, "_blank")}
@@ -231,7 +248,7 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
               disabled={isVerifying}
               className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
             >
-              <CheckCircle2 className="h-3 w-3" /> Verify Drive Files
+              <CheckCircle2 className="h-3 w-3" /> {activeTab === "Recovery Center" ? "Reconcile Drive" : "Verify Drive Files"}
             </button>
             <button onClick={onClose} className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-white">
               <X className="h-5 w-5" />
@@ -240,8 +257,8 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
         </div>
 
         <div className="flex border-b border-zinc-800 shrink-0">
-          {(["All Files", "Source", "Preview", "Versions"] as TabOption[]).map((tab) => {
-            const count = tab === "All Files" ? files.length : tab === "Source" ? sourceFiles.length : tab === "Preview" ? previewFiles.length : versionFiles.length;
+          {(["All Files", "Source", "Preview", "Versions", "Recovery Center"] as TabOption[]).map((tab) => {
+            const count = tab === "All Files" ? files.length : tab === "Source" ? sourceFiles.length : tab === "Preview" ? previewFiles.length : tab === "Versions" ? versionFiles.length : recoveryFiles.length;
             return (
               <button
                 key={tab}
@@ -289,11 +306,12 @@ export default function AssetFileManager({ asset, isOpen, onClose }: AssetFileMa
           ) : (
             <div className="flex flex-col items-center justify-center h-40 text-zinc-500">
               <AlertCircle className="h-8 w-8 mb-2 opacity-50" />
-              <p>
+               <p>
                 {searchQuery ? "No files match your search." : 
                  activeTab === "Source" ? "No Source files are available." :
                  activeTab === "Preview" ? "No Preview image is available." :
                  activeTab === "Versions" ? "No file versions have been uploaded." :
+                 activeTab === "Recovery Center" ? "No Trashed or Missing files found." :
                  "No files are attached to this Asset."}
               </p>
             </div>

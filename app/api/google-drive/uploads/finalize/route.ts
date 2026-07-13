@@ -90,7 +90,8 @@ export async function POST(req: Request) {
           file_size_bytes: sizeBytes,
           file_role: expectedDestination,
           drive_created_time: fileMeta.createdTime,
-          upload_status: "Complete",
+          record_status: "Active",
+          updated_at: new Date().toISOString(),
           source_file_id: actualSourceFileId,
           version_number: versionNumber
         }).select("*").single();
@@ -130,7 +131,8 @@ export async function POST(req: Request) {
       file_size_bytes: sizeBytes,
       file_role: expectedDestination,
       drive_created_time: fileMeta.createdTime,
-      upload_status: "Complete",
+      record_status: "Active",
+      updated_at: new Date().toISOString(),
       source_file_id: null,
       version_number: versionNumber
     }).select("*").single();

@@ -28,7 +28,7 @@ export async function POST(
     // Load all files for this asset that have a drive_file_id
     const { data: files, error: filesErr } = await adminClient
       .from("asset_files")
-      .select("id, drive_file_id, upload_status")
+      .select("id, drive_file_id, record_status")
       .eq("asset_id", assetId)
       .not("drive_file_id", "is", null);
 
@@ -62,32 +62,32 @@ export async function POST(
             fields: "id, trashed",
           });
           
-          if (response.data.trashed && file.upload_status !== "Missing") {
-            // Update to Missing
+          if (response.data.trashed && file.record_status !== "Missing" && file.record_status !== "Trashed") {
+            // Update to Trashed
             await adminClient
               .from("asset_files")
-              .update({ upload_status: "Missing" })
+              .update({ record_status: "Trashed" })
               .eq("id", file.id);
-            return { id: file.id, status: "Missing" };
-          } else if (!response.data.trashed && file.upload_status === "Missing") {
+            return { id: file.id, status: "Trashed" };
+          } else if (!response.data.trashed && (file.record_status === "Missing" || file.record_status === "Trashed")) {
             // Recovered
             await adminClient
               .from("asset_files")
-              .update({ upload_status: "Complete" })
+              .update({ record_status: "Active" })
               .eq("id", file.id);
-            return { id: file.id, status: "Complete" };
+            return { id: file.id, status: "Active" };
           }
-          return { id: file.id, status: file.upload_status };
+          return { id: file.id, status: file.record_status };
         } catch (err: unknown) {
-          if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 404 && file.upload_status !== "Missing") {
+          if (err && typeof err === "object" && "status" in err && (err as { status: number }).status === 404 && file.record_status !== "Missing") {
             // Missing
             await adminClient
               .from("asset_files")
-              .update({ upload_status: "Missing" })
+              .update({ record_status: "Missing" })
               .eq("id", file.id);
             return { id: file.id, status: "Missing" };
           }
-          return { id: file.id, status: file.upload_status }; // Keep current if other error
+          return { id: file.id, status: file.record_status }; // Keep current if other error
         }
       });
 

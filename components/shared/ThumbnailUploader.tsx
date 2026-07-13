@@ -2,6 +2,7 @@
 
 import { UploadCloud } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 
 type ThumbnailUploaderProps = {
   value: string;
@@ -56,7 +57,7 @@ export default function ThumbnailUploader({ value, onChange }: ThumbnailUploader
           className="absolute inset-0 cursor-pointer opacity-0 z-10"
         />
         {value ? (
-          <img src={value} alt="Thumbnail preview" className="h-full w-full object-cover rounded-sm" />
+          <Image src={value} alt="Thumbnail preview" fill className="object-cover rounded-sm" unoptimized />
         ) : (
           <>
             <UploadCloud className="mb-2 h-10 w-10 text-zinc-500" />

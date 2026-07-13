@@ -93,8 +93,11 @@ export type AssetFile = {
   fileRole?: "Source" | "Preview" | "Version" | string | null;
   versionNumber?: number | null;
   driveCreatedTime?: string | null;
-  uploadStatus?: "Queued" | "Preparing" | "Uploading" | "Complete" | "Failed" | "Cancelled" | "Missing" | string | null;
+  recordStatus?: "Queued" | "Preparing" | "Uploading" | "Active" | "Retired" | "Trashed" | "Failed" | "Cancelled" | "Missing" | string | null;
   sourceFileId?: string | null;
+  currentFileId?: string | null;
+  displayName?: string | null;
+  restoredFromFileId?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 };

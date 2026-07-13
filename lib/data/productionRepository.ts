@@ -680,8 +680,11 @@ type AssetFileRecord = {
   file_role: string | null;
   version_number: number | null;
   drive_created_time: string | null;
-  upload_status: string | null;
+  record_status: string | null;
   source_file_id: string | null;
+  current_file_id: string | null;
+  display_name: string | null;
+  restored_from_file_id: string | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -739,8 +742,11 @@ const assetSelect = `
     file_role,
     version_number,
     drive_created_time,
-    upload_status,
+    record_status,
     source_file_id,
+    current_file_id,
+    display_name,
+    restored_from_file_id,
     created_at,
     updated_at
   )
@@ -771,8 +777,11 @@ function mapAssetFile(record: AssetFileRecord) {
     fileRole: record.file_role,
     versionNumber: record.version_number,
     driveCreatedTime: record.drive_created_time,
-    uploadStatus: record.upload_status,
+    uploadStatus: record.record_status,
     sourceFileId: record.source_file_id,
+    currentFileId: record.current_file_id,
+    displayName: record.display_name,
+    restoredFromFileId: record.restored_from_file_id,
     createdAt: record.created_at,
     updatedAt: record.updated_at,
   };
@@ -1085,4 +1094,57 @@ export async function loadAssociationsForTargets(targets: TargetDescriptor[]): P
   }
 
   return assignedAssetIds;
+}
+
+export async function renameFileLabel(fileId: string, displayName: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("asset_files")
+    .update({ display_name: displayName, updated_at: new Date().toISOString() })
+    .eq("id", fileId);
+
+  if (error) {
+    console.error("Failed to rename file label", error);
+    throw error;
+  }
+}
+
+export async function updateFileRecordStatus(fileId: string, newStatus: "Active" | "Retired" | "Trashed" | "Missing"): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("asset_files")
+    .update({ record_status: newStatus, updated_at: new Date().toISOString() })
+    .eq("id", fileId);
+
+  if (error) {
+    console.error(`Failed to update record status to ${newStatus}`, error);
+    throw error;
+  }
+}
+
+export async function makeFileCurrent(sourceFileId: string, newCurrentFileId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("asset_files")
+    .update({ current_file_id: newCurrentFileId, updated_at: new Date().toISOString() })
+    .eq("id", sourceFileId)
+    .eq("file_role", "Source");
+
+  if (error) {
+    console.error("Failed to make file current", error);
+    throw error;
+  }
+}
+
+export async function removeAssetPreview(assetId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("assets")
+    .update({ preview_url: null, updated_at: new Date().toISOString() })
+    .eq("id", assetId);
+
+  if (error) {
+    console.error("Failed to remove asset preview", error);
+    throw error;
+  }
 }
