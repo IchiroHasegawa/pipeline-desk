@@ -3,10 +3,11 @@
 import { useState } from "react";
 import TopNav from "@/components/layout/TopNav";
 import ProjectsSettings from "@/components/settings/ProjectsSettings";
+import StorageSettings from "@/components/settings/StorageSettings";
 
-type SettingsCategory = "Projects" | "Users" | "Security" | "Workflows";
+type SettingsCategory = "Projects" | "Users" | "Security" | "Workflows" | "Storage";
 
-const categories: SettingsCategory[] = ["Projects", "Users", "Security", "Workflows"];
+const categories: SettingsCategory[] = ["Projects", "Users", "Security", "Workflows", "Storage"];
 
 export default function SettingsPage() {
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>("Projects");
@@ -38,7 +39,8 @@ export default function SettingsPage() {
         {/* Content Area */}
         <main className="flex min-w-0 flex-1 flex-col overflow-y-auto p-8">
           {activeCategory === "Projects" && <ProjectsSettings />}
-          {activeCategory !== "Projects" && (
+          {activeCategory === "Storage" && <StorageSettings />}
+          {activeCategory !== "Projects" && activeCategory !== "Storage" && (
             <div className="flex h-full items-center justify-center">
               <div className="rounded border border-[#2a2a2a] bg-zinc-900 px-6 py-4 text-center text-zinc-400">
                 <h2 className="mb-2 text-lg font-bold text-white">{activeCategory}</h2>

@@ -22,6 +22,7 @@ import ProjectForm from "./ProjectForm";
 import SceneTable from "./SceneTable";
 import ProjectTable from "./ProjectTable";
 import EnvironmentTable from "./EnvironmentTable";
+import ManageDialog from "@/components/shared/ManageDialog";
 
 type DataSource = "supabase" | "mock";
 
@@ -48,6 +49,7 @@ export default function ProductionPage() {
   const [isAddingEnvironment, setIsAddingEnvironment] = useState(false);
   const [isAddingJob, setIsAddingJob] = useState(false);
   const [isAddingScene, setIsAddingScene] = useState(false);
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
 
   const [loadState, setLoadState] = useState<LoadState>({
     isLoading: true,
@@ -58,11 +60,6 @@ export default function ProductionPage() {
   const applyLoadedProjects = useCallback(
     (loadedProjects: Project[], dataSource: DataSource) => {
       setProjects(loadedProjects);
-      setSelectedProjectId("ALL");
-      setSelectedEnvironmentId("ALL");
-      setEpisodeFilterId("ALL");
-      setSelectedEpisodeId(null);
-      setSelectedSceneId(null);
       
       setLoadState({
         isLoading: false,
@@ -107,11 +104,6 @@ export default function ProductionPage() {
       }
 
       setProjects([]);
-      setSelectedProjectId("ALL");
-      setSelectedEnvironmentId("ALL");
-      setEpisodeFilterId("ALL");
-      setSelectedEpisodeId(null);
-      setSelectedSceneId(null);
       
       setLoadState({
         isLoading: false,
@@ -241,7 +233,7 @@ export default function ProductionPage() {
 
       <main className="flex min-h-0 flex-1 overflow-hidden">
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <ProductionToolbar viewLevel={viewLevel} onAdd={handleAdd} />
+          <ProductionToolbar viewLevel={viewLevel} onAdd={handleAdd} onManage={() => setIsManageDialogOpen(true)} />
 
           {loadState.isLoading ? (
             <LoadingMessage />
@@ -292,9 +284,11 @@ export default function ProductionPage() {
       {isAddingProject && (
         <ProjectForm
           project={null}
-          onClose={() => {
+          onClose={(createdId) => {
             setIsAddingProject(false);
-            void loadProductionData();
+            void loadProductionData().then(() => {
+              if (createdId) handleProjectChange(createdId);
+            });
           }}
         />
       )}
@@ -303,9 +297,11 @@ export default function ProductionPage() {
         <EnvironmentForm
           projectId={selectedProject.id}
           environment={null}
-          onClose={() => {
+          onClose={(createdId) => {
             setIsAddingEnvironment(false);
-            void loadProductionData();
+            void loadProductionData().then(() => {
+              if (createdId) handleEnvironmentChange(createdId);
+            });
           }}
         />
       )}
@@ -314,9 +310,11 @@ export default function ProductionPage() {
         <JobForm
           environmentId={selectedEnvironment.id}
           job={null}
-          onClose={() => {
+          onClose={(createdId) => {
             setIsAddingJob(false);
-            void loadProductionData();
+            void loadProductionData().then(() => {
+              if (createdId) handleEpisodeFilterChange(createdId);
+            });
           }}
         />
       )}
@@ -325,10 +323,36 @@ export default function ProductionPage() {
         <SceneForm
           jobId={selectedEpisode.id}
           scene={null}
-          onClose={() => {
+          onClose={(createdId) => {
             setIsAddingScene(false);
-            void loadProductionData();
+            void loadProductionData().then(() => {
+              if (createdId) {
+                // There's no specific scene dropdown, but we can set the view to the scene's job
+                // Actually the user is already looking at the job if they are adding a scene to it.
+                // We might not need to do anything here for selection, since the job is already selected.
+              }
+            });
           }}
+        />
+      )}
+
+      {isManageDialogOpen && (
+        <ManageDialog
+          isOpen={isManageDialogOpen}
+          onClose={() => setIsManageDialogOpen(false)}
+          title={`Manage ${viewLevel === "PROJECT" ? "Projects" : viewLevel === "ENVIRONMENT" ? "Environments" : viewLevel === "JOB" ? "Jobs" : "Scenes"}`}
+          items={
+            viewLevel === "PROJECT" ? projects :
+            viewLevel === "ENVIRONMENT" ? (selectedProject?.environments ?? []) :
+            viewLevel === "JOB" ? displayedEpisodes :
+            (selectedEpisode?.scenes ?? [])
+          }
+          onRefresh={loadProductionData}
+          entityType={
+            viewLevel === "PROJECT" ? "Project" :
+            viewLevel === "ENVIRONMENT" ? "Environment" :
+            viewLevel === "JOB" ? "Job" : "Scene"
+          }
         />
       )}
     </div>

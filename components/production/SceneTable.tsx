@@ -3,6 +3,7 @@
 import type { Scene } from "@/types/production";
 import ProgressCircle from "./ProgressCircle";
 import TaskCard from "./TaskCard";
+import { useState, useRef, useEffect } from "react";
 
 type SceneTableProps = {
   scenes: Scene[];
@@ -11,13 +12,50 @@ type SceneTableProps = {
 };
 
 export default function SceneTable({ scenes, selectedSceneId, onSelectScene }: SceneTableProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
+  const allIds = scenes.map(s => s.id);
+  const isAllSelected = scenes.length > 0 && selectedIds.size === scenes.length;
+  const isIndeterminate = selectedIds.size > 0 && selectedIds.size < scenes.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
+  const handleHeaderClick = () => {
+    if (isIndeterminate || !isAllSelected) {
+      setSelectedIds(new Set(allIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleRowCheck = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0a] px-4">
       <table className="w-full min-w-[1040px] border-collapse text-left text-sm text-[#e0e0e0]">
         <thead className="sticky top-0 z-10 border-b border-[#2a2a2a] bg-[#121212] text-xs font-bold uppercase text-zinc-500 shadow-sm">
           <tr>
             <th className="px-2 py-3 w-8 text-center font-medium">
-              <input type="checkbox" className="rounded border-zinc-700 bg-zinc-900" />
+              <input 
+                type="checkbox" 
+                ref={headerCheckboxRef}
+                checked={isAllSelected}
+                onChange={handleHeaderClick}
+                className="rounded border-zinc-700 bg-zinc-900" 
+              />
             </th>
             <th className="px-2 py-3 w-32 font-medium">Preview</th>
             <th className="px-2 py-3 font-medium">Scene Name ▲</th>
@@ -41,8 +79,8 @@ export default function SceneTable({ scenes, selectedSceneId, onSelectScene }: S
                   isSelected ? "bg-zinc-800/80" : ""
                 }`}
               >
-                <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                  <input type="checkbox" checked={isSelected} readOnly className="rounded border-zinc-700 bg-zinc-900" />
+                <td className="px-2 py-3 text-center" onClick={(e) => handleRowCheck(e, scene.id)}>
+                  <input type="checkbox" checked={selectedIds.has(scene.id)} readOnly className="rounded border-zinc-700 bg-zinc-900" />
                 </td>
                 <td className="px-2 py-3">
                   {scene.previewImage ? (

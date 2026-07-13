@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Project } from "@/types/production";
 import { getProjects, deleteProject, retireProject, restoreProject } from "@/lib/data/productionRepository";
 import ProjectForm from "./ProjectForm";
-import { Search, Plus, Edit2, Archive, RotateCcw, Trash2 } from "lucide-react";
+import { Search, Plus, Edit2, Archive, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
 
 export default function ProjectsSettings() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -14,6 +14,11 @@ export default function ProjectsSettings() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [impactMessages, setImpactMessages] = useState<string[]>([]);
+  const [isFetchingImpact, setIsFetchingImpact] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
@@ -65,20 +70,32 @@ export default function ProjectsSettings() {
       alert(err instanceof Error ? err.message : String(err));
     }
   };
-
-  const handleDelete = async (project: Project) => {
-    if (project.environments && project.environments.length > 0) {
-      alert(`Cannot delete project "${project.title}" because it contains environments. You must retire, move, or delete them first.`);
-      return;
-    }
-
-    if (confirm(`Are you sure you want to completely delete project "${project.title}"? This cannot be undone.`)) {
-      try {
-        await deleteProject(project.id);
-        loadProjects();
-      } catch (err: unknown) {
-        alert(err instanceof Error ? err.message : "Failed to delete project. Check if there are attached environments.");
+  const handleInitiateDelete = async (project: Project) => {
+    setConfirmDeleteId(project.id);
+    setIsFetchingImpact(true);
+    setImpactMessages([]);
+    try {
+      const res = await fetch(`/api/production/impact?entityType=Project&id=${project.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setImpactMessages(data.messages || []);
       }
+    } catch (err) {
+      console.error(err);
+    }
+    setIsFetchingImpact(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    setIsProcessing(true);
+    try {
+      await deleteProject(id);
+      setConfirmDeleteId(null);
+      loadProjects();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to delete project. Check if there are attached environments.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -183,7 +200,7 @@ export default function ProjectsSettings() {
                           <RotateCcw className="h-4 w-4" />
                         </button>
                       )}
-                      <button onClick={() => handleDelete(project)} className="p-1 text-red-500 hover:text-red-400" title="Delete">
+                      <button onClick={() => handleInitiateDelete(project)} className="p-1 text-red-500 hover:text-red-400" title="Delete" disabled={isProcessing || isFetchingImpact}>
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -194,6 +211,56 @@ export default function ProjectsSettings() {
           </tbody>
         </table>
       </div>
+
+      {/* Confirm Delete Modal Overlay */}
+      {confirmDeleteId && (() => {
+        const itemToConfirm = projects.find(i => i.id === confirmDeleteId);
+        if (!itemToConfirm) return null;
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <div className="w-full max-w-md bg-[#121212] border border-[#2a2a2a] rounded-lg shadow-2xl p-6 flex flex-col gap-4">
+              <div className="flex items-center gap-3 text-red-500">
+                <AlertTriangle className="h-6 w-6" />
+                <h3 className="text-lg font-bold text-white">Confirm Deletion</h3>
+              </div>
+              <p className="text-sm text-zinc-300">
+                Are you sure you want to completely delete <strong>{itemToConfirm.title}</strong>?
+              </p>
+              
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded p-4 flex flex-col gap-2 mt-2">
+                <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider">Impact Summary</p>
+                {impactMessages.length > 0 ? (
+                  <div className="text-sm text-red-400">
+                    This will also permanently delete:
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                      {impactMessages.map((msg, i) => <li key={i}>{msg}</li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-400">All nested items (if any) will also be deleted.</p>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button 
+                  onClick={() => setConfirmDeleteId(null)} 
+                  className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors border border-transparent hover:border-zinc-700 rounded" 
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => handleDelete(confirmDeleteId)} 
+                  className="px-4 py-2 text-sm bg-red-600 hover:bg-red-500 text-white rounded font-bold transition-colors flex items-center justify-center min-w-[140px]" 
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Deleting..." : "Permanently Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

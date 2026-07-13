@@ -186,7 +186,7 @@ function AssetsAssemblyContent() {
         text: `${result.createdCount} new Asset associations created. ${result.skippedCount > 0 ? `${result.skippedCount} existing associations skipped.` : ''}`
       });
       setTimeout(() => setAssociationMessage(null), 5000);
-    } catch (error) {
+    } catch {
       setAssociationMessage({
         type: 'error',
         text: "Unable to create Asset associations."
@@ -214,7 +214,7 @@ function AssetsAssemblyContent() {
         text: `${deletedCount} Asset associations removed.`
       });
       setTimeout(() => setAssociationMessage(null), 5000);
-    } catch (error) {
+    } catch {
       setAssociationMessage({
         type: 'error',
         text: "Unable to remove Asset associations."

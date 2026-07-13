@@ -1,19 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
-
-function getAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY. Required for username lookup.");
-  }
-
-  return createSupabaseClient(supabaseUrl, serviceRoleKey);
-}
 
 export type AuthState = {
   success?: boolean;

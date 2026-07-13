@@ -7,9 +7,11 @@ import AssetManageTable from "@/components/assets/AssetManageTable";
 import AssetDetailsPanel from "@/components/assets/AssetDetailsPanel";
 import AssetBottomPanel from "@/components/assets/AssetBottomPanel";
 import AssetForm from "@/components/assets/AssetForm";
+import SyncDriveFoldersModal from "@/components/assets/SyncDriveFoldersModal";
+import ManageDialog from "@/components/shared/ManageDialog";
 import { getAssets, getAssetCategories } from "@/lib/data/productionRepository";
 import type { Asset, AssetCategory } from "@/types/production";
-import { Filter, ListFilter, Plus, Search } from "lucide-react";
+import { Filter, ListFilter, Plus, Search, Upload, RefreshCw } from "lucide-react";
 
 export default function AssetsManagePage() {
   return (
@@ -27,6 +29,8 @@ function AssetsManageContent() {
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [isAddingAsset, setIsAddingAsset] = useState(false);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -58,9 +62,12 @@ function AssetsManageContent() {
   }, []);
 
   const handleAssetCreated = (asset: Asset) => {
-    setAssets((currentAssets) => [...currentAssets, asset]);
+    setAssets((currentAssets) => {
+      if (currentAssets.some(a => a.id === asset.id)) return currentAssets;
+      return [...currentAssets, asset];
+    });
     setSelectedAsset(asset);
-    setIsAddingAsset(false);
+    // Do not call setIsAddingAsset(false) here. Let AssetForm decide when to close via onClose prop.
     loadData();
   };
 
@@ -110,6 +117,20 @@ function AssetsManageContent() {
             <Plus className="mr-1 h-3 w-3" />
             Add Asset
           </button>
+          <button
+            onClick={() => setIsManageDialogOpen(true)}
+            className="flex items-center rounded bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white"
+          >
+            <Upload className="mr-1 h-3 w-3" />
+            Manage Assets
+          </button>
+          <button
+            onClick={() => setIsSyncModalOpen(true)}
+            className="flex items-center rounded bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white ml-2"
+          >
+            <RefreshCw className="mr-1 h-3 w-3" />
+            Sync Missing Drive Folders
+          </button>
         </div>
       </div>
 
@@ -145,6 +166,17 @@ function AssetsManageContent() {
           onClose={() => setIsAddingAsset(false)}
           onCreated={handleAssetCreated}
           categories={categories}
+        />
+      )}
+      <SyncDriveFoldersModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} />
+      {isManageDialogOpen && (
+        <ManageDialog
+          isOpen={isManageDialogOpen}
+          onClose={() => setIsManageDialogOpen(false)}
+          title="Manage Assets"
+          items={filteredAssets}
+          onRefresh={loadData}
+          entityType="Asset"
         />
       )}
     </main>

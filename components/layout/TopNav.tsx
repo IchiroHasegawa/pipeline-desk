@@ -103,27 +103,29 @@ export default function TopNav() {
             <ChevronDown className="h-3.5 w-3.5" />
           </Link>
 
-          <div className="invisible absolute left-0 top-full z-50 min-w-36 translate-y-2 rounded border border-[#2a2a2a] bg-zinc-950 py-1 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-1 group-hover:opacity-100">
-            <Link
-              href="/assets/manage"
-              className={`block px-3 py-2 text-xs transition-colors ${
-                pathname === "/assets/manage"
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-              }`}
-            >
-              Manage
-            </Link>
-            <Link
-              href="/assets/assembly"
-              className={`block px-3 py-2 text-xs transition-colors ${
-                pathname === "/assets/assembly"
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
-              }`}
-            >
-              Assembly
-            </Link>
+          <div className="invisible absolute left-0 top-full z-50 min-w-36 pt-1 opacity-0 transition-all group-hover:visible group-hover:opacity-100">
+            <div className="rounded border border-[#2a2a2a] bg-zinc-950 py-1 shadow-xl">
+              <Link
+                href="/assets/manage"
+                className={`block px-3 py-2 text-xs transition-colors ${
+                  pathname === "/assets/manage"
+                    ? "bg-zinc-800 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                Manage
+              </Link>
+              <Link
+                href="/assets/assembly"
+                className={`block px-3 py-2 text-xs transition-colors ${
+                  pathname === "/assets/assembly"
+                    ? "bg-zinc-800 text-white"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                }`}
+              >
+                Assembly
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -167,16 +169,18 @@ export default function TopNav() {
             <ChevronDown className="h-4 w-4 text-zinc-400" />
           </button>
           
-          <div className="invisible absolute right-0 top-full z-50 mt-1 min-w-36 rounded border border-[#2a2a2a] bg-zinc-950 py-1 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-1 group-hover:opacity-100">
-            <form action={logoutAction}>
-              <button
-                type="submit"
-                className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-zinc-900 hover:text-red-300"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                Logout
-              </button>
-            </form>
+          <div className="invisible absolute right-0 top-full z-50 min-w-36 pt-1 opacity-0 transition-all group-hover:visible group-hover:opacity-100">
+            <div className="rounded border border-[#2a2a2a] bg-zinc-950 py-1 shadow-xl">
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-zinc-900 hover:text-red-300"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Logout
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

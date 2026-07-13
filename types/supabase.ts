@@ -308,6 +308,51 @@ export type Database = {
         };
         Relationships: never[];
       };
+      asset_storage_locations: {
+        Row: {
+          id: string;
+          asset_id: string;
+          provider: string;
+          root_folder_id: string;
+          project_folder_id: string | null;
+          category_folder_id: string | null;
+          asset_folder_id: string;
+          source_folder_id: string;
+          preview_folder_id: string;
+          versions_folder_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          asset_id: string;
+          provider: string;
+          root_folder_id: string;
+          project_folder_id?: string | null;
+          category_folder_id?: string | null;
+          asset_folder_id: string;
+          source_folder_id: string;
+          preview_folder_id: string;
+          versions_folder_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          asset_id?: string;
+          provider?: string;
+          root_folder_id?: string;
+          project_folder_id?: string | null;
+          category_folder_id?: string | null;
+          asset_folder_id?: string;
+          source_folder_id?: string;
+          preview_folder_id?: string;
+          versions_folder_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: never[];
+      };
       asset_files: {
         Row: {
           id: string;
@@ -317,6 +362,17 @@ export type Database = {
           file_format: string;
           file_size_bytes: number;
           created_at: string;
+          provider: string | null;
+          drive_file_id: string | null;
+          drive_parent_folder_id: string | null;
+          original_file_name: string | null;
+          extension: string | null;
+          mime_type: string | null;
+          file_role: string | null;
+          version_number: number | null;
+          drive_created_time: string | null;
+          upload_status: string | null;
+          updated_at: string | null;
         };
         Insert: {
           id?: string;
@@ -326,6 +382,17 @@ export type Database = {
           file_format: string;
           file_size_bytes?: number;
           created_at?: string;
+          provider?: string | null;
+          drive_file_id?: string | null;
+          drive_parent_folder_id?: string | null;
+          original_file_name?: string | null;
+          extension?: string | null;
+          mime_type?: string | null;
+          file_role?: string | null;
+          version_number?: number | null;
+          drive_created_time?: string | null;
+          upload_status?: string | null;
+          updated_at?: string | null;
         };
         Update: {
           id?: string;
@@ -335,6 +402,17 @@ export type Database = {
           file_format?: string;
           file_size_bytes?: number;
           created_at?: string;
+          provider?: string | null;
+          drive_file_id?: string | null;
+          drive_parent_folder_id?: string | null;
+          original_file_name?: string | null;
+          extension?: string | null;
+          mime_type?: string | null;
+          file_role?: string | null;
+          version_number?: number | null;
+          drive_created_time?: string | null;
+          upload_status?: string | null;
+          updated_at?: string | null;
         };
         Relationships: never[];
       };
@@ -511,6 +589,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      };
+      storage_connections: {
+        Row: {
+          id: string
+          provider: string
+          connection_name: string | null
+          account_label: string | null
+          encrypted_refresh_token: string
+          root_folder_id: string | null
+          status: string
+          last_connected_at: string | null
+          last_error: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          provider: string
+          connection_name?: string | null
+          account_label?: string | null
+          encrypted_refresh_token: string
+          root_folder_id?: string | null
+          status: string
+          last_connected_at?: string | null
+          last_error?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          provider?: string
+          connection_name?: string | null
+          account_label?: string | null
+          encrypted_refresh_token?: string
+          root_folder_id?: string | null
+          status?: string
+          last_connected_at?: string | null
+          last_error?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       };
     };
     Views: Record<string, never>;

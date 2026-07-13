@@ -358,6 +358,16 @@ export async function restoreProject(id: string): Promise<void> {
 
 export async function deleteProject(id: string): Promise<void> {
   const supabase = createClient();
+  
+  const { error: envError } = await supabase
+    .from("production_environments")
+    .delete()
+    .eq("project_id", id);
+    
+  if (envError) {
+    throw new Error(`Failed to cascade delete environments: ${envError.message}`);
+  }
+
   const { error } = await supabase
     .from("projects")
     .delete()
@@ -475,20 +485,6 @@ export async function restoreEnvironment(id: string): Promise<void> {
 
 export async function deleteEnvironment(id: string): Promise<void> {
   const supabase = createClient();
-  
-  // Check if jobs/episodes exist
-  const { count, error: countError } = await supabase
-    .from("episodes")
-    .select("*", { count: "exact", head: true })
-    .eq("environment_id", id);
-    
-  if (countError) {
-    throw new Error(`Failed to check environment jobs: ${countError.message}`);
-  }
-  
-  if (count && count > 0) {
-    throw new Error(`Cannot delete this environment because it contains ${count} job(s). You must retire, move, or delete them first.`);
-  }
 
   const { error } = await supabase
     .from("production_environments")
@@ -500,7 +496,7 @@ export async function deleteEnvironment(id: string): Promise<void> {
   }
 }
 
-export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes' | 'createdAt'>[]): Promise<void> {
+export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes' | 'createdAt'>[]): Promise<string[]> {
   const supabase = createClient();
   
   const records = jobs.map((job) => ({
@@ -516,13 +512,16 @@ export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id'
     scene_workflow: job.sceneWorkflow || null,
   }));
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("episodes")
-    .insert(records);
+    .insert(records)
+    .select("id");
 
   if (error) {
     throw new Error(`Failed to create jobs: ${error.message}`);
   }
+  
+  return data?.map(d => d.id) || [];
 }
 
 export async function updateJob(id: string, updates: Partial<Omit<Episode, 'id' | 'scenes'>>): Promise<void> {
@@ -570,22 +569,6 @@ export async function restoreJob(id: string): Promise<void> {
 
 export async function deleteJob(id: string): Promise<void> {
   const supabase = createClient();
-  
-  // NOTE: Phase 4D will add scene checking here similar to how we check jobs for environment deletion.
-  // For now, we allow deletion as jobs might be empty.
-  
-  const { count, error: countError } = await supabase
-    .from("scenes")
-    .select("*", { count: "exact", head: true })
-    .eq("episode_id", id);
-    
-  if (countError) {
-    throw new Error(`Failed to check job scenes: ${countError.message}`);
-  }
-  
-  if (count && count > 0) {
-    throw new Error(`Cannot delete this job because it contains ${count} scene(s).`);
-  }
 
   const { error } = await supabase
     .from("episodes")
@@ -597,7 +580,7 @@ export async function deleteJob(id: string): Promise<void> {
   }
 }
 
-export async function createScenes(jobId: string, scenes: Omit<Scene, 'id' | 'tasks' | 'createdAt'>[]): Promise<void> {
+export async function createScenes(jobId: string, scenes: Omit<Scene, 'id' | 'tasks' | 'createdAt'>[]): Promise<string[]> {
   const supabase = createClient();
   
   const records = scenes.map((scene) => ({
@@ -611,13 +594,16 @@ export async function createScenes(jobId: string, scenes: Omit<Scene, 'id' | 'ta
     priority: scene.priority,
   }));
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("scenes")
-    .insert(records);
+    .insert(records)
+    .select("id");
 
   if (error) {
     throw new Error(`Failed to create scenes: ${error.message}`);
   }
+  
+  return data?.map(d => d.id) || [];
 }
 
 export async function updateScene(id: string, updates: Partial<Omit<Scene, 'id' | 'tasks'>>): Promise<void> {
@@ -661,19 +647,6 @@ export async function restoreScene(id: string): Promise<void> {
 
 export async function deleteScene(id: string): Promise<void> {
   const supabase = createClient();
-  
-  const { count, error: countError } = await supabase
-    .from("production_tasks")
-    .select("*", { count: "exact", head: true })
-    .eq("scene_id", id);
-    
-  if (countError) {
-    throw new Error(`Failed to check scene tasks: ${countError.message}`);
-  }
-  
-  if (count && count > 0) {
-    throw new Error(`Cannot delete this scene because it contains ${count} task(s).`);
-  }
 
   const { error } = await supabase
     .from("scenes")
@@ -783,7 +756,11 @@ function mapAsset(record: AssetRecord): Asset {
     assetType: record.asset_type ?? "General",
     workflow: record.workflow ?? "Basic",
     tags: record.tags ?? [],
-    previewUrl: record.preview_url ?? "",
+    previewUrl: record.preview_url 
+      ? (record.preview_url.startsWith('http') || record.preview_url.startsWith('/'))
+        ? record.preview_url 
+        : `/api/assets/${record.id}/preview?v=${new Date(record.updated_at || record.created_at).getTime()}`
+      : "",
     status: record.status === "Retired" ? "Retired" : "Active",
     files: [...(record.asset_files ?? [])]
       .sort((first, second) => first.created_at.localeCompare(second.created_at))

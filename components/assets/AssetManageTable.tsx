@@ -3,6 +3,7 @@
 import type { Asset } from "@/types/production";
 import ProgressCircle from "@/components/production/ProgressCircle";
 import TaskCard from "@/components/production/TaskCard";
+import { useState, useRef, useEffect } from "react";
 
 type AssetManageTableProps = {
   assets: Asset[];
@@ -11,13 +12,50 @@ type AssetManageTableProps = {
 };
 
 export default function AssetManageTable({ assets, selectedAssetId, onSelectAsset }: AssetManageTableProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
+  const allIds = assets.map(a => a.id);
+  const isAllSelected = assets.length > 0 && selectedIds.size === assets.length;
+  const isIndeterminate = selectedIds.size > 0 && selectedIds.size < assets.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
+  const handleHeaderClick = () => {
+    if (isIndeterminate || !isAllSelected) {
+      setSelectedIds(new Set(allIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleRowCheck = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="flex-1 overflow-auto bg-[#0a0a0a] px-4">
       <table className="w-full min-w-[1040px] border-collapse text-left text-sm text-[#e0e0e0]">
         <thead className="sticky top-0 z-10 border-b border-[#2a2a2a] bg-[#121212] text-xs font-bold uppercase text-zinc-500 shadow-sm">
           <tr>
             <th className="px-2 py-3 w-8 text-center font-medium">
-              <input type="checkbox" className="rounded border-zinc-700 bg-zinc-900" />
+              <input 
+                type="checkbox" 
+                ref={headerCheckboxRef}
+                checked={isAllSelected}
+                onChange={handleHeaderClick}
+                className="rounded border-zinc-700 bg-zinc-900" 
+              />
             </th>
             <th className="px-2 py-3 w-32 font-medium">Preview</th>
             <th className="px-2 py-3 font-medium">Asset Name ▲</th>
@@ -43,8 +81,8 @@ export default function AssetManageTable({ assets, selectedAssetId, onSelectAsse
                   isSelected ? "bg-zinc-800/80" : ""
                 }`}
               >
-                <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                  <input type="checkbox" checked={isSelected} readOnly className="rounded border-zinc-700 bg-zinc-900" />
+                <td className="px-2 py-3 text-center" onClick={(e) => handleRowCheck(e, asset.id)}>
+                  <input type="checkbox" checked={selectedIds.has(asset.id)} readOnly className="rounded border-zinc-700 bg-zinc-900" />
                 </td>
                 <td className="px-2 py-3">
                   {asset.previewUrl ? (

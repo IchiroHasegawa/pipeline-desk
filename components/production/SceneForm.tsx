@@ -3,11 +3,12 @@
 import { useState } from "react";
 import type { Scene } from "@/types/production";
 import { createScenes, updateScene } from "@/lib/data/productionRepository";
+import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
 
 type SceneFormProps = {
   jobId: string;
   scene: Scene | null;
-  onClose: () => void;
+  onClose: (createdId?: string) => void;
 };
 
 export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
@@ -40,6 +41,7 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           numberOfFrames,
           priority,
         });
+        onClose(scene.id);
       } else {
         const match = sceneName.match(/^(.*?)(\d+)$/);
         const count = Math.max(1, sceneCount);
@@ -73,9 +75,9 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           priority,
         }));
 
-        await createScenes(jobId, newScenes);
+        const newSceneIds = await createScenes(jobId, newScenes);
+        onClose(newSceneIds[0]);
       }
-      onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to save scene(s)");
     } finally {
@@ -96,61 +98,55 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div>
-            <h3 className="mb-4 text-sm font-bold uppercase text-zinc-400 border-b border-zinc-800 pb-2">
-              Scene Information
-            </h3>
-            <div className="grid gap-6 md:grid-cols-2">
-              {!isEditing && (
+        <form onSubmit={handleSubmit} className="flex gap-8">
+          <div className="pt-6">
+            <ThumbnailUploader value={previewImage} onChange={setPreviewImage} />
+          </div>
+          
+          <div className="flex-1 space-y-8">
+            <div>
+              <h3 className="mb-4 text-sm font-bold uppercase text-zinc-400 border-b border-zinc-800 pb-2">
+                Scene Information
+              </h3>
+              <div className="grid gap-6 md:grid-cols-2">
+                {!isEditing && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-zinc-500">Number of Scenes *</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={sceneCount}
+                      onChange={(e) => setSceneCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                    />
+                  </div>
+                )}
+    
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-zinc-500">Number of Scenes *</label>
+                  <label className="text-xs font-bold uppercase text-zinc-500">
+                    {isEditing ? "Scene Name *" : "First Scene Name *"}
+                  </label>
                   <input
-                    type="number"
-                    min="1"
+                    type="text"
                     required
-                    value={sceneCount}
-                    onChange={(e) => setSceneCount(Math.max(1, parseInt(e.target.value) || 1))}
+                    value={sceneName}
+                    onChange={(e) => setSceneName(e.target.value)}
+                    placeholder="e.g., Scene_001"
                     className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
                   />
                 </div>
-              )}
-  
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-zinc-500">
-                  {isEditing ? "Scene Name *" : "First Scene Name *"}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={sceneName}
-                  onChange={(e) => setSceneName(e.target.value)}
-                  placeholder="e.g., Scene_001"
-                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-                />
-              </div>
-  
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold uppercase text-zinc-500">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="h-24 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-                />
-              </div>
-  
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-bold uppercase text-zinc-500">Default Thumbnail URL</label>
-                <input
-                  type="url"
-                  value={previewImage}
-                  onChange={(e) => setPreviewImage(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-                />
+    
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-xs font-bold uppercase text-zinc-500">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="h-24 w-full resize-none rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
           <div>
             <h3 className="mb-4 text-sm font-bold uppercase text-zinc-400 border-b border-zinc-800 pb-2">
@@ -200,21 +196,23 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded px-4 py-2 text-sm font-bold text-zinc-400 hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded bg-blue-600 px-6 py-2 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-50"
-            >
-              {isSubmitting ? "Saving..." : isEditing ? "Save Scene" : "Create Scene(s)"}
-            </button>
+            <div className="flex justify-end gap-3 border-t border-zinc-800 pt-6">
+              <button
+                type="button"
+                onClick={() => onClose()}
+                disabled={isSubmitting}
+                className="rounded px-4 py-2 text-sm font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="rounded bg-blue-600 px-6 py-2 text-sm font-bold text-white hover:bg-blue-500 disabled:opacity-50"
+              >
+                {isSubmitting ? "Saving..." : isEditing ? "Save Scene" : "Create Scene(s)"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

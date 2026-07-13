@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Asset } from "@/types/production";
+import AssetUploadDialog from "./AssetUploadDialog";
 import ProgressCircle from "@/components/production/ProgressCircle";
 
 type AssetDetailsPanelProps = {
@@ -10,6 +12,8 @@ type AssetDetailsPanelProps = {
 
 export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
   const [activeTab, setActiveTab] = useState<"details" | "notes">("details");
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const router = useRouter();
 
   const totalTasks = asset.tasks?.length || 0;
   const completedTasks = asset.tasks?.filter((t) => t.status === "Approved").length || 0;
@@ -99,9 +103,15 @@ export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
                   </div>
                 )}
               </div>
-              <div className="border-t border-[#2a2a2a] pt-2">
-                <div className="mb-2 border-b border-[#2a2a2a] pb-1">
+              <div className="border-t border-[#2a2a2a] pt-2 mt-4">
+                <div className="mb-2 border-b border-[#2a2a2a] pb-1 flex justify-between items-center">
                   <span className="text-xs font-bold text-zinc-400">File Attachments</span>
+                  <button 
+                    onClick={() => setIsUploadDialogOpen(true)}
+                    className="text-[10px] bg-white text-black px-2 py-1 rounded font-bold hover:bg-zinc-200"
+                  >
+                    Upload Files
+                  </button>
                 </div>
                 <div className="space-y-2 mt-2">
                   {asset.files && asset.files.length > 0 ? (
@@ -133,6 +143,14 @@ export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
           )}
         </div>
       </div>
+      <AssetUploadDialog 
+        asset={asset}
+        isOpen={isUploadDialogOpen}
+        onClose={() => setIsUploadDialogOpen(false)}
+        onSuccess={() => {
+          router.refresh();
+        }}
+      />
     </aside>
   );
 }

@@ -1,6 +1,7 @@
 import type { Episode, ProductionTask } from "@/types/production";
 import ProgressCircle from "./ProgressCircle";
 import TaskCard from "./TaskCard";
+import { useState, useRef, useEffect } from "react";
 
 type EpisodeTableProps = {
   episodes: Episode[];
@@ -40,13 +41,50 @@ export default function EpisodeTable({
   selectedEpisodeId,
   onSelectEpisode,
 }: EpisodeTableProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
+  const allIds = episodes.map(e => e.id);
+  const isAllSelected = episodes.length > 0 && selectedIds.size === episodes.length;
+  const isIndeterminate = selectedIds.size > 0 && selectedIds.size < episodes.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
+  const handleHeaderClick = () => {
+    if (isIndeterminate || !isAllSelected) {
+      setSelectedIds(new Set(allIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleRowCheck = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-0 flex-1 overflow-auto px-4">
       <table className="w-full min-w-[1040px] border-collapse text-left">
         <thead className="border-b border-[#2a2a2a] text-[10px] font-bold uppercase text-zinc-500">
           <tr>
             <th className="sticky top-0 z-10 w-8 bg-[#121212] px-2 py-3 text-center shadow-[0_1px_0_#2a2a2a]">
-              <input type="checkbox" className="rounded border-zinc-700 bg-zinc-900" />
+              <input 
+                type="checkbox" 
+                ref={headerCheckboxRef}
+                checked={isAllSelected}
+                onChange={handleHeaderClick}
+                className="rounded border-zinc-700 bg-zinc-900" 
+              />
             </th>
             <th className="sticky top-0 z-10 w-32 bg-[#121212] px-2 py-3 shadow-[0_1px_0_#2a2a2a]">
               Preview
@@ -76,8 +114,8 @@ export default function EpisodeTable({
                   isSelected ? "bg-zinc-900/70" : "bg-transparent"
                 }`}
               >
-                <td className="px-2 py-3 text-center font-medium text-zinc-500" onClick={(e) => e.stopPropagation()}>
-                  <input type="checkbox" checked={isSelected} readOnly className="rounded border-zinc-700 bg-zinc-900" />
+                <td className="px-2 py-3 text-center font-medium text-zinc-500" onClick={(e) => handleRowCheck(e, episode.id)}>
+                  <input type="checkbox" checked={selectedIds.has(episode.id)} readOnly className="rounded border-zinc-700 bg-zinc-900" />
                 </td>
                 <td className="px-2 py-3">
                   <div
