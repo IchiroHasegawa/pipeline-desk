@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getDriveClient, resolveAssetStorageHierarchy } from "@/lib/google-drive-server";
 import { Auth } from "googleapis";
+import { checkDriveAccess } from "@/lib/deployment";
 
 const BLOCKED_EXTENSIONS = [".exe", ".msi", ".bat", ".cmd", ".com", ".scr", ".ps1", ".vbs", ".js"];
 const PREVIEW_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
 
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Google Drive uploads are disabled in production" }, { status: 403 });
+  const driveAccess = await checkDriveAccess();
+  if (!driveAccess.allowed) {
+    return NextResponse.json({ error: driveAccess.error }, { status: 403 });
   }
 
   try {

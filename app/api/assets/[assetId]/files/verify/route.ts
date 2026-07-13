@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getDriveClient } from "@/lib/google-drive-server";
+import { checkDriveAccess } from "@/lib/deployment";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ assetId: string }> }
 ) {
-  if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Google Drive operations are disabled in production" }, { status: 403 });
+  const driveAccess = await checkDriveAccess();
+  if (!driveAccess.allowed) {
+    return NextResponse.json({ error: driveAccess.error }, { status: 403 });
   }
 
   try {

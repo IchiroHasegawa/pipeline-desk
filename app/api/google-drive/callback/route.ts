@@ -2,25 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { encryptToken } from "@/lib/encryption";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { checkDriveAccess } from "@/lib/deployment";
 
 export async function GET(request: NextRequest) {
-  if (process.env.NODE_ENV !== "development") {
-    return NextResponse.json({ error: "Unavailable in production" }, { status: 403 });
+  const driveAccess = await checkDriveAccess();
+  if (!driveAccess.allowed) {
+    return NextResponse.json({ error: driveAccess.error }, { status: 403 });
   }
 
   const searchParams = request.nextUrl.searchParams;
+  const baseUrl = process.env.APP_URL || request.url;
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
   if (error) {
-    return NextResponse.redirect(new URL("/settings?error=" + encodeURIComponent(error), request.url));
+    return NextResponse.redirect(new URL("/settings?error=" + encodeURIComponent(error), baseUrl));
   }
 
   const savedState = request.cookies.get("google_oauth_state")?.value;
 
   if (!state || !savedState || state !== savedState) {
-    return NextResponse.redirect(new URL("/settings?error=invalid_state", request.url));
+    return NextResponse.redirect(new URL("/settings?error=invalid_state", baseUrl));
   }
 
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
   const redirectUri = process.env.GOOGLE_DRIVE_REDIRECT_URI;
 
   if (!clientId || !clientSecret || !redirectUri) {
-    return NextResponse.redirect(new URL("/settings?error=missing_env", request.url));
+    return NextResponse.redirect(new URL("/settings?error=missing_env", baseUrl));
   }
 
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
@@ -39,7 +42,7 @@ export async function GET(request: NextRequest) {
     if (!tokens.refresh_token) {
       // If no refresh token, they might have already authorized and Google didn't send a new one.
       // But we require offline access and consent, so it usually sends one.
-      return NextResponse.redirect(new URL("/settings?error=no_refresh_token", request.url));
+      return NextResponse.redirect(new URL("/settings?error=no_refresh_token", baseUrl));
     }
 
     oauth2Client.setCredentials(tokens);
@@ -91,15 +94,15 @@ export async function GET(request: NextRequest) {
 
     if (insertError) {
       console.error("Database insert error:", insertError);
-      return NextResponse.redirect(new URL("/settings?error=db_error", request.url));
+      return NextResponse.redirect(new URL("/settings?error=db_error", baseUrl));
     }
 
-    const response = NextResponse.redirect(new URL("/settings", request.url));
+    const response = NextResponse.redirect(new URL("/settings", baseUrl));
     response.cookies.delete("google_oauth_state");
     return response;
 
   } catch (err) {
     console.error("OAuth error:", err);
-    return NextResponse.redirect(new URL("/settings?error=oauth_failed", request.url));
+    return NextResponse.redirect(new URL("/settings?error=oauth_failed", baseUrl));
   }
 }

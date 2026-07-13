@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateFileRecordStatus } from "@/lib/data/productionRepository";
+import { checkDriveAccess } from "@/lib/deployment";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ assetId: string; assetFileId: string }> }
 ) {
+  const driveAccess = await checkDriveAccess();
+  if (!driveAccess.allowed) {
+    return NextResponse.json({ error: driveAccess.error }, { status: 403 });
+  }
   try {
     const { assetFileId } = await params;
     const body = await request.json();

@@ -4,6 +4,7 @@ import { useState } from "react";
 import TopNav from "@/components/layout/TopNav";
 import ProjectsSettings from "@/components/settings/ProjectsSettings";
 import StorageSettings from "@/components/settings/StorageSettings";
+import SecuritySettings from "@/components/settings/SecuritySettings";
 
 type SettingsCategory = "Projects" | "Users" | "Security" | "Workflows" | "Storage";
 
@@ -40,7 +41,8 @@ export default function SettingsPage() {
         <main className="flex min-w-0 flex-1 flex-col overflow-y-auto p-8">
           {activeCategory === "Projects" && <ProjectsSettings />}
           {activeCategory === "Storage" && <StorageSettings />}
-          {activeCategory !== "Projects" && activeCategory !== "Storage" && (
+          {activeCategory === "Security" && <SecuritySettings />}
+          {activeCategory !== "Projects" && activeCategory !== "Storage" && activeCategory !== "Security" && (
             <div className="flex h-full items-center justify-center">
               <div className="rounded border border-[#2a2a2a] bg-zinc-900 px-6 py-4 text-center text-zinc-400">
                 <h2 className="mb-2 text-lg font-bold text-white">{activeCategory}</h2>
