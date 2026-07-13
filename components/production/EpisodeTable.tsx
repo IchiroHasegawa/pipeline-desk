@@ -1,120 +1,166 @@
-import type { EpisodeJob } from "@/types/production";
+import type { Episode, ProductionTask } from "@/types/production";
 import ProgressCircle from "./ProgressCircle";
+import TaskCard from "./TaskCard";
+import { useState, useRef, useEffect } from "react";
 
 type EpisodeTableProps = {
-  jobs: EpisodeJob[];
-  selectedJobId: string;
-  onSelectJob: (job: EpisodeJob) => void;
+  episodes: Episode[];
+  selectedEpisodeId: string | null;
+  onSelectEpisode: (episode: Episode) => void;
 };
 
 const taskColumns = [
-  { label: "Script", taskName: "Script" },
-  { label: "Storyboard", taskName: "Storyboard" },
-  { label: "Production", taskName: "Production" },
-  { label: "Layout", taskName: "Layout" },
-  { label: "Setup", taskName: "Setup" },
-  { label: "Animation", taskName: "Animation" },
-  { label: "Cleanup", taskName: "Cleanup Animation" },
-  { label: "Comp", taskName: "Compositing" },
+  { label: "Script", taskNames: ["Script"] },
+  { label: "Storyboard", taskNames: ["Storyboard"] },
+  { label: "Production", taskNames: ["Production"] },
+  { label: "Layout", taskNames: ["Layout", "Layout Check"] },
+  { label: "Setup", taskNames: ["Setup"] },
+  { label: "Animation", taskNames: ["Animation", "Rough Animation"] },
+  { label: "Cleanup", taskNames: ["Cleanup Animation"] },
+  { label: "Comp", taskNames: ["Compositing"] },
 ];
 
-function getTaskProgress(job: EpisodeJob, taskName: string) {
-  const task = job.tasks.find((item) => item.name === taskName);
-  return task?.progress ?? 0;
+function getTaskProgress(episode: Episode, taskNames: string[]) {
+  const matchingTasks = episode.scenes
+    .flatMap((scene) => scene.tasks)
+    .filter((task) => taskNames.includes(task.name));
+  if (matchingTasks.length === 0) return 0;
+  const totalProgress = matchingTasks.reduce((total, task) => total + task.progress, 0);
+  return Math.round(totalProgress / matchingTasks.length);
 }
 
-function getOverallProgress(job: EpisodeJob) {
-  if (job.tasks.length === 0) return 0;
-
-  const total = job.tasks.reduce((sum, task) => sum + task.progress, 0);
-  return Math.round(total / job.tasks.length);
+function getOverallProgress(episode: Episode) {
+  const allTasks = episode.scenes.flatMap((scene) => scene.tasks);
+  if (allTasks.length === 0) return 0;
+  const totalProgress = allTasks.reduce((total, task) => total + task.progress, 0);
+  return Math.round(totalProgress / allTasks.length);
 }
 
 export default function EpisodeTable({
-  jobs,
-  selectedJobId,
-  onSelectJob,
+  episodes,
+  selectedEpisodeId,
+  onSelectEpisode,
 }: EpisodeTableProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
+  const allIds = episodes.map(e => e.id);
+  const isAllSelected = episodes.length > 0 && selectedIds.size === episodes.length;
+  const isIndeterminate = selectedIds.size > 0 && selectedIds.size < episodes.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
+  const handleHeaderClick = () => {
+    if (isIndeterminate || !isAllSelected) {
+      setSelectedIds(new Set(allIds));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleRowCheck = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-0 flex-1 overflow-auto px-4">
       <table className="w-full min-w-[1040px] border-collapse text-left">
         <thead className="border-b border-[#2a2a2a] text-[10px] font-bold uppercase text-zinc-500">
           <tr>
-            <th className="sticky top-0 z-10 w-8 bg-[#121212] px-2 py-2 text-center shadow-[0_1px_0_#2a2a2a]">
-              #
+            <th className="sticky top-0 z-10 w-8 bg-[#121212] px-2 py-3 text-center shadow-[0_1px_0_#2a2a2a]">
+              <input 
+                type="checkbox" 
+                ref={headerCheckboxRef}
+                checked={isAllSelected}
+                onChange={handleHeaderClick}
+                className="rounded border-zinc-700 bg-zinc-900" 
+              />
             </th>
-            <th className="sticky top-0 z-10 bg-[#121212] px-2 py-2 shadow-[0_1px_0_#2a2a2a]">
-              Job Name ▲
-            </th>
-            <th className="sticky top-0 z-10 bg-[#121212] px-2 py-2 shadow-[0_1px_0_#2a2a2a]">
+            <th className="sticky top-0 z-10 w-32 bg-[#121212] px-2 py-3 shadow-[0_1px_0_#2a2a2a]">
               Preview
             </th>
-            <th className="sticky top-0 z-10 bg-[#121212] px-2 py-2 shadow-[0_1px_0_#2a2a2a]">
-              Start Date
+            <th className="sticky top-0 z-10 bg-[#121212] px-2 py-3 shadow-[0_1px_0_#2a2a2a]">
+              Job Name ▲
             </th>
-            <th className="sticky top-0 z-10 bg-[#121212] px-2 py-2 shadow-[0_1px_0_#2a2a2a]">
-              End Date
+            <th className="sticky top-0 z-10 w-24 bg-[#121212] px-2 py-3 text-center shadow-[0_1px_0_#2a2a2a]">
+              Completion
             </th>
-
-            {taskColumns.map((column) => (
-              <th
-                key={column.taskName}
-                className="sticky top-0 z-10 bg-[#121212] px-1 py-2 text-center shadow-[0_1px_0_#2a2a2a]"
-              >
-                {column.label}
-              </th>
-            ))}
-
-            <th className="sticky top-0 z-10 bg-[#121212] px-1 py-2 text-center shadow-[0_1px_0_#2a2a2a]">
-              Done
+            <th className="sticky top-0 z-10 bg-[#121212] px-4 py-3 shadow-[0_1px_0_#2a2a2a]">
+              Tasks
+            </th>
+            <th className="sticky top-0 z-10 w-48 bg-[#121212] px-2 py-3 shadow-[0_1px_0_#2a2a2a]">
+              Notes
             </th>
           </tr>
         </thead>
-
         <tbody className="text-xs">
-          {jobs.map((job, index) => {
-            const isSelected = job.id === selectedJobId;
-
+          {episodes.map((episode) => {
+            const isSelected = episode.id === selectedEpisodeId;
             return (
               <tr
-                key={job.id}
-                onClick={() => onSelectJob(job)}
+                key={episode.id}
+                onClick={() => onSelectEpisode(episode)}
                 className={`group cursor-pointer border-b border-[#2a2a2a] transition-colors hover:bg-zinc-900/50 ${
                   isSelected ? "bg-zinc-900/70" : "bg-transparent"
                 }`}
               >
-                <td className="px-2 py-2 text-center font-medium text-zinc-500">
-                  {index + 1}
+                <td className="px-2 py-3 text-center font-medium text-zinc-500" onClick={(e) => handleRowCheck(e, episode.id)}>
+                  <input type="checkbox" checked={selectedIds.has(episode.id)} readOnly className="rounded border-zinc-700 bg-zinc-900" />
                 </td>
-
-                <td className="px-2 py-2 font-medium text-[#e0e0e0]">
-                  {job.jobName}
-                </td>
-
-                <td className="px-2 py-2">
+                <td className="px-2 py-3">
                   <div
-                    aria-label={`${job.jobName} preview`}
-                    className="flex h-10 w-16 items-center justify-center rounded bg-zinc-800 bg-cover bg-center text-[9px] text-zinc-500"
-                    style={{ backgroundImage: `url(${job.previewImage})` }}
+                    aria-label={`${episode.episodeName} preview`}
+                    className="flex h-14 w-24 shrink-0 items-center justify-center rounded bg-zinc-800 bg-cover bg-center text-[9px] text-zinc-500"
+                    style={{ backgroundImage: `url(${episode.previewImage})` }}
                   >
-                    <span className="rounded bg-black/50 px-1">Preview</span>
+                    {!episode.previewImage && <span className="rounded bg-black/50 px-1">Preview</span>}
                   </div>
                 </td>
-
-                <td className="px-2 py-2 text-zinc-400">{job.startDate}</td>
-                <td className="px-2 py-2 text-zinc-400">{job.endDate}</td>
-
-                {taskColumns.map((column) => (
-                  <td key={column.taskName} className="px-1 py-2 text-center">
-                    <ProgressCircle
-                      value={getTaskProgress(job, column.taskName)}
-                      size={28}
-                    />
-                  </td>
-                ))}
-
-                <td className="px-1 py-2 text-center">
-                  <ProgressCircle value={getOverallProgress(job)} size={28} />
+                <td className="px-2 py-3 font-medium text-[#e0e0e0]">
+                  {episode.episodeName}
+                </td>
+                <td className="px-2 py-3 text-center">
+                  <div className="flex justify-center">
+                    <ProgressCircle value={getOverallProgress(episode)} size={48} />
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2 overflow-x-auto max-w-[600px] pb-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+                    {taskColumns.map((col) => {
+                      const progress = getTaskProgress(episode, col.taskNames);
+                      // Only show tasks that are relevant (we fake relevance if progress > 0 or if we assume it's part of workflow)
+                      const fakeTask: ProductionTask = {
+                        id: col.label,
+                        name: col.label,
+                        progress,
+                        status: progress === 100 ? "Approved" : progress > 0 ? "In Progress" : "Standby",
+                        assignee: "Team",
+                        startDate: episode.startDate,
+                        endDate: episode.endDate,
+                        createdAt: new Date().toISOString(),
+                      };
+                      return (
+                        <div key={col.label} className="w-[140px] shrink-0">
+                          <TaskCard task={fakeTask} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </td>
+                <td className="px-2 py-3 text-zinc-400">
+                  <div className="truncate max-w-[180px] text-xs">
+                    {episode.description || "No notes available."}
+                  </div>
                 </td>
               </tr>
             );
