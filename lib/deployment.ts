@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { type NextRequest } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export type DeploymentMode = "local" | "staging" | "production";
 
@@ -59,18 +60,41 @@ export async function verifyStagingAccess(request?: NextRequest): Promise<boolea
 }
 
 export async function checkDriveAccess(): Promise<{ allowed: boolean; error?: string }> {
+  // 1. Enforce Authentication and Active Profile (Required for all modes to match production behavior)
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { allowed: false, error: "Unauthorized: Missing or invalid authentication session." };
+  }
+
+  const { data } = await supabase
+    .from('profiles')
+    .select('account_status')
+    .eq('id', user.id)
+    .single();
+
+  const profile = data as unknown as { account_status: string } | null;
+
+  if (profile?.account_status !== 'active') {
+    return { allowed: false, error: "Unauthorized: Production OS account is unavailable." };
+  }
+
+  // 2. Check deployment mode specific rules
   const mode = getDeploymentMode();
+  const isTestAccessEnabled = process.env.PRODUCTION_OS_TEST_ACCESS_ENABLED === "true";
   
-  if (mode === "local") return { allowed: true };
-  
-  if (mode === "production") {
-    return { allowed: false, error: "Google Drive operations are disabled in production until full Production OS Authentication is implemented." };
+  if (mode === "local" || mode === "production") {
+    // If authenticated and active, allow.
+    return { allowed: true };
   }
   
   if (mode === "staging") {
-    const isAuthorized = await verifyStagingAccess();
-    if (!isAuthorized) {
-      return { allowed: false, error: "Unauthorized staging access for Google Drive operations." };
+    if (isTestAccessEnabled) {
+      const isAuthorized = await verifyStagingAccess();
+      if (!isAuthorized) {
+        return { allowed: false, error: "Unauthorized staging access for Google Drive operations." };
+      }
     }
     return { allowed: true };
   }

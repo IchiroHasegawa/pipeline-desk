@@ -49,16 +49,51 @@ export async function updateSession(request: NextRequest) {
   
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
   
-  if (isProtectedRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  if (isProtectedRoute) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('account_status')
+      .eq('id', user.id)
+      .single();
+      
+    const profile = data as unknown as { account_status: string } | null;
+
+    if (profile?.account_status !== 'active') {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "account_unavailable");
+      
+      const redirectResponse = NextResponse.redirect(url);
+      request.cookies.getAll().forEach((cookie) => {
+         if (cookie.name.startsWith('sb-')) {
+             redirectResponse.cookies.delete(cookie.name);
+         }
+      });
+      return redirectResponse;
+    }
   }
   
   if ((request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup")) && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/production";
-    return NextResponse.redirect(url);
+    // Also verify profile is active before redirecting to production
+    const { data } = await supabase
+      .from('profiles')
+      .select('account_status')
+      .eq('id', user.id)
+      .single();
+      
+    const profile = data as unknown as { account_status: string } | null;
+      
+    if (profile?.account_status === 'active') {
+      const url = request.nextUrl.clone();
+      url.pathname = "/production";
+      return NextResponse.redirect(url);
+    }
   }
 
   if (request.nextUrl.pathname === "/") {

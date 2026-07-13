@@ -16,7 +16,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-bold italic text-black">
             P
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Sign in to Production OS</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Welcome Back</h2>
         </div>
 
         <form action={formAction} className="mt-8 space-y-6">
@@ -55,7 +55,7 @@ export default function LoginPage() {
               </button>
 
               <div className="text-center text-sm text-zinc-400">
-                Don&apos;t have an account?{" "}
+                New to Production OS?{" "}
                 <Link href="/signup" className="font-bold text-white hover:underline">
                   Create Account
                 </Link>

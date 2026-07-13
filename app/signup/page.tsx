@@ -18,9 +18,12 @@ export default function SignupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Check your email</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Check Your Email</h2>
           <p className="text-zinc-400 text-sm">
-            {state.message || "We sent you a confirmation link."}
+            We sent a confirmation link to your email address.
+          </p>
+          <p className="text-zinc-400 text-sm mt-2">
+            After confirming your email, return to Production OS and log in with your Username.
           </p>
           <div className="pt-4">
             <Link href="/login" className="text-sm font-bold text-white hover:underline">
@@ -39,7 +42,7 @@ export default function SignupPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-bold italic text-black">
             P
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Create your account</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Create Production OS Account</h2>
         </div>
 
         <form action={formAction} className="mt-8 space-y-6">

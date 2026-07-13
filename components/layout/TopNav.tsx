@@ -30,14 +30,14 @@ export default function TopNav() {
         if (user) {
           const { data } = await supabase
             .from("profiles")
-            .select("username")
+            .select("username, display_name")
             .eq("id", user.id)
             .single();
             
-          const profile = data as unknown as { username: string } | null;
+          const profile = data as unknown as { username: string; display_name: string | null } | null;
           
-          if (profile && profile.username) {
-            setUsername(profile.username);
+          if (profile) {
+            setUsername(profile.display_name || profile.username);
           } else {
             setUsername("User");
           }

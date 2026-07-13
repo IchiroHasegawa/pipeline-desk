@@ -20,7 +20,7 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
   // Step 1: Validate Username exists
   if (step === "1") {
     if (!username) return { message: "Username is required.", step: 1 };
-    if (username.length < 3 || username.length > 30) return { message: "Invalid credentials.", step: 1 };
+    if (username.length < 3 || username.length > 30) return { message: "Invalid Username or Password.", step: 1 };
     
     return { success: true, step: 2, username };
   }
@@ -33,27 +33,39 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
   try {
     const adminClient = getAdminClient();
     
-    // Securely lookup the email associated with this username using service_role
+    // Securely lookup the profile ID associated with this username using service_role
+    // using ilike to match case-insensitively, even though our unique index helps
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("email")
-      .eq("username", username)
-      .single();
+      .select("id, account_status")
+      .ilike("username", username)
+      .maybeSingle();
 
-    if (profileError || !profile?.email) {
+    if (profileError || !profile) {
       // Return generic error to prevent username enumeration
-      return { message: "Invalid credentials.", step: 2, username };
+      return { message: "Invalid Username or Password.", step: 2, username };
+    }
+
+    if (profile.account_status !== "active") {
+      return { message: "This Production OS account is unavailable.", step: 2, username };
+    }
+    
+    // Retrieve the Auth account email using the server-only Supabase Admin API
+    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(profile.id);
+    
+    if (userError || !userData?.user?.email) {
+      return { message: "Invalid Username or Password.", step: 2, username };
     }
 
     // Now sign in using the standard SSR client with the resolved email
     const supabase = await createClient();
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email: profile.email,
+      email: userData.user.email,
       password,
     });
 
     if (authError) {
-      return { message: "Invalid credentials.", step: 2, username };
+      return { message: "Invalid Username or Password.", step: 2, username };
     }
 
   } catch (error) {
@@ -93,7 +105,7 @@ export async function signupAction(prevState: AuthState | null, formData: FormDa
       .maybeSingle();
 
     if (existingUser) {
-      return { message: "Username is already taken." };
+      return { message: "That Username is unavailable." };
     }
 
     const supabase = await createClient();
