@@ -76,6 +76,51 @@ export async function getOrCreateFolder(drive: drive_v3.Drive, parentId: string,
   return createResponse.data.id;
 }
 
+export async function getProjectIdForAsset(assetId: string): Promise<string | null> {
+  const adminClient = getAdminClient();
+  
+  // 1. Direct project link
+  const { data: projLink } = await adminClient.from("asset_project_links").select("project_id").eq("asset_id", assetId).limit(1).maybeSingle();
+  if (projLink?.project_id) {
+    console.log(`[getProjectIdForAsset] Found project link for asset ${assetId}: project_id=${projLink.project_id}`);
+    return projLink.project_id;
+  }
+  
+  // 2. Environment link
+  const { data: envLink } = await adminClient.from("asset_environment_links").select("environment_id").eq("asset_id", assetId).limit(1).maybeSingle();
+  if (envLink?.environment_id) {
+    console.log(`[getProjectIdForAsset] Found environment link for asset ${assetId}: env_id=${envLink.environment_id}`);
+    const { data: env } = await adminClient.from("production_environments").select("project_id").eq("id", envLink.environment_id).single();
+    if (env?.project_id) return env.project_id;
+  }
+  
+  // 3. Job (Episode) link
+  const { data: jobLink } = await adminClient.from("asset_job_links").select("episode_id").eq("asset_id", assetId).limit(1).maybeSingle();
+  if (jobLink?.episode_id) {
+    const { data: episode } = await adminClient.from("episodes").select("environment_id").eq("id", jobLink.episode_id).single();
+    if (episode?.environment_id) {
+       const { data: env } = await adminClient.from("production_environments").select("project_id").eq("id", episode.environment_id).single();
+       if (env?.project_id) return env.project_id;
+    }
+  }
+
+  // 4. Scene link
+  const { data: sceneLink } = await adminClient.from("asset_scene_links").select("scene_id").eq("asset_id", assetId).limit(1).maybeSingle();
+  if (sceneLink?.scene_id) {
+    const { data: scene } = await adminClient.from("scenes").select("episode_id").eq("id", sceneLink.scene_id).single();
+    if (scene?.episode_id) {
+      const { data: episode } = await adminClient.from("episodes").select("environment_id").eq("id", scene.episode_id).single();
+      if (episode?.environment_id) {
+         const { data: env } = await adminClient.from("production_environments").select("project_id").eq("id", episode.environment_id).single();
+         if (env?.project_id) return env.project_id;
+      }
+    }
+  }
+  
+  console.log(`[getProjectIdForAsset] No project found for asset ${assetId}, returning null`);
+  return null;
+}
+
 export type StorageLocation = Database["public"]["Tables"]["asset_storage_locations"]["Row"];
 
 export async function resolveAssetStorageHierarchy(assetId: string): Promise<StorageLocation> {
@@ -103,7 +148,7 @@ export async function resolveAssetStorageHierarchy(assetId: string): Promise<Sto
   // Get asset info with category and project links
   const { data: asset, error: assetErr } = await adminClient
     .from("assets")
-    .select("asset_code, category_id, asset_project_links(project_id)")
+    .select("asset_code, category_id")
     .eq("id", assetId)
     .single();
   
@@ -121,8 +166,9 @@ export async function resolveAssetStorageHierarchy(assetId: string): Promise<Sto
   let categoryFolderId: string | null = null;
   let parentForAsset: string;
   
-  if (asset.asset_project_links && asset.asset_project_links.length > 0) {
-    const projectId = asset.asset_project_links[0].project_id;
+  const projectId = await getProjectIdForAsset(assetId);
+  
+  if (projectId) {
     const { data: project } = await adminClient.from("projects").select("project_code").eq("id", projectId).single();
     
     if (project) {
@@ -168,4 +214,105 @@ export async function resolveAssetStorageHierarchy(assetId: string): Promise<Sto
   if (insertErr || !insertedLoc) throw new Error("Failed to save storage location: " + insertErr?.message);
   
   return insertedLoc;
+}
+
+export async function moveAssetFolderInDrive(assetId: string): Promise<StorageLocation | null> {
+  const adminClient = getAdminClient();
+  
+  // 1. Get existing location. If none exists, nothing to move yet (it will be created correctly when files are uploaded).
+  const { data: existingLoc, error: existingErr } = await adminClient
+    .from("asset_storage_locations")
+    .select("*")
+    .eq("asset_id", assetId)
+    .eq("provider", "google_drive")
+    .maybeSingle();
+
+  if (!existingLoc || existingErr) {
+    console.log(`[moveAssetFolderInDrive] No existing storage location for asset ${assetId}`);
+    return null;
+  }
+
+  // 2. Get current required project_id
+  const projectId = await getProjectIdForAsset(assetId);
+  console.log(`[moveAssetFolderInDrive] Asset ${assetId}: resolved projectId=${projectId}, current category_folder_id=${existingLoc.category_folder_id}`);
+
+  // Get asset info with category
+  const { data: asset, error: assetErr } = await adminClient
+    .from("assets")
+    .select("asset_code, category_id")
+    .eq("id", assetId)
+    .single();
+
+  if (assetErr || !asset) return existingLoc;
+
+  let categoryName = "Uncategorized";
+  if (asset.category_id) {
+    const { data: catData } = await adminClient.from("asset_categories").select("name").eq("id", asset.category_id).single();
+    if (catData && catData.name) categoryName = catData.name;
+  }
+
+  const { drive, rootFolderId } = await getDriveClient();
+
+  let newProjectFolderId: string | null = null;
+  let newCategoryFolderId: string | null = null;
+  let newParentForAsset: string;
+
+  if (projectId) {
+    const { data: project } = await adminClient.from("projects").select("project_code").eq("id", projectId).single();
+    
+    if (project) {
+      const projectsFolderId = await getOrCreateFolder(drive, rootFolderId, "Projects");
+      newProjectFolderId = await getOrCreateFolder(drive, projectsFolderId, project.project_code);
+      const assetsFolderId = await getOrCreateFolder(drive, newProjectFolderId, "Assets");
+      newCategoryFolderId = await getOrCreateFolder(drive, assetsFolderId, categoryName);
+      newParentForAsset = newCategoryFolderId;
+    } else {
+      const globalLibraryId = await getOrCreateFolder(drive, rootFolderId, "Global Library");
+      newCategoryFolderId = await getOrCreateFolder(drive, globalLibraryId, categoryName);
+      newParentForAsset = newCategoryFolderId;
+    }
+  } else {
+    const globalLibraryId = await getOrCreateFolder(drive, rootFolderId, "Global Library");
+    newCategoryFolderId = await getOrCreateFolder(drive, globalLibraryId, categoryName);
+    newParentForAsset = newCategoryFolderId;
+  }
+
+  // 3. Compare current parent with intended parent
+  console.log(`[moveAssetFolderInDrive] Asset ${assetId}: existingCategoryFolder=${existingLoc.category_folder_id}, newParent=${newParentForAsset}, needsMove=${existingLoc.category_folder_id !== newParentForAsset}`);
+  if (existingLoc.category_folder_id !== newParentForAsset) {
+    // We need to move the asset folder
+    try {
+      console.log(`[moveAssetFolderInDrive] Moving folder ${existingLoc.asset_folder_id} from ${existingLoc.category_folder_id} to ${newParentForAsset}`);
+      const moveResult = await drive.files.update({
+        fileId: existingLoc.asset_folder_id,
+        addParents: newParentForAsset,
+        removeParents: existingLoc.category_folder_id || undefined,
+        fields: "id, parents"
+      });
+      console.log(`[moveAssetFolderInDrive] Drive move result: status=${moveResult.status}, parents=${JSON.stringify(moveResult.data.parents)}`);
+
+      // Update the DB record
+      const { data: updatedLoc, error: updateErr } = await adminClient
+        .from("asset_storage_locations")
+        .update({
+          project_folder_id: newProjectFolderId,
+          category_folder_id: newCategoryFolderId,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", existingLoc.id)
+        .select("*")
+        .single();
+
+      if (updateErr) throw new Error("Failed to update storage location record");
+      console.log(`[moveAssetFolderInDrive] DB updated. New category_folder_id=${updatedLoc?.category_folder_id}`);
+      return updatedLoc;
+
+    } catch (error) {
+      console.error("Failed to move asset folder in Google Drive:", error);
+      // Even if move fails, return the existing location so we don't break the app
+      return existingLoc;
+    }
+  }
+
+  return existingLoc;
 }

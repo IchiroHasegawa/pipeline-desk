@@ -180,6 +180,17 @@ function AssetsAssemblyContent() {
       // Reload associations
       const assigned = await loadAssociationsForTargets(targetList);
       setAssignedAssetIds(assigned);
+
+      // Trigger Google Drive folder movement
+      try {
+        await fetch("/api/google-drive/assets/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetIds: Array.from(selectedAssetIds) }),
+        });
+      } catch (err) {
+        console.error("Failed to trigger asset folder movement", err);
+      }
       
       setAssociationMessage({
         type: 'success',
@@ -208,6 +219,17 @@ function AssetsAssemblyContent() {
       // Reload associations
       const assigned = await loadAssociationsForTargets(targetList);
       setAssignedAssetIds(assigned);
+
+      // Trigger Google Drive folder movement — clear all links and move back to Global Library
+      try {
+        await fetch("/api/google-drive/assets/move", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetIds: Array.from(selectedAssetIds), removeAllLinks: true }),
+        });
+      } catch (err) {
+        console.error("Failed to trigger asset folder movement on removal", err);
+      }
       
       setAssociationMessage({
         type: 'success',

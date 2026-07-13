@@ -12,6 +12,7 @@ export interface UploadOptions {
   assetId: string;
   file: File;
   destination: "Source" | "Preview" | "Versions";
+  sourceFileId?: string;
   onProgress: (progress: UploadProgress) => void;
   signal?: AbortSignal;
 }
@@ -22,7 +23,7 @@ const MAX_RETRIES = 5;
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function getUploadSession(assetId: string, file: File, destination: string, signal?: AbortSignal) {
+async function getUploadSession(assetId: string, file: File, destination: string, sourceFileId?: string, signal?: AbortSignal) {
   const response = await fetch("/api/google-drive/uploads/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -32,6 +33,7 @@ async function getUploadSession(assetId: string, file: File, destination: string
       mimeType: file.type || "application/octet-stream",
       sizeBytes: file.size,
       destination,
+      sourceFileId,
     }),
     signal,
   });
@@ -47,7 +49,7 @@ async function getUploadSession(assetId: string, file: File, destination: string
   return sessionUri;
 }
 
-async function finalizeUpload(assetId: string, driveFileId: string, expectedDestination: string, signal?: AbortSignal) {
+async function finalizeUpload(assetId: string, driveFileId: string, expectedDestination: string, sourceFileId?: string, signal?: AbortSignal) {
   const response = await fetch("/api/google-drive/uploads/finalize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -55,6 +57,7 @@ async function finalizeUpload(assetId: string, driveFileId: string, expectedDest
       assetId,
       driveFileId,
       expectedDestination,
+      sourceFileId,
     }),
     signal,
   });
@@ -92,7 +95,7 @@ async function queryUploadStatus(sessionUri: string, totalSize: number, signal?:
 }
 
 export async function uploadAssetFile(options: UploadOptions): Promise<void> {
-  const { assetId, file, destination, onProgress, signal } = options;
+  const { assetId, file, destination, sourceFileId, onProgress, signal } = options;
   let sessionUri = "";
   
   const updateProgress = (state: Partial<UploadProgress>) => {
@@ -108,7 +111,7 @@ export async function uploadAssetFile(options: UploadOptions): Promise<void> {
 
   try {
     updateProgress({ status: "Preparing" });
-    sessionUri = await getUploadSession(assetId, file, destination, signal);
+    sessionUri = await getUploadSession(assetId, file, destination, sourceFileId, signal);
     
     let uploadedBytes = 0;
     let driveFileId = "";
@@ -202,7 +205,7 @@ export async function uploadAssetFile(options: UploadOptions): Promise<void> {
     }
     
     updateProgress({ status: "Finalizing", bytesUploaded: file.size, percentage: 100 });
-    const finalResult = await finalizeUpload(assetId, driveFileId, destination, signal);
+    const finalResult = await finalizeUpload(assetId, driveFileId, destination, sourceFileId, signal);
     
     updateProgress({ status: "Complete", bytesUploaded: file.size, percentage: 100 });
     return finalResult;

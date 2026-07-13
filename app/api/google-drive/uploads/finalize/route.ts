@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { assetId, driveFileId, expectedDestination } = body;
+    const { assetId, driveFileId, expectedDestination, sourceFileId } = body;
 
     if (!assetId || !driveFileId || !expectedDestination) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -17,6 +17,10 @@ export async function POST(req: Request) {
 
     if (!["Source", "Preview", "Versions"].includes(expectedDestination)) {
       return NextResponse.json({ error: "Invalid destination" }, { status: 400 });
+    }
+
+    if (expectedDestination === "Versions" && !sourceFileId) {
+      return NextResponse.json({ error: "Missing sourceFileId for version upload" }, { status: 400 });
     }
 
     // Resolve folder hierarchy to get expected parent folder ID
@@ -51,7 +55,67 @@ export async function POST(req: Request) {
 
     const adminClient = getAdminClient();
 
-    // Do not create the record before successful verification (we just verified it)
+    let versionNumber = expectedDestination === "Source" ? 1 : null;
+    const actualSourceFileId = expectedDestination === "Versions" ? sourceFileId : null;
+
+    if (expectedDestination === "Versions" && sourceFileId) {
+      // Safely determine next version with a simple retry loop on conflict
+      let retryCount = 0;
+      const maxRetries = 3;
+      let fileRecord = null;
+      let fileErr = null;
+
+      while (retryCount < maxRetries) {
+        const { data: maxVerData } = await adminClient
+          .from("asset_files")
+          .select("version_number")
+          .eq("source_file_id", sourceFileId)
+          .order("version_number", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        versionNumber = (maxVerData?.version_number || 1) + 1;
+
+        const result = await adminClient.from("asset_files").insert({
+          asset_id: assetId,
+          provider: "google_drive",
+          drive_file_id: driveFileId,
+          drive_parent_folder_id: expectedParentId,
+          original_file_name: fileName,
+          file_name: fileName,
+          file_url: fileMeta.webViewLink || "",
+          file_format: mimeType,
+          mime_type: mimeType,
+          extension: extension,
+          file_size_bytes: sizeBytes,
+          file_role: expectedDestination,
+          drive_created_time: fileMeta.createdTime,
+          upload_status: "Complete",
+          source_file_id: actualSourceFileId,
+          version_number: versionNumber
+        }).select("*").single();
+
+        if (result.error && result.error.code === '23505' && result.error.message.includes('asset_files_unique_version')) {
+          retryCount++;
+          // Wait a bit and try again
+          await new Promise(r => setTimeout(r, 200 * retryCount));
+          continue;
+        }
+
+        fileRecord = result.data;
+        fileErr = result.error;
+        break;
+      }
+
+      if (fileErr || !fileRecord) {
+        console.error("Database error while finalizing file version", fileErr);
+        return NextResponse.json({ error: "Unable to save Asset file information." }, { status: 500 });
+      }
+
+      return NextResponse.json({ file: fileRecord });
+    }
+
+    // Normal insertion for non-versions
     const { data: fileRecord, error: fileErr } = await adminClient.from("asset_files").insert({
       asset_id: assetId,
       provider: "google_drive",
@@ -66,7 +130,9 @@ export async function POST(req: Request) {
       file_size_bytes: sizeBytes,
       file_role: expectedDestination,
       drive_created_time: fileMeta.createdTime,
-      upload_status: "Complete"
+      upload_status: "Complete",
+      source_file_id: null,
+      version_number: versionNumber
     }).select("*").single();
 
     if (fileErr || !fileRecord) {

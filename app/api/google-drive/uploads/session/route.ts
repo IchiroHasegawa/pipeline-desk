@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { assetId, fileName, mimeType, sizeBytes, destination } = body;
+    const { assetId, fileName, mimeType, sizeBytes, destination, sourceFileId } = body;
 
     if (!assetId || !fileName || !mimeType || sizeBytes === undefined || !destination) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -20,6 +20,10 @@ export async function POST(req: Request) {
 
     if (!["Source", "Preview", "Versions"].includes(destination)) {
       return NextResponse.json({ error: "Invalid destination" }, { status: 400 });
+    }
+
+    if (destination === "Versions" && !sourceFileId) {
+      return NextResponse.json({ error: "Missing sourceFileId for version upload" }, { status: 400 });
     }
 
     const extension = fileName.includes('.') ? "." + fileName.split('.').pop()?.toLowerCase() : "";
@@ -53,6 +57,31 @@ export async function POST(req: Request) {
     const referer = req.headers.get("referer");
     const origin = req.headers.get("origin") || (referer ? new URL(referer).origin : "http://localhost:3000");
 
+    let driveFileName = fileName;
+    
+    if (destination === "Versions" && sourceFileId) {
+      // Determine version number for Drive file name
+      const { getAdminClient } = await import("@/lib/supabase/admin");
+      const adminClient = getAdminClient();
+      
+      const { data: maxVerData } = await adminClient
+        .from("asset_files")
+        .select("version_number")
+        .eq("source_file_id", sourceFileId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      const nextVersion = (maxVerData?.version_number || 1) + 1;
+      // Also get original source name to preserve base name if we want, but using new name base + version is okay too.
+      // Let's use the original source base name for consistency
+      const { data: sourceFile } = await adminClient.from("asset_files").select("original_file_name, file_name").eq("id", sourceFileId).single();
+      const baseNameStr = sourceFile?.original_file_name || sourceFile?.file_name || fileName;
+      const baseNameWithoutExt = baseNameStr.includes('.') ? baseNameStr.substring(0, baseNameStr.lastIndexOf('.')) : baseNameStr;
+      
+      driveFileName = `${baseNameWithoutExt}_v${nextVersion.toString().padStart(3, '0')}${extension}`;
+    }
+
     // We send a POST request with the metadata to get the session URI
     const response = await authClient.request({
       url,
@@ -64,7 +93,7 @@ export async function POST(req: Request) {
         "Origin": origin
       },
       data: {
-        name: fileName,
+        name: driveFileName,
         parents: [parentFolderId],
         mimeType: mimeType
       }

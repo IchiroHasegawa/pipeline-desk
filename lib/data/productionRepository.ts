@@ -671,7 +671,19 @@ type AssetFileRecord = {
   file_url: string;
   file_format: string;
   file_size_bytes: number;
+  provider: string | null;
+  drive_file_id: string | null;
+  drive_parent_folder_id: string | null;
+  original_file_name: string | null;
+  extension: string | null;
+  mime_type: string | null;
+  file_role: string | null;
+  version_number: number | null;
+  drive_created_time: string | null;
+  upload_status: string | null;
+  source_file_id: string | null;
   created_at: string;
+  updated_at: string | null;
 };
 
 type AssetRecord = {
@@ -718,7 +730,19 @@ const assetSelect = `
     file_url,
     file_format,
     file_size_bytes,
-    created_at
+    provider,
+    drive_file_id,
+    drive_parent_folder_id,
+    original_file_name,
+    extension,
+    mime_type,
+    file_role,
+    version_number,
+    drive_created_time,
+    upload_status,
+    source_file_id,
+    created_at,
+    updated_at
   )
 `;
 
@@ -738,7 +762,19 @@ function mapAssetFile(record: AssetFileRecord) {
     fileUrl: record.file_url,
     fileFormat: record.file_format,
     sizeBytes: record.file_size_bytes,
+    provider: record.provider,
+    driveFileId: record.drive_file_id,
+    driveParentFolderId: record.drive_parent_folder_id,
+    originalFileName: record.original_file_name,
+    extension: record.extension,
+    mimeType: record.mime_type,
+    fileRole: record.file_role,
+    versionNumber: record.version_number,
+    driveCreatedTime: record.drive_created_time,
+    uploadStatus: record.upload_status,
+    sourceFileId: record.source_file_id,
     createdAt: record.created_at,
+    updatedAt: record.updated_at,
   };
 }
 

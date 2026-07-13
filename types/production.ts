@@ -84,7 +84,19 @@ export type AssetFile = {
   fileUrl: string;
   fileFormat: string;
   sizeBytes: number;
+  provider?: string | null;
+  driveFileId?: string | null;
+  driveParentFolderId?: string | null;
+  originalFileName?: string | null;
+  extension?: string | null;
+  mimeType?: string | null;
+  fileRole?: "Source" | "Preview" | "Version" | string | null;
+  versionNumber?: number | null;
+  driveCreatedTime?: string | null;
+  uploadStatus?: "Queued" | "Preparing" | "Uploading" | "Complete" | "Failed" | "Cancelled" | "Missing" | string | null;
+  sourceFileId?: string | null;
   createdAt: string;
+  updatedAt?: string | null;
 };
 
 export type Asset = {

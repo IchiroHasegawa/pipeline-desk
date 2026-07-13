@@ -372,6 +372,7 @@ export type Database = {
           version_number: number | null;
           drive_created_time: string | null;
           upload_status: string | null;
+          source_file_id: string | null;
           updated_at: string | null;
         };
         Insert: {
@@ -392,6 +393,7 @@ export type Database = {
           version_number?: number | null;
           drive_created_time?: string | null;
           upload_status?: string | null;
+          source_file_id?: string | null;
           updated_at?: string | null;
         };
         Update: {
@@ -412,6 +414,7 @@ export type Database = {
           version_number?: number | null;
           drive_created_time?: string | null;
           upload_status?: string | null;
+          source_file_id?: string | null;
           updated_at?: string | null;
         };
         Relationships: never[];

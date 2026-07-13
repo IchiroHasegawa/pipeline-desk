@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Asset } from "@/types/production";
 import AssetUploadDialog from "./AssetUploadDialog";
+import AssetFileManager from "./AssetFileManager";
 import ProgressCircle from "@/components/production/ProgressCircle";
 
 type AssetDetailsPanelProps = {
@@ -13,6 +14,7 @@ type AssetDetailsPanelProps = {
 export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
   const [activeTab, setActiveTab] = useState<"details" | "notes">("details");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isFileManagerOpen, setIsFileManagerOpen] = useState(false);
   const router = useRouter();
 
   const totalTasks = asset.tasks?.length || 0;
@@ -104,23 +106,52 @@ export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
                 )}
               </div>
               <div className="border-t border-[#2a2a2a] pt-2 mt-4">
-                <div className="mb-2 border-b border-[#2a2a2a] pb-1 flex justify-between items-center">
+                <div className="mb-2 flex justify-between items-center">
                   <span className="text-xs font-bold text-zinc-400">File Attachments</span>
+                  <span className="text-xs text-zinc-500">{asset.files?.length || 0} files</span>
+                </div>
+                <div className="flex gap-2 mb-3">
+                  <button 
+                    onClick={() => setIsFileManagerOpen(true)}
+                    className="flex-1 text-[10px] bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-1.5 rounded font-bold hover:bg-zinc-700 transition-colors text-center"
+                  >
+                    Manage Files
+                  </button>
                   <button 
                     onClick={() => setIsUploadDialogOpen(true)}
-                    className="text-[10px] bg-white text-black px-2 py-1 rounded font-bold hover:bg-zinc-200"
+                    className="flex-1 text-[10px] bg-white text-black px-2 py-1.5 rounded font-bold hover:bg-zinc-200 transition-colors text-center"
                   >
                     Upload Files
                   </button>
                 </div>
-                <div className="space-y-2 mt-2">
+                
+                <div className="space-y-1.5">
                   {asset.files && asset.files.length > 0 ? (
-                    asset.files.map((file) => (
-                      <div key={file.id} className="flex justify-between items-center text-xs bg-black p-2 rounded border border-[#2a2a2a]">
-                        <span className="truncate max-w-[150px] text-zinc-300" title={file.fileName}>{file.fileName}</span>
-                        <span className="text-zinc-500">{file.fileFormat}</span>
-                      </div>
-                    ))
+                    <>
+                      {asset.files.slice(0, 5).map((file) => (
+                        <div key={file.id} className="flex justify-between items-center bg-black p-2 rounded border border-[#2a2a2a]">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-zinc-500 shrink-0 text-xs uppercase font-bold w-12 truncate">{file.extension?.replace('.', '') || 'FILE'}</span>
+                            <div className="flex flex-col min-w-0">
+                              <span className="truncate text-xs text-zinc-300" title={file.originalFileName || file.fileName}>
+                                {file.originalFileName || file.fileName}
+                              </span>
+                              <span className="text-[10px] text-zinc-500">
+                                {file.fileRole || "Unknown"} • {(file.sizeBytes / 1024 / 1024).toFixed(2)} MB • {file.uploadStatus || "Complete"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {asset.files.length > 5 && (
+                        <button 
+                          onClick={() => setIsFileManagerOpen(true)}
+                          className="w-full text-center text-[10px] text-zinc-500 hover:text-zinc-300 py-1"
+                        >
+                          View all files
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <p className="text-[10px] text-zinc-500 italic">No files attached.</p>
                   )}
@@ -150,6 +181,11 @@ export default function AssetDetailsPanel({ asset }: AssetDetailsPanelProps) {
         onSuccess={() => {
           router.refresh();
         }}
+      />
+      <AssetFileManager
+        asset={asset}
+        isOpen={isFileManagerOpen}
+        onClose={() => setIsFileManagerOpen(false)}
       />
     </aside>
   );
