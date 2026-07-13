@@ -777,7 +777,7 @@ function mapAssetFile(record: AssetFileRecord) {
     fileRole: record.file_role,
     versionNumber: record.version_number,
     driveCreatedTime: record.drive_created_time,
-    uploadStatus: record.record_status,
+    recordStatus: record.record_status,
     sourceFileId: record.source_file_id,
     currentFileId: record.current_file_id,
     displayName: record.display_name,
