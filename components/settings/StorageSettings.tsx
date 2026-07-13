@@ -125,6 +125,12 @@ export default function StorageSettings() {
         <h2 className="text-xl font-bold text-white">Storage Integrations</h2>
       </div>
 
+      <div className="rounded border border-blue-900/30 bg-blue-900/10 p-4">
+        <p className="text-sm text-blue-400">
+          Google Drive connection administration must be restricted to Owner or Administrator roles in the future Roles phase.
+        </p>
+      </div>
+
       <div className="rounded border border-[#2a2a2a] bg-zinc-900 overflow-hidden">
         <div className="p-6 border-b border-[#2a2a2a]">
           <div className="flex items-center justify-between">
