@@ -62,7 +62,7 @@ export default function OwnerLoginPage() {
       
       if (factorsError) throw factorsError;
       
-      const totpFactor = factors.factors.find(f => f.status === 'verified' && f.factor_type === 'totp');
+      const totpFactor = factors?.totp?.find(f => f.status === 'verified');
       
       if (!totpFactor) {
         setMfaError("Owner access requires two-step verification.");

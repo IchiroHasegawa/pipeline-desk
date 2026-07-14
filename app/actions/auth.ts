@@ -69,8 +69,8 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
     }
 
     if (profile.system_role === 'owner') {
-      const { data: { factors } } = await supabase.auth.mfa.listFactors();
-      const hasVerifiedFactors = factors && factors.filter(f => f.status === 'verified').length > 0;
+      const { data } = await supabase.auth.mfa.listFactors();
+      const hasVerifiedFactors = data?.all && data.all.filter(f => f.status === 'verified').length > 0;
       
       if (hasVerifiedFactors) {
         redirect("/owner-login?step=3");

@@ -84,9 +84,9 @@ export async function updateSession(request: NextRequest) {
       
       // If no session exists, the user check above would have caught it, but just in case
       if (session) {
-        const { data: { factors } } = await supabase.auth.mfa.listFactors();
-        const hasVerifiedFactors = factors && factors.filter(f => f.status === 'verified').length > 0;
-        const currentLevel = supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        const { data } = await supabase.auth.mfa.listFactors();
+        const hasVerifiedFactors = data?.all && data.all.filter(f => f.status === 'verified').length > 0;
+        const currentLevel = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
         const isAal1 = currentLevel.data?.currentLevel === 'aal1';
         
         // Settings Owner Auth route needs protection, unless they have 0 factors (for initial enrollment)

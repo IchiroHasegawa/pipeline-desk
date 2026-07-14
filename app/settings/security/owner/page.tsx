@@ -31,8 +31,8 @@ export default function OwnerAuthSettings() {
     setIsLoading(true);
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.listFactors();
-    if (!error && data) {
-      setFactors(data.factors.filter(f => f.status === 'verified' && f.factor_type === 'totp'));
+    if (!error && data?.totp) {
+      setFactors(data.totp.filter(f => f.status === 'verified'));
     }
     setIsLoading(false);
   };
