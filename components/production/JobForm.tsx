@@ -4,6 +4,9 @@ import { useState } from "react";
 import type { Episode } from "@/types/production";
 import { createJobs, updateJob } from "@/lib/data/productionRepository";
 import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Workflow, getWorkflows, generateWorkflowTasks } from "@/lib/data/workflowRepository";
 
 type JobFormProps = {
   environmentId: string;
@@ -58,9 +61,22 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
   
   const [jobWorkflow, setJobWorkflow] = useState(job?.jobWorkflow ?? "Basic");
   const [sceneWorkflow, setSceneWorkflow] = useState(job?.sceneWorkflow ?? "Basic");
+  
+  const [workflowId, setWorkflowId] = useState("");
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!job) {
+      getWorkflows(supabase, "job")
+        .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
+        .catch(console.error);
+    }
+  }, [job]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +131,17 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
           });
 
           const newJobIds = await createJobs(environmentId, jobsToCreate);
+          
+          if (workflowId) {
+            for (const newJobId of newJobIds) {
+              try {
+                await generateWorkflowTasks(supabase, "job", newJobId, workflowId);
+              } catch (taskErr) {
+                console.error("Failed to generate workflow tasks:", taskErr);
+              }
+            }
+          }
+          
           onClose(newJobIds[0]);
         }
       } catch (err: unknown) {
@@ -231,6 +258,27 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
                 />
               </div>
             </div>
+
+            {!isEditing && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                  Generate Tasks via Workflow (Optional)
+                </label>
+                <select
+                  value={workflowId}
+                  onChange={(e) => setWorkflowId(e.target.value)}
+                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                >
+                  <option value="">No Workflow</option>
+                  {workflows.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+                {!workflowId && (
+                  <p className="mt-1 text-xs text-zinc-500">No Tasks will be created automatically.</p>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>

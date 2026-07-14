@@ -4,6 +4,9 @@ import { useState } from "react";
 import type { Scene } from "@/types/production";
 import { createScenes, updateScene } from "@/lib/data/productionRepository";
 import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Workflow, getWorkflows, generateWorkflowTasks } from "@/lib/data/workflowRepository";
 
 type SceneFormProps = {
   jobId: string;
@@ -23,8 +26,21 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
 
   const [sceneCount, setSceneCount] = useState(1);
   
+  const [workflowId, setWorkflowId] = useState("");
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!scene) {
+      getWorkflows(supabase, "scene")
+        .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
+        .catch(console.error);
+    }
+  }, [scene]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +92,17 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
         }));
 
         const newSceneIds = await createScenes(jobId, newScenes);
+        
+        if (workflowId) {
+          for (const newSceneId of newSceneIds) {
+            try {
+              await generateWorkflowTasks(supabase, "scene", newSceneId, workflowId);
+            } catch (taskErr) {
+              console.error("Failed to generate workflow tasks:", taskErr);
+            }
+          }
+        }
+        
         onClose(newSceneIds[0]);
       }
     } catch (err: unknown) {
@@ -194,6 +221,27 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
                 </select>
               </div>
             </div>
+
+            {!isEditing && (
+              <div className="mt-6 border-t border-zinc-800 pt-6">
+                <label className="mb-2 block text-sm font-bold uppercase text-zinc-400">
+                  Generate Tasks via Workflow (Optional)
+                </label>
+                <select
+                  value={workflowId}
+                  onChange={(e) => setWorkflowId(e.target.value)}
+                  className="w-full md:w-1/2 rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                >
+                  <option value="">No Workflow</option>
+                  {workflows.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+                {!workflowId && (
+                  <p className="mt-1 text-xs text-zinc-500">No Tasks will be created automatically.</p>
+                )}
+              </div>
+            )}
           </div>
 
             <div className="flex justify-end gap-3 border-t border-zinc-800 pt-6">

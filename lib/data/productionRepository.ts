@@ -29,6 +29,8 @@ type ProductionTaskRecord = {
   start_date: string | null;
   end_date: string | null;
   sort_order: number | null;
+  source_workflow_process_id: string | null;
+  task_status_definition_id: string | null;
   created_at: string;
 };
 
@@ -123,6 +125,8 @@ const productionEnvironmentSelect = `
         start_date,
         end_date,
         sort_order,
+        source_workflow_process_id,
+        task_status_definition_id,
         created_at
       ),
       scene_notes (
@@ -159,6 +163,8 @@ function mapProductionTask(record: ProductionTaskRecord): ProductionTask {
     assignee: record.assignee ?? "Unassigned",
     startDate: record.start_date ?? undefined,
     endDate: record.end_date ?? undefined,
+    process_id: record.source_workflow_process_id ?? undefined,
+    status_id: record.task_status_definition_id ?? undefined,
     createdAt: record.created_at,
   };
 }

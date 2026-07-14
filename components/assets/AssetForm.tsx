@@ -5,6 +5,9 @@ import { X, UploadCloud, FileIcon, XCircle, CheckCircle2 } from "lucide-react";
 import type { Asset, AssetCategory } from "@/types/production";
 import { createAsset, createAssetCategory } from "@/lib/data/productionRepository";
 import { uploadAssetFile } from "@/lib/google-drive-client";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Workflow, getWorkflows, generateWorkflowTasks } from "@/lib/data/workflowRepository";
 import type { UploadProgress } from "@/lib/google-drive-client";
 
 type AssetFormProps = {
@@ -44,6 +47,17 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
   
   // Track if asset was already created in DB to prevent duplicates on retry
   const [createdAsset, setCreatedAsset] = useState<Asset | null>(null);
+
+  const [workflowId, setWorkflowId] = useState("");
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    getWorkflows(supabase, "asset")
+      .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
+      .catch(console.error);
+  }, []);
 
   const handleFilesAdded = (newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);
@@ -173,6 +187,15 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
         });
         
         setCreatedAsset(currentAsset);
+        
+        if (workflowId) {
+          try {
+            await generateWorkflowTasks(supabase, "asset", currentAsset.id, workflowId);
+          } catch (taskErr) {
+            console.error("Failed to generate workflow tasks:", taskErr);
+          }
+        }
+        
         // Call onCreated to add it to the table immediately without closing the dialog
         // (Wait, the prop is onCreated, which currently closes. We'll modify the parent to not close it immediately if we change the prop semantics, but we can't change it here yet. Let's assume parent won't close if we don't call it? No, if we call it, parent closes. So we only call onCreated at the VERY end if all success.)
         // But the prompt says "Display the new Asset immediately". We will update the parent to handle this via a new callback prop or by separating `onCreated` and `onClose`.
@@ -365,6 +388,23 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
                     <option value="Basic">Basic</option>
                     <option value="Advanced">Advanced</option>
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-zinc-500">Generate Tasks via Workflow (Optional)</label>
+                  <select
+                    value={workflowId}
+                    disabled={!!createdAsset}
+                    onChange={(e) => setWorkflowId(e.target.value)}
+                    className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500 disabled:opacity-50"
+                  >
+                    <option value="">No Workflow</option>
+                    {workflows.map(w => (
+                      <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                  </select>
+                  {!workflowId && (
+                    <p className="mt-1 text-xs text-zinc-500">No Tasks will be created automatically.</p>
+                  )}
                 </div>
               </div>
               

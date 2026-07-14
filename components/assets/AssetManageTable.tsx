@@ -115,7 +115,7 @@ export default function AssetManageTable({ assets, selectedAssetId, onSelectAsse
                   <div className="flex gap-2 overflow-x-auto max-w-[500px] pb-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                     {tasks.map((task) => (
                       <div key={task.id} className="w-[140px] shrink-0">
-                        <TaskCard task={task} />
+                        <TaskCard task={task} isAssetTask={true} />
                       </div>
                     ))}
                     {tasks.length === 0 && (

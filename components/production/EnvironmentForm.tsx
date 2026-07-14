@@ -4,6 +4,9 @@ import { useState } from "react";
 import type { ProductionEnvironment } from "@/types/production";
 import { createEnvironment, updateEnvironment } from "@/lib/data/productionRepository";
 import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { Workflow, getWorkflows, generateWorkflowTasks } from "@/lib/data/workflowRepository";
 
 type EnvironmentFormProps = {
   projectId: string;
@@ -15,9 +18,21 @@ export default function EnvironmentForm({ projectId, environment, onClose }: Env
   const [name, setName] = useState(environment?.name ?? "");
   const [description, setDescription] = useState(environment?.description ?? "");
   const [thumbnailUrl, setThumbnailUrl] = useState(environment?.thumbnailUrl ?? "");
+  const [workflowId, setWorkflowId] = useState("");
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    if (!environment) {
+      getWorkflows(supabase, "environment")
+        .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
+        .catch(console.error);
+    }
+  }, [environment]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +60,16 @@ export default function EnvironmentForm({ projectId, environment, onClose }: Env
           thumbnailUrl,
           status: "Active",
         });
+        
+        if (workflowId) {
+          try {
+            await generateWorkflowTasks(supabase, "environment", newEnv.id, workflowId);
+          } catch (taskErr) {
+            console.error("Failed to generate workflow tasks:", taskErr);
+            // Non-blocking error
+          }
+        }
+        
         onClose(newEnv.id);
       }
     } catch (err: unknown) {
@@ -98,6 +123,27 @@ export default function EnvironmentForm({ projectId, environment, onClose }: Env
                 rows={3}
               />
             </div>
+
+            {!environment && (
+              <div>
+                <label className="mb-1 block text-sm font-medium text-zinc-300">
+                  Workflow (Optional)
+                </label>
+                <select
+                  value={workflowId}
+                  onChange={(e) => setWorkflowId(e.target.value)}
+                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+                >
+                  <option value="">No Workflow</option>
+                  {workflows.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+                {!workflowId && (
+                  <p className="mt-1 text-xs text-zinc-500">No Tasks will be created automatically.</p>
+                )}
+              </div>
+            )}
 
             <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-[#2a2a2a]">
               <button

@@ -44,9 +44,9 @@ export default function AssetBottomPanel({ asset }: AssetBottomPanelProps) {
 
       {activeTab === "tasks" && (
         tasks.length > 0 ? (
-          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-700">
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
             {tasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
+              <TaskCard key={task.id} task={task} isAssetTask={true} />
             ))}
           </div>
         ) : (

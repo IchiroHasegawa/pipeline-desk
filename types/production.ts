@@ -16,6 +16,8 @@ export type ProductionTask = {
   assignee: string;
   startDate?: string;
   endDate?: string;
+  process_id?: string;
+  status_id?: string;
   createdAt: string;
 };
 
