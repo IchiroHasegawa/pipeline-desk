@@ -110,6 +110,7 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
             }
             
             return {
+              id: crypto.randomUUID(),
               episodeName: name,
               description,
               previewImage,

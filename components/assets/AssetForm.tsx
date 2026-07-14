@@ -236,8 +236,14 @@ export default function AssetForm({ asset, onClose, onCreated, categories }: Ass
             setCreatedAsset(currentAsset);
           }
           
-          onCreated(currentAsset);
+          if (currentAsset) onCreated(currentAsset);
         }
+      }
+
+      if (!currentAsset) {
+         setError("Failed to create asset.");
+         setIsSubmitting(false);
+         return;
       }
 
       // Provision folders

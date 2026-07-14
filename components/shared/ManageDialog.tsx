@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, Search, Edit2, Archive, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-type ManageDialogProps = {
+type ManageDialogProps<T> = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -62,7 +62,7 @@ export default function ManageDialog<T extends { id: string; status?: string; cr
     return item.code || "";
   };
 
-  const handleRetire = async (id: string, currentStatus: string) => {
+  const handleRetire = async (id: string, currentStatus?: string) => {
     setIsProcessing(true);
     try {
       const newStatus = currentStatus === "Retired" ? "Active" : "Retired";

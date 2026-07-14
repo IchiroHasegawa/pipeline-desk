@@ -143,17 +143,19 @@ export async function generateWorkflowTasks(
   entityData?: Record<string, unknown>,
   parentId?: string
 ) {
-  const { data, error } = await supabase.rpc("generate_workflow_tasks", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase.rpc("generate_workflow_tasks" as any, {
     p_entity_type: entityType,
     p_entity_id: entityId,
     p_workflow_id: workflowId,
     p_entity_data: entityData ?? null,
     p_parent_id: parentId ?? null,
-  });
+  } as any);
 
   if (error) {
     throw new Error(`Failed to generate workflow tasks: ${error.message}`);
   }
   
-  return data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data as any;
 }

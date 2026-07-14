@@ -288,17 +288,9 @@ export default function ProductionPage() {
         <SceneForm jobId={selectedEpisode.id} scene={editingScene} onClose={() => { setIsAddingScene(false); setEditingScene(null); refreshWithoutDrillIn(); }} />
       )}
 
-      {isAddingAsset && (
-        <AssetForm
-          projectId={selectedProject?.id || ""}
-          onClose={() => setIsAddingAsset(false)}
-          onCreated={handleAssetCreated}
-        />
-      )}
-
       {isManageDialogOpen && (
         <ManageDialog
-          isHidden={!!editingProject || !!editingEnvironment || !!editingJob || !!editingScene || isAddingProject || isAddingEnvironment || isAddingJob || isAddingScene || isAddingAsset}
+          isHidden={!!editingProject || !!editingEnvironment || !!editingJob || !!editingScene || isAddingProject || isAddingEnvironment || isAddingJob || isAddingScene}
           isOpen={isManageDialogOpen}
           onClose={() => setIsManageDialogOpen(false)}
           title={`Manage ${viewLevel === "PROJECT" ? "Projects" : viewLevel === "ENVIRONMENT" ? "Environments" : viewLevel === "JOB" ? "Jobs" : "Scenes"}`}
@@ -314,7 +306,7 @@ export default function ProductionPage() {
             viewLevel === "ENVIRONMENT" ? "Environment" :
             viewLevel === "JOB" ? "Job" : "Scene"
           }
-          onEdit={(item) => {
+          onEdit={(item: any) => {
             if (viewLevel === "PROJECT") setEditingProject(item);
             else if (viewLevel === "ENVIRONMENT") setEditingEnvironment(item);
             else if (viewLevel === "JOB") setEditingJob(item);

@@ -42,7 +42,7 @@ export function summarizeTasks(tasks: ProductionTask[]) {
     groups.set(processId, [...(groups.get(processId) ?? []), task]);
   });
 
-  return Array.from(groups.entries()).map(([name, groupedTasks]) => {
+  return Array.from(groups.entries()).map(([processId, groupedTasks]) => {
     const assignees = Array.from(
       new Set(groupedTasks.map((task) => task.assignee).filter(Boolean))
     );

@@ -80,6 +80,7 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
         }
 
         const newScenes = names.map((name) => ({
+          id: crypto.randomUUID(),
           sceneName: name,
           description,
           previewImage,

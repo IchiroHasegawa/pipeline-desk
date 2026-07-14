@@ -180,7 +180,7 @@ function AssetsManageContent() {
           items={filteredAssets}
           onRefresh={loadData}
           entityType="Asset"
-          onEdit={(item) => setEditingAsset(item)}
+          onEdit={(item: any) => setEditingAsset(item)}
         />
       )}
     </main>
