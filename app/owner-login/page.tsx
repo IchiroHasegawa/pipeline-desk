@@ -1,13 +1,13 @@
 "use client";
 
-import { useActionState, useState, useEffect, useRef } from "react";
+import { useActionState, useState, useEffect, useRef, Suspense } from "react";
 import { ownerLoginStep1Action, ownerLoginStep2Action, type OwnerAuthState } from "@/app/actions/owner-login";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function OwnerLoginPage() {
+function OwnerLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlStep = searchParams.get("step");
@@ -271,5 +271,13 @@ export default function OwnerLoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OwnerLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><Loader2 className="w-8 h-8 text-[#00e5ff] animate-spin" /></div>}>
+      <OwnerLoginContent />
+    </Suspense>
   );
 }
