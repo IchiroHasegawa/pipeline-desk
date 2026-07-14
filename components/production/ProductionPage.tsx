@@ -3,28 +3,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import TopNav from "@/components/layout/TopNav";
+import ManageDialog from "@/components/shared/ManageDialog";
+import { DevelopmentFallbackWarning, LoadingMessage, ErrorMessage } from "@/components/ui/LoadingState";
 import { mockProjects } from "@/data/mockProductions";
 import { getProjects } from "@/lib/data/productionRepository";
 import type { Project } from "@/types/production";
-import { DevelopmentFallbackWarning, LoadingMessage, ErrorMessage } from "@/components/ui/LoadingState";
 
 import BottomTaskPanel from "./BottomTaskPanel";
 import EnvironmentDropdown from "./EnvironmentDropdown";
+import EnvironmentForm from "./EnvironmentForm";
+import EnvironmentTable from "./EnvironmentTable";
 import EpisodeDropdown from "./EpisodeDropdown";
 import EpisodeTable from "./EpisodeTable";
+import JobForm from "./JobForm";
 import ProductionToolbar from "./ProductionToolbar";
 import ProjectDropdown from "./ProjectDropdown";
-import RightDetailsPanel from "./RightDetailsPanel";
-import EnvironmentForm from "./EnvironmentForm";
-import JobForm from "./JobForm";
-import SceneForm from "./SceneForm";
 import ProjectForm from "./ProjectForm";
-import SceneTable from "./SceneTable";
 import ProjectTable from "./ProjectTable";
-import EnvironmentTable from "./EnvironmentTable";
-import ManageDialog from "@/components/shared/ManageDialog";
+import RightDetailsPanel from "./RightDetailsPanel";
+import SceneForm from "./SceneForm";
+import SceneTable from "./SceneTable";
+import type { ProductionRowItem } from "./productionTableUtils";
 
 type DataSource = "supabase" | "mock";
+type ViewLevel = "PROJECT" | "ENVIRONMENT" | "JOB" | "SCENE";
+type ActiveSelection = { type: ProductionRowItem["type"]; id: string } | null;
 
 type LoadState = {
   isLoading: boolean;
@@ -37,13 +40,11 @@ const isDevelopment = process.env.NODE_ENV === "development";
 export default function ProductionPage() {
   const isMountedRef = useRef(true);
   const [projects, setProjects] = useState<Project[]>([]);
-  
+
   const [selectedProjectId, setSelectedProjectId] = useState("ALL");
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState("ALL");
   const [episodeFilterId, setEpisodeFilterId] = useState<"ALL" | string>("ALL");
-  
-  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(null);
-  const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
+  const [activeSelection, setActiveSelection] = useState<ActiveSelection>(null);
 
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [isAddingEnvironment, setIsAddingEnvironment] = useState(false);
@@ -57,28 +58,16 @@ export default function ProductionPage() {
     dataSource: "supabase",
   });
 
-  const applyLoadedProjects = useCallback(
-    (loadedProjects: Project[], dataSource: DataSource) => {
-      setProjects(loadedProjects);
-      
-      setLoadState({
-        isLoading: false,
-        errorMessage: null,
-        dataSource,
-      });
-    },
-    []
-  );
+  const applyLoadedProjects = useCallback((loadedProjects: Project[], dataSource: DataSource) => {
+    setProjects(loadedProjects);
+    setLoadState({ isLoading: false, errorMessage: null, dataSource });
+  }, []);
 
   const loadProductionData = useCallback(async () => {
     await Promise.resolve();
     if (!isMountedRef.current) return;
 
-    setLoadState((current) => ({
-      ...current,
-      isLoading: true,
-      errorMessage: null,
-    }));
+    setLoadState((current) => ({ ...current, isLoading: true, errorMessage: null }));
 
     try {
       const loadedProjects = await getProjects();
@@ -88,28 +77,16 @@ export default function ProductionPage() {
       if (!isMountedRef.current) return;
       console.error("Failed to load production data from Supabase", error);
 
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Production data could not be loaded from Supabase.";
+      const errorMessage = error instanceof Error ? error.message : "Production data could not be loaded from Supabase.";
 
       if (isDevelopment) {
         applyLoadedProjects(mockProjects, "mock");
-        setLoadState({
-          isLoading: false,
-          errorMessage,
-          dataSource: "mock",
-        });
+        setLoadState({ isLoading: false, errorMessage, dataSource: "mock" });
         return;
       }
 
       setProjects([]);
-      
-      setLoadState({
-        isLoading: false,
-        errorMessage,
-        dataSource: "supabase",
-      });
+      setLoadState({ isLoading: false, errorMessage, dataSource: "supabase" });
     }
   }, [applyLoadedProjects]);
 
@@ -129,66 +106,90 @@ export default function ProductionPage() {
 
   const selectedEnvironment = useMemo(() => {
     if (!selectedProject || selectedEnvironmentId === "ALL") return null;
-    return selectedProject.environments.find(
-      (environment) => environment.id === selectedEnvironmentId
-    ) ?? null;
+    return selectedProject.environments.find((environment) => environment.id === selectedEnvironmentId) ?? null;
   }, [selectedProject, selectedEnvironmentId]);
 
   const displayedEpisodes = useMemo(() => {
     if (!selectedEnvironment) return [];
     if (episodeFilterId === "ALL") return selectedEnvironment.episodes;
-    return selectedEnvironment.episodes.filter(
-      (episode) => episode.id === episodeFilterId
-    );
+    return selectedEnvironment.episodes.filter((episode) => episode.id === episodeFilterId);
   }, [selectedEnvironment, episodeFilterId]);
 
   const selectedEpisode = useMemo(() => {
-    if (!selectedEnvironment || selectedEpisodeId === null) return null;
-    return selectedEnvironment.episodes.find(
-      (episode) => episode.id === selectedEpisodeId
-    ) ?? null;
-  }, [selectedEnvironment, selectedEpisodeId]);
+    if (!selectedEnvironment || episodeFilterId === "ALL") return null;
+    return selectedEnvironment.episodes.find((episode) => episode.id === episodeFilterId) ?? null;
+  }, [selectedEnvironment, episodeFilterId]);
 
-  const viewLevel = 
+  const viewLevel: ViewLevel =
     selectedProjectId === "ALL" ? "PROJECT" :
     selectedEnvironmentId === "ALL" ? "ENVIRONMENT" :
     episodeFilterId === "ALL" ? "JOB" : "SCENE";
+
+  const detailSelection: ProductionRowItem | null = (() => {
+    if (!activeSelection) return null;
+
+    if (activeSelection.type === "project") {
+      const project = projects.find((item) => item.id === activeSelection.id);
+      return project ? { type: "project", item: project } : null;
+    }
+
+    const project = projects.find((item) =>
+      item.environments.some((environment) => {
+        if (activeSelection.type === "environment" && environment.id === activeSelection.id) return true;
+        return environment.episodes.some((episode) => {
+          if (activeSelection.type === "job" && episode.id === activeSelection.id) return true;
+          return episode.scenes.some((scene) => activeSelection.type === "scene" && scene.id === activeSelection.id);
+        });
+      })
+    );
+
+    if (!project) return null;
+
+    for (const environment of project.environments) {
+      if (activeSelection.type === "environment" && environment.id === activeSelection.id) {
+        return { type: "environment", item: environment };
+      }
+
+      for (const episode of environment.episodes) {
+        if (activeSelection.type === "job" && episode.id === activeSelection.id) {
+          return { type: "job", item: episode };
+        }
+
+        const scene = episode.scenes.find((item) => activeSelection.type === "scene" && item.id === activeSelection.id);
+        if (scene) return { type: "scene", item: scene };
+      }
+    }
+
+    return null;
+  })();
 
   function handleProjectChange(projectId: string) {
     setSelectedProjectId(projectId);
     setSelectedEnvironmentId("ALL");
     setEpisodeFilterId("ALL");
-    setSelectedEpisodeId(null);
-    setSelectedSceneId(null);
+    setActiveSelection(null);
   }
 
   function handleEnvironmentChange(environmentId: string) {
     setSelectedEnvironmentId(environmentId);
     setEpisodeFilterId("ALL");
-    setSelectedEpisodeId(null);
-    setSelectedSceneId(null);
+    setActiveSelection(null);
   }
 
   function handleEpisodeFilterChange(episodeId: "ALL" | string) {
     setEpisodeFilterId(episodeId);
-    setSelectedSceneId(null);
-    if (episodeId !== "ALL") {
-      setSelectedEpisodeId(episodeId);
-    } else {
-      setSelectedEpisodeId(null);
-    }
+    setActiveSelection(null);
   }
-  
+
   function handleAdd() {
-    if (viewLevel === "PROJECT") {
-      setIsAddingProject(true);
-    } else if (viewLevel === "ENVIRONMENT") {
-      setIsAddingEnvironment(true);
-    } else if (viewLevel === "JOB") {
-      setIsAddingJob(true);
-    } else if (viewLevel === "SCENE") {
-      setIsAddingScene(true);
-    }
+    if (viewLevel === "PROJECT") setIsAddingProject(true);
+    else if (viewLevel === "ENVIRONMENT") setIsAddingEnvironment(true);
+    else if (viewLevel === "JOB") setIsAddingJob(true);
+    else if (viewLevel === "SCENE") setIsAddingScene(true);
+  }
+
+  function refreshWithoutDrillIn() {
+    void loadProductionData();
   }
 
   return (
@@ -196,11 +197,7 @@ export default function ProductionPage() {
       <TopNav />
 
       <div className="flex shrink-0 flex-wrap items-center gap-4 border-b border-[#2a2a2a] bg-zinc-900 px-4 py-2">
-        <ProjectDropdown
-          projects={projects}
-          selectedProjectId={selectedProjectId}
-          onChangeProject={handleProjectChange}
-        />
+        <ProjectDropdown projects={projects} selectedProjectId={selectedProjectId} onChangeProject={handleProjectChange} />
 
         {viewLevel !== "PROJECT" && (
           <div className="flex items-center gap-1">
@@ -225,10 +222,7 @@ export default function ProductionPage() {
       </div>
 
       {loadState.dataSource === "mock" && loadState.errorMessage && (
-        <DevelopmentFallbackWarning
-          errorMessage={loadState.errorMessage}
-          onRetry={loadProductionData}
-        />
+        <DevelopmentFallbackWarning errorMessage={loadState.errorMessage} onRetry={loadProductionData} />
       )}
 
       <main className="flex min-h-0 flex-1 overflow-hidden">
@@ -238,102 +232,56 @@ export default function ProductionPage() {
           {loadState.isLoading ? (
             <LoadingMessage />
           ) : loadState.errorMessage && loadState.dataSource !== "mock" ? (
-            <ErrorMessage
-              message="Production data could not be loaded from Supabase."
-              onRetry={loadProductionData}
-            />
+            <ErrorMessage message="Production data could not be loaded from Supabase." onRetry={loadProductionData} />
           ) : viewLevel === "PROJECT" ? (
-            <ProjectTable 
+            <ProjectTable
               projects={projects}
-              selectedProjectId={null}
-              onSelectProject={(p) => handleProjectChange(p.id)}
+              selectedProjectId={detailSelection?.type === "project" ? detailSelection.item.id : null}
+              onSelectProject={(project) => setActiveSelection({ type: "project", id: project.id })}
+              onOpenProject={(project) => handleProjectChange(project.id)}
             />
           ) : viewLevel === "ENVIRONMENT" && selectedProject ? (
             <EnvironmentTable
               environments={selectedProject.environments}
-              selectedEnvironmentId={null}
-              onSelectEnvironment={(env) => handleEnvironmentChange(env.id)}
+              selectedEnvironmentId={detailSelection?.type === "environment" ? detailSelection.item.id : null}
+              onSelectEnvironment={(environment) => setActiveSelection({ type: "environment", id: environment.id })}
+              onOpenEnvironment={(environment) => handleEnvironmentChange(environment.id)}
             />
           ) : viewLevel === "JOB" && selectedEnvironment ? (
             <EpisodeTable
               episodes={displayedEpisodes}
-              selectedEpisodeId={null}
-              onSelectEpisode={(ep) => handleEpisodeFilterChange(ep.id)}
+              selectedEpisodeId={detailSelection?.type === "job" ? detailSelection.item.id : null}
+              onSelectEpisode={(episode) => setActiveSelection({ type: "job", id: episode.id })}
+              onOpenEpisode={(episode) => handleEpisodeFilterChange(episode.id)}
             />
           ) : viewLevel === "SCENE" && selectedEpisode ? (
             <SceneTable
               scenes={selectedEpisode.scenes}
-              selectedSceneId={selectedSceneId}
-              onSelectScene={(scene) => setSelectedSceneId(scene.id)}
+              selectedSceneId={detailSelection?.type === "scene" ? detailSelection.item.id : null}
+              onSelectScene={(scene) => setActiveSelection({ type: "scene", id: scene.id })}
             />
           ) : null}
 
-          {viewLevel === "SCENE" && selectedEpisode && !loadState.isLoading && (
-            <BottomTaskPanel episode={selectedEpisode} />
-          )}
+          {!loadState.isLoading && <BottomTaskPanel selection={detailSelection} />}
         </section>
 
-        {viewLevel === "SCENE" && selectedEpisode && selectedEnvironment && !loadState.isLoading && (
-          <RightDetailsPanel
-            episode={selectedEpisode}
-            environmentName={selectedEnvironment.name}
-          />
-        )}
+        {!loadState.isLoading && <RightDetailsPanel selection={detailSelection} />}
       </main>
 
       {isAddingProject && (
-        <ProjectForm
-          project={null}
-          onClose={(createdId) => {
-            setIsAddingProject(false);
-            void loadProductionData().then(() => {
-              if (createdId) handleProjectChange(createdId);
-            });
-          }}
-        />
+        <ProjectForm project={null} onClose={() => { setIsAddingProject(false); refreshWithoutDrillIn(); }} />
       )}
 
       {isAddingEnvironment && selectedProject && (
-        <EnvironmentForm
-          projectId={selectedProject.id}
-          environment={null}
-          onClose={(createdId) => {
-            setIsAddingEnvironment(false);
-            void loadProductionData().then(() => {
-              if (createdId) handleEnvironmentChange(createdId);
-            });
-          }}
-        />
+        <EnvironmentForm projectId={selectedProject.id} environment={null} onClose={() => { setIsAddingEnvironment(false); refreshWithoutDrillIn(); }} />
       )}
-      
+
       {isAddingJob && selectedEnvironment && (
-        <JobForm
-          environmentId={selectedEnvironment.id}
-          job={null}
-          onClose={(createdId) => {
-            setIsAddingJob(false);
-            void loadProductionData().then(() => {
-              if (createdId) handleEpisodeFilterChange(createdId);
-            });
-          }}
-        />
+        <JobForm environmentId={selectedEnvironment.id} job={null} onClose={() => { setIsAddingJob(false); refreshWithoutDrillIn(); }} />
       )}
-      
+
       {isAddingScene && selectedEpisode && (
-        <SceneForm
-          jobId={selectedEpisode.id}
-          scene={null}
-          onClose={(createdId) => {
-            setIsAddingScene(false);
-            void loadProductionData().then(() => {
-              if (createdId) {
-                // There's no specific scene dropdown, but we can set the view to the scene's job
-                // Actually the user is already looking at the job if they are adding a scene to it.
-                // We might not need to do anything here for selection, since the job is already selected.
-              }
-            });
-          }}
-        />
+        <SceneForm jobId={selectedEpisode.id} scene={null} onClose={() => { setIsAddingScene(false); refreshWithoutDrillIn(); }} />
       )}
 
       {isManageDialogOpen && (
@@ -358,3 +306,4 @@ export default function ProductionPage() {
     </div>
   );
 }
+
