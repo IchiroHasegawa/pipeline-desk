@@ -135,12 +135,25 @@ export async function deleteTaskStatus(supabase: SupabaseClient<Database>, id: s
 
 // Task Generation RPC
 
-export async function generateWorkflowTasks(supabase: SupabaseClient<Database>, entityType: string, entityId: string, workflowId: string) {
-  // @ts-expect-error - RPC might not be in generated types yet
-  const { error } = await supabase.rpc("generate_workflow_tasks", {
+export async function generateWorkflowTasks(
+  supabase: SupabaseClient<Database>, 
+  entityType: string, 
+  entityId: string, 
+  workflowId: string,
+  entityData?: Record<string, unknown>,
+  parentId?: string
+) {
+  const { data, error } = await supabase.rpc("generate_workflow_tasks", {
     p_entity_type: entityType,
     p_entity_id: entityId,
-    p_workflow_id: workflowId
+    p_workflow_id: workflowId,
+    p_entity_data: entityData ?? null,
+    p_parent_id: parentId ?? null,
   });
-  if (error) throw error;
+
+  if (error) {
+    throw new Error(`Failed to generate workflow tasks: ${error.message}`);
+  }
+  
+  return data;
 }

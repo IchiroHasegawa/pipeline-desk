@@ -173,6 +173,7 @@ function AssetsManageContent() {
       <SyncDriveFoldersModal isOpen={isSyncModalOpen} onClose={() => setIsSyncModalOpen(false)} />
       {isManageDialogOpen && (
         <ManageDialog
+          isHidden={!!editingAsset || isAddingAsset}
           isOpen={isManageDialogOpen}
           onClose={() => setIsManageDialogOpen(false)}
           title="Manage Assets"

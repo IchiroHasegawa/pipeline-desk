@@ -16,7 +16,7 @@ export function getSceneProgress(scene: Scene) {
 }
 
 export function getEpisodeTasks(episode: Episode) {
-  return episode.scenes.flatMap((scene) => scene.tasks);
+  return episode.tasks || [];
 }
 
 export function getEnvironmentTasks(environment: ProductionEnvironment) {
@@ -37,7 +37,9 @@ export function summarizeTasks(tasks: ProductionTask[]) {
   const groups = new Map<string, ProductionTask[]>();
 
   tasks.forEach((task) => {
-    groups.set(task.name, [...(groups.get(task.name) ?? []), task]);
+    // Group by source_workflow_process_id (process_id) if available, fallback to normalized name
+    const processId = task.process_id || task.name.toLowerCase();
+    groups.set(processId, [...(groups.get(processId) ?? []), task]);
   });
 
   return Array.from(groups.entries()).map(([name, groupedTasks]) => {
@@ -45,8 +47,10 @@ export function summarizeTasks(tasks: ProductionTask[]) {
       new Set(groupedTasks.map((task) => task.assignee).filter(Boolean))
     );
 
+    const name = groupedTasks[0]?.name || "Unknown Process";
+    
     return {
-      id: name.toLowerCase().replaceAll(" ", "-").replaceAll("/", "-"),
+      id: processId,
       name,
       progress: getAverageProgress(groupedTasks),
       status: getSummaryStatus(groupedTasks),
@@ -54,6 +58,7 @@ export function summarizeTasks(tasks: ProductionTask[]) {
       startDate: "—",
       endDate: "—",
       createdAt: groupedTasks[0]?.createdAt ?? new Date().toISOString(),
+      process_id: groupedTasks[0]?.process_id,
     } satisfies ProductionTask;
   });
 }

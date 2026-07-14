@@ -90,13 +90,31 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           priority,
         }));
 
-        const newSceneIds = await createScenes(jobId, newScenes);
+        let taskErrorOccurred = false;
+        let newSceneIds: string[] = [];
         
         if (workflowId) {
-          let taskErrorOccurred = false;
-          for (const newSceneId of newSceneIds) {
+          for (const scene of newScenes) {
             try {
-              await generateWorkflowTasks(supabase, "scene", newSceneId, workflowId);
+              const sceneEntityData = {
+                scene_name: scene.sceneName,
+                description: scene.description || null,
+                preview_image: scene.previewImage || null,
+                status: scene.status,
+                workflow: scene.workflow || null,
+                number_of_frames: scene.numberOfFrames,
+                priority: scene.priority,
+              };
+              
+              await generateWorkflowTasks(
+                supabase, 
+                "scene", 
+                scene.id, 
+                workflowId, 
+                sceneEntityData,
+                jobId
+              );
+              newSceneIds.push(scene.id);
             } catch (taskErr: unknown) {
               console.error("Failed to generate workflow tasks:", taskErr);
               setError(taskErr instanceof Error ? taskErr.message : "The selected Workflow is not valid for this item.");
@@ -104,10 +122,13 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
               break;
             }
           }
-          if (taskErrorOccurred) {
-            setIsSubmitting(false);
-            return;
-          }
+        } else {
+          newSceneIds = await createScenes(jobId, newScenes);
+        }
+        
+        if (taskErrorOccurred) {
+          setIsSubmitting(false);
+          return;
         }
         
         onClose(newSceneIds[0]);

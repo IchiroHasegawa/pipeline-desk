@@ -8,15 +8,23 @@ type ManageDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  items: any[];
+  items: T[];
   onRefresh: () => void;
   entityType: "Asset" | "Project" | "Environment" | "Job" | "Scene";
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onEdit?: (item: any) => void;
+  onEdit?: (item: T) => void;
+  isHidden?: boolean;
 };
 
-export default function ManageDialog({ isOpen, onClose, title, items, onRefresh, entityType, onEdit }: ManageDialogProps) {
+export default function ManageDialog<T extends { id: string; status?: string; created_at?: string }>({ 
+  isOpen, 
+  onClose, 
+  title, 
+  items, 
+  onRefresh, 
+  entityType, 
+  onEdit,
+  isHidden 
+}: ManageDialogProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -121,7 +129,7 @@ export default function ManageDialog({ isOpen, onClose, title, items, onRefresh,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 ${isHidden ? 'hidden' : ''}`}>
       <div className="w-full max-w-4xl max-h-[90vh] flex flex-col rounded-lg border border-[#2a2a2a] bg-[#121212] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#2a2a2a] p-4">
           <h2 className="text-lg font-bold text-white">{title}</h2>

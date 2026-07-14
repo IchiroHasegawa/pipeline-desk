@@ -188,29 +188,52 @@ export default function AssetForm({ asset, onClose, onCreated, categories }: Ass
           });
           onCreated(currentAsset);
         } else {
-          currentAsset = await createAsset({
-            assetName,
-            assetCode,
-            description,
-            priority,
-            categoryId: finalCategoryId || null,
-            assetType,
-            workflow: "Basic",
-            tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-            status: "Active",
-          });
-          
-          setCreatedAsset(currentAsset);
-          
           if (workflowId) {
             try {
-              await generateWorkflowTasks(supabase, "asset", currentAsset.id, workflowId);
+              const assetId = crypto.randomUUID();
+              const assetEntityData = {
+                asset_name: assetName,
+                asset_code: assetCode,
+                description: description || null,
+                priority,
+                category_id: finalCategoryId || null,
+                asset_type: assetType,
+                workflow: "Basic",
+                tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+                status: "Active",
+              };
+              
+              const result = await generateWorkflowTasks(
+                supabase, 
+                "asset", 
+                assetId, 
+                workflowId,
+                assetEntityData
+                // no parent_id for assets (they belong to project but we don't pass project_id here)
+              );
+              
+              currentAsset = result.entity;
+              setCreatedAsset(currentAsset);
             } catch (taskErr: unknown) {
               console.error("Failed to generate workflow tasks:", taskErr);
               setError(taskErr instanceof Error ? taskErr.message : "The selected Workflow is not valid for this item.");
               setIsSubmitting(false);
               return;
             }
+          } else {
+            currentAsset = await createAsset({
+              assetName,
+              assetCode,
+              description,
+              priority,
+              categoryId: finalCategoryId || null,
+              assetType,
+              workflow: "Basic",
+              tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+              status: "Active",
+            });
+            
+            setCreatedAsset(currentAsset);
           }
           
           onCreated(currentAsset);

@@ -122,13 +122,34 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
             };
           });
 
-          const newJobIds = await createJobs(environmentId, jobsToCreate);
+          let taskErrorOccurred = false;
+          let newJobIds: string[] = [];
           
           if (workflowId) {
-            let taskErrorOccurred = false;
-            for (const newJobId of newJobIds) {
+            for (const job of jobsToCreate) {
               try {
-                await generateWorkflowTasks(supabase, "job", newJobId, workflowId);
+                // Pass the raw job data exactly as it's defined in createJobs
+                const jobEntityData = {
+                  episode_name: job.episodeName,
+                  description: job.description || null,
+                  preview_image: job.previewImage || null,
+                  code: job.code || null,
+                  start_date: job.startDate || null,
+                  end_date: job.endDate || null,
+                  status: job.status,
+                  job_workflow: job.jobWorkflow || null,
+                  scene_workflow: job.sceneWorkflow || null,
+                };
+                
+                await generateWorkflowTasks(
+                  supabase, 
+                  "job", 
+                  job.id, 
+                  workflowId, 
+                  jobEntityData,
+                  environmentId
+                );
+                newJobIds.push(job.id);
               } catch (taskErr: unknown) {
                 console.error("Failed to generate workflow tasks:", taskErr);
                 setError(taskErr instanceof Error ? taskErr.message : "The selected Workflow is not valid for this item.");
@@ -136,10 +157,14 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
                 break;
               }
             }
-            if (taskErrorOccurred) {
-              setIsSubmitting(false);
-              return; // Do not close form if there's an error
-            }
+          } else {
+            // Fallback for when no workflow is selected
+            newJobIds = await createJobs(environmentId, jobsToCreate);
+          }
+          
+          if (taskErrorOccurred) {
+            setIsSubmitting(false);
+            return;
           }
           
           onClose(newJobIds[0]);
