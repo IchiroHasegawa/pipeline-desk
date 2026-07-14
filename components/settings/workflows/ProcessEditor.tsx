@@ -20,41 +20,44 @@ export default function ProcessEditor({ process, onProcessUpdated, onProcessDele
 
   useEffect(() => {
     setFormData(process);
+    
+    async function loadStatusWorkflows() {
+      try {
+        const wfs = await getWorkflows(supabase, "task_status");
+        setTaskStatusWorkflows(wfs || []);
+      } catch {
+        console.error("Failed to load workflows");
+      }
+    }
+    
     loadStatusWorkflows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [process.id]);
 
   useEffect(() => {
+    async function loadStatuses(workflowId: string) {
+      try {
+        const statuses = await getTaskStatuses(supabase, workflowId);
+        setTaskStatuses(statuses || []);
+      } catch {
+        console.error("Failed to load statuses");
+      }
+    }
+
     if (formData.task_status_workflow_id) {
       loadStatuses(formData.task_status_workflow_id);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTaskStatuses([]);
     }
-  }, [formData.task_status_workflow_id]);
-
-  const loadStatusWorkflows = async () => {
-    try {
-      const wfs = await getWorkflows(supabase, "task_status");
-      setTaskStatusWorkflows(wfs || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const loadStatuses = async (workflowId: string) => {
-    try {
-      const statuses = await getTaskStatuses(supabase, workflowId);
-      setTaskStatuses(statuses || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  }, [formData.task_status_workflow_id, supabase]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const updated = await updateWorkflowProcess(supabase, process.id, formData);
       onProcessUpdated(updated);
-    } catch (err) {
+    } catch {
       alert("Unable to update Process.");
     } finally {
       setSaving(false);
@@ -66,14 +69,14 @@ export default function ProcessEditor({ process, onProcessUpdated, onProcessDele
       try {
         await deleteWorkflowProcess(supabase, process.id);
         onProcessDeleted(process.id);
-      } catch (err) {
+      } catch {
         alert("Unable to delete Process.");
       }
     }
   };
 
-  const handleChange = (field: keyof WorkflowProcess, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleChange = (field: keyof WorkflowProcess, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value as any }));
   };
 
   const hasChanges = JSON.stringify({ ...process, ...formData }) !== JSON.stringify(process);

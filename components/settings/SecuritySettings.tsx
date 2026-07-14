@@ -1,11 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SecuritySettings() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    async function loadRole() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("system_role")
+          .eq("id", user.id)
+          .single();
+          
+        const profile = data as unknown as { system_role: string } | null;
+        if (profile?.system_role === 'owner') {
+          setIsOwner(true);
+        }
+      }
+    }
+    loadRole();
+  }, []);
 
   const handleExitStaging = async () => {
     setIsLoading(true);
@@ -43,6 +66,25 @@ export default function SecuritySettings() {
           </button>
         </div>
       </div>
+
+      {isOwner && (
+        <div className="rounded-lg border border-[#2a2a2a] bg-zinc-900 overflow-hidden mt-6">
+          <div className="border-b border-[#2a2a2a] p-4 flex justify-between items-center">
+            <h3 className="font-semibold text-white">Owner Authentication</h3>
+          </div>
+          <div className="p-4 space-y-4">
+            <p className="text-sm text-zinc-400">
+              Manage your two-step verification factors for secure administrative access.
+            </p>
+            <Link 
+              href="/settings/security/owner"
+              className="inline-block rounded bg-zinc-800 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+            >
+              Manage Owner Authentication
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

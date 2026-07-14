@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { logoutAction } from "@/app/actions/auth";
@@ -21,6 +21,7 @@ export default function TopNav() {
   const pathname = usePathname();
   const assetsActive = pathname.startsWith("/assets");
   const [username, setUsername] = useState<string>("Loading...");
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -30,14 +31,15 @@ export default function TopNav() {
         if (user) {
           const { data } = await supabase
             .from("profiles")
-            .select("username, display_name")
+            .select("username, display_name, system_role")
             .eq("id", user.id)
             .single();
             
-          const profile = data as unknown as { username: string; display_name: string | null } | null;
+          const profile = data as unknown as { username: string; display_name: string | null; system_role: string } | null;
           
           if (profile) {
             setUsername(profile.display_name || profile.username);
+            setIsOwner(profile.system_role === 'owner');
           } else {
             setUsername("User");
           }
@@ -162,9 +164,16 @@ export default function TopNav() {
       <div className="flex items-center space-x-4">
         <div className="group relative">
           <button className="flex items-center space-x-2 rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-1 text-sm hover:bg-zinc-800 transition-colors">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-[10px] font-bold uppercase">
-              {username !== "Loading..." ? username.charAt(0) : "P"}
-            </div>
+            {isOwner ? (
+              <div className="flex items-center gap-1.5 px-1">
+                <Crown className="h-4 w-4 text-yellow-500" />
+                <span className="font-bold text-yellow-500">Owner</span>
+              </div>
+            ) : (
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-700 text-[10px] font-bold uppercase">
+                {username !== "Loading..." ? username.charAt(0) : "P"}
+              </div>
+            )}
             <span>{username}</span>
             <ChevronDown className="h-4 w-4 text-zinc-400" />
           </button>

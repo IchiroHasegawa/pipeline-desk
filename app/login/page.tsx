@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { loginAction, type AuthState } from "@/app/actions/auth";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState<AuthState, FormData>(loginAction, { step: 1 });
@@ -121,6 +121,22 @@ export default function LoginPage() {
           )}
         </form>
       </div>
+      
+      {state.step === 1 && (
+        <div className="w-full max-w-md mt-6 rounded-xl border border-[#2a2a2a] bg-[#121212] p-6 shadow-2xl">
+          <div className="flex flex-col items-center justify-center text-center">
+            <ShieldCheck className="h-8 w-8 text-zinc-400 mb-2" />
+            <h3 className="text-lg font-bold text-white">Owner Access</h3>
+            <p className="text-sm text-zinc-400 mt-1 mb-4">Secure administrative access</p>
+            <Link 
+              href="/owner-login" 
+              className="flex w-full justify-center rounded border border-[#2a2a2a] bg-zinc-900 px-4 py-2 text-sm font-bold text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+            >
+              Continue as Owner
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

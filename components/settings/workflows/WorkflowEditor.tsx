@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Workflow, WorkflowProcess, WorkflowTaskStatus, getWorkflows, createWorkflow, updateWorkflow, retireWorkflow, restoreWorkflow, deleteWorkflow } from "@/lib/data/workflowRepository";
+import { Workflow, getWorkflows } from "@/lib/data/workflowRepository";
 
 // Dummy components for now, will implement shortly.
 import WorkflowSidebar from "./WorkflowSidebar";
@@ -18,15 +18,16 @@ export default function WorkflowEditor() {
 
   useEffect(() => {
     loadWorkflows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadWorkflows = async () => {
+  async function loadWorkflows() {
     setLoading(true);
     try {
       const data = await getWorkflows(supabase);
       setWorkflows(data || []);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       setError("Unable to load Workflows.");
       console.error(err);
     } finally {

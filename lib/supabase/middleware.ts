@@ -58,11 +58,11 @@ export async function updateSession(request: NextRequest) {
 
     const { data } = await supabase
       .from('profiles')
-      .select('account_status')
+      .select('account_status, system_role')
       .eq('id', user.id)
       .single();
       
-    const profile = data as unknown as { account_status: string } | null;
+    const profile = data as unknown as { account_status: string; system_role: string } | null;
 
     if (profile?.account_status !== 'active') {
       const url = request.nextUrl.clone();
@@ -77,17 +77,49 @@ export async function updateSession(request: NextRequest) {
       });
       return redirectResponse;
     }
+    
+    // AAL2 Enforcement for Owner Access
+    if (profile?.system_role === 'owner') {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // If no session exists, the user check above would have caught it, but just in case
+      if (session) {
+        const { data: { factors } } = await supabase.auth.mfa.listFactors();
+        const hasVerifiedFactors = factors && factors.filter(f => f.status === 'verified').length > 0;
+        const currentLevel = supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        const isAal1 = currentLevel.data?.currentLevel === 'aal1';
+        
+        // Settings Owner Auth route needs protection, unless they have 0 factors (for initial enrollment)
+        const isOwnerAuthRoute = request.nextUrl.pathname.startsWith("/settings/security/owner");
+        
+        if (isAal1 && hasVerifiedFactors) {
+          // If they have enrolled factors and are only AAL1, redirect to MFA challenge
+          const url = request.nextUrl.clone();
+          url.pathname = "/owner-login";
+          url.searchParams.set("step", "3");
+          return NextResponse.redirect(url);
+        } else if (isOwnerAuthRoute && isAal1 && !hasVerifiedFactors) {
+          // Allow access to enrollment UI (owner settings) for initial setup
+          // No action needed
+        } else if (isOwnerAuthRoute && profile.system_role !== 'owner') {
+          // Non-owners shouldn't access owner settings
+          const url = request.nextUrl.clone();
+          url.pathname = "/settings/security";
+          return NextResponse.redirect(url);
+        }
+      }
+    }
   }
   
   if ((request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup")) && user) {
     // Also verify profile is active before redirecting to production
     const { data } = await supabase
       .from('profiles')
-      .select('account_status')
+      .select('account_status, system_role')
       .eq('id', user.id)
       .single();
       
-    const profile = data as unknown as { account_status: string } | null;
+    const profile = data as unknown as { account_status: string; system_role: string } | null;
       
     if (profile?.account_status === 'active') {
       const url = request.nextUrl.clone();

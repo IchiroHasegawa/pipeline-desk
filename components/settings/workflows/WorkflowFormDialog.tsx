@@ -95,7 +95,7 @@ export default function WorkflowFormDialog({ isOpen, onClose, onSuccess, workflo
 
       onSuccess(newWorkflow.id);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       setError("Unable to create Workflow.");
       console.error(err);
     } finally {

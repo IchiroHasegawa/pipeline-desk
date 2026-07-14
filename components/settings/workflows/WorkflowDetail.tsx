@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Workflow, WorkflowProcess, WorkflowTaskStatus, getWorkflowProcesses, updateWorkflow, retireWorkflow, restoreWorkflow, deleteWorkflow, getTaskStatuses, createTaskStatus, updateTaskStatus, deleteTaskStatus } from "@/lib/data/workflowRepository";
+import { Workflow, WorkflowProcess, WorkflowTaskStatus, getWorkflowProcesses, updateWorkflow, retireWorkflow, restoreWorkflow, deleteWorkflow, getTaskStatuses } from "@/lib/data/workflowRepository";
 import ProcessCard from "./ProcessCard";
 import ProcessFormDialog from "./ProcessFormDialog";
 import ProcessEditor from "./ProcessEditor";
@@ -21,39 +21,37 @@ export default function WorkflowDetail({ workflow, onWorkflowUpdated, onWorkflow
   const [processes, setProcesses] = useState<WorkflowProcess[]>([]);
   const [statuses, setStatuses] = useState<WorkflowTaskStatus[]>([]);
   const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [savingInfo, setSavingInfo] = useState(false);
   const [isAddProcessOpen, setIsAddProcessOpen] = useState(false);
 
   const supabase = createClient();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(workflow.name);
     setColour(workflow.colour);
     setDescription(workflow.description || "");
     setSelectedProcessId(null);
-    loadDetails();
-  }, [workflow.id]);
-
-  const loadDetails = async () => {
-    setLoading(true);
-    try {
-      if (workflow.workflow_type === "task_status") {
-        const data = await getTaskStatuses(supabase, workflow.id);
-        setStatuses(data || []);
-      } else {
-        const data = await getWorkflowProcesses(supabase, workflow.id);
-        setProcesses(data || []);
-        if (data && data.length > 0 && !selectedProcessId) {
-          setSelectedProcessId(data[0].id);
+    
+    async function loadDetails() {
+      try {
+        if (workflow.workflow_type === "task_status") {
+          const data = await getTaskStatuses(supabase, workflow.id);
+          setStatuses(data || []);
+        } else {
+          const data = await getWorkflowProcesses(supabase, workflow.id);
+          setProcesses(data || []);
+          if (data && data.length > 0) {
+            setSelectedProcessId(data[0].id);
+          }
         }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
-  };
+    
+    loadDetails();
+  }, [workflow.id, workflow.name, workflow.colour, workflow.description, workflow.workflow_type, supabase]);
 
   const handleSaveInfo = async () => {
     setSavingInfo(true);
@@ -77,7 +75,7 @@ export default function WorkflowDetail({ workflow, onWorkflowUpdated, onWorkflow
       try {
         const updated = await retireWorkflow(supabase, workflow.id);
         onWorkflowUpdated(updated);
-      } catch (err) {
+      } catch {
         alert("Unable to retire Workflow.");
       }
     }
@@ -87,7 +85,7 @@ export default function WorkflowDetail({ workflow, onWorkflowUpdated, onWorkflow
     try {
       const updated = await restoreWorkflow(supabase, workflow.id);
       onWorkflowUpdated(updated);
-    } catch (err) {
+    } catch {
       alert("Unable to restore Workflow.");
     }
   };
@@ -97,7 +95,7 @@ export default function WorkflowDetail({ workflow, onWorkflowUpdated, onWorkflow
       try {
         await deleteWorkflow(supabase, workflow.id);
         onWorkflowDeleted(workflow.id);
-      } catch (err) {
+      } catch {
         alert("Unable to delete. Workflow may be referenced by existing tasks or entities. Please Retire it instead.");
       }
     }

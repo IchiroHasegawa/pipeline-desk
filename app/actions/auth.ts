@@ -37,7 +37,7 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
     // using ilike to match case-insensitively, even though our unique index helps
     const { data: profile, error: profileError } = await adminClient
       .from("profiles")
-      .select("id, account_status")
+      .select("id, account_status, system_role")
       .ilike("username", username)
       .maybeSingle();
 
@@ -68,7 +68,19 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
       return { message: "Invalid Username or Password.", step: 2, username };
     }
 
+    if (profile.system_role === 'owner') {
+      const { data: { factors } } = await supabase.auth.mfa.listFactors();
+      const hasVerifiedFactors = factors && factors.filter(f => f.status === 'verified').length > 0;
+      
+      if (hasVerifiedFactors) {
+        redirect("/owner-login?step=3");
+      }
+    }
+
   } catch (error) {
+    if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+      throw error;
+    }
     console.error("Login error:", error);
     return { message: "An unexpected error occurred.", step: 2, username };
   }
