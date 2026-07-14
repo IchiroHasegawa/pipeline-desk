@@ -22,12 +22,7 @@ const folderLabels: Record<FolderType, string> = {
   task_status: "Task Statuses"
 };
 
-const DEFAULT_GROUPS: Record<FolderType, Workflow[]> = {
-  job: [],
-  scene: [],
-  asset: [],
-  task_status: []
-};
+
 
 const folderOrder: FolderType[] = ["job", "scene", "asset", "task_status"];
 

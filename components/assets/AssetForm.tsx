@@ -57,7 +57,7 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
     getWorkflows(supabase, "asset")
       .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
       .catch(console.error);
-  }, []);
+  }, [supabase]);
 
   const handleFilesAdded = (newFiles: FileList | File[]) => {
     const fileArray = Array.from(newFiles);

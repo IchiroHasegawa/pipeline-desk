@@ -4,8 +4,6 @@ import { useState } from "react";
 import type { ProductionEnvironment } from "@/types/production";
 import { createEnvironment, updateEnvironment } from "@/lib/data/productionRepository";
 import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
-import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 type EnvironmentFormProps = {
   projectId: string;
@@ -20,8 +18,6 @@ export default function EnvironmentForm({ projectId, environment, onClose }: Env
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const supabase = createClient();
 
 
   const handleSubmit = async (e: React.FormEvent) => {

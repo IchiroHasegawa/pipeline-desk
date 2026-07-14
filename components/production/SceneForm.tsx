@@ -40,7 +40,7 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
         .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
         .catch(console.error);
     }
-  }, [scene]);
+  }, [scene, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

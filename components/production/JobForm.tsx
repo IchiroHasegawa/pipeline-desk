@@ -76,7 +76,7 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
         .then(data => setWorkflows((data || []).filter(w => w.status === 'active')))
         .catch(console.error);
     }
-  }, [job]);
+  }, [job, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -2,7 +2,6 @@
 
 import { useActionState, useState, useEffect, useRef, Suspense } from "react";
 import { ownerLoginStep1Action, ownerLoginStep2Action, type OwnerAuthState } from "@/app/actions/owner-login";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,7 +28,6 @@ function OwnerLoginContent() {
     if (state1.success && state1.step === 2) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsername(state1.username || "");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentStep(2);
     }
   }, [state1]);
