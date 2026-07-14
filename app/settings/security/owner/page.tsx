@@ -27,7 +27,7 @@ export default function OwnerAuthSettings() {
     loadFactors();
   }, []);
 
-  const loadFactors = async () => {
+  async function loadFactors() {
     setIsLoading(true);
     const supabase = createClient();
     const { data, error } = await supabase.auth.mfa.listFactors();

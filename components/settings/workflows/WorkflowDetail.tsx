@@ -108,9 +108,11 @@ export default function WorkflowDetail({ workflow, onWorkflowUpdated, onWorkflow
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="p-6 border-b border-[#2a2a2a] flex flex-col gap-6">
         <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-          <span>{workflow.workflow_type.replace("_", " ")} Workflows</span>
-          <span>/</span>
-          <span className="text-zinc-300">{workflow.workflow_code}</span>
+          <span>Workflow Editor</span>
+          <span>&gt;</span>
+          <span>{workflow.workflow_type.replace("_", " ")}</span>
+          <span>&gt;</span>
+          <span className="text-zinc-300">{workflow.name}</span>
           {workflow.status === 'retired' && (
             <span className="ml-2 text-[10px] text-zinc-500 border border-zinc-700 px-1 rounded uppercase">Retired</span>
           )}

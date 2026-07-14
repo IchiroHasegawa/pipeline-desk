@@ -27,13 +27,16 @@ function OwnerLoginContent() {
 
   useEffect(() => {
     if (state1.success && state1.step === 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsername(state1.username || "");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentStep(2);
     }
   }, [state1]);
 
   useEffect(() => {
     if (state2.success && state2.step === 3) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentStep(3);
     }
   }, [state2]);

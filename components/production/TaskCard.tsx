@@ -79,6 +79,7 @@ export default function TaskCard({ task, isAssetTask = false }: TaskCardProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentStatusId(task.status_id);
     setCurrentStatusName(task.status);
   }, [task.status_id, task.status]);

@@ -107,11 +107,12 @@ export default function WorkflowSidebar({
         {loading ? (
           <div className="text-center text-zinc-500 text-sm mt-4">Loading Workflows...</div>
         ) : error ? (
-          <div className="text-center text-red-400 text-sm mt-4">{error}</div>
-        ) : filteredWorkflows.length === 0 ? (
-          <div className="text-center text-zinc-500 text-sm mt-4">No Workflows match your search.</div>
+          <div className="text-center text-zinc-500 text-sm mt-4">Unable to load Workflows.<br /><button onClick={onRefresh} className="mt-2 text-blue-400 hover:underline">Retry</button></div>
         ) : (
           <div className="space-y-4">
+            {search.trim() !== "" && filteredWorkflows.length === 0 && (
+              <div className="text-center text-zinc-500 text-sm mb-4">No Workflows match your search.</div>
+            )}
             {folderOrder.map(folder => {
               const items = groupedWorkflows[folder];
               const isExpanded = expanded[folder];
@@ -155,8 +156,10 @@ export default function WorkflowSidebar({
                       ))}
                     </div>
                   )}
-                  {isExpanded && items.length === 0 && search === "" && (
-                    <div className="px-6 py-1 text-xs text-zinc-600">Empty</div>
+                  {isExpanded && items.length === 0 && (
+                    <div className="px-6 py-1 text-xs text-zinc-600">
+                      {search.trim() !== "" ? "No matching Workflows" : `No ${folderLabels[folder]} Workflows`}
+                    </div>
                   )}
                 </div>
               );

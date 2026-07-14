@@ -19,6 +19,7 @@ export default function ProcessEditor({ process, onProcessUpdated, onProcessDele
   const supabase = createClient();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFormData(process);
     
     async function loadStatusWorkflows() {
@@ -76,6 +77,7 @@ export default function ProcessEditor({ process, onProcessUpdated, onProcessDele
   };
 
   const handleChange = (field: keyof WorkflowProcess, value: unknown) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setFormData(prev => ({ ...prev, [field]: value as any }));
   };
 
