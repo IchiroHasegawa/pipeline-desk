@@ -29,6 +29,7 @@ function AssetsManageContent() {
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [isAddingAsset, setIsAddingAsset] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,9 +162,10 @@ function AssetsManageContent() {
         {selectedAsset && <AssetDetailsPanel asset={selectedAsset} />}
       </div>
 
-      {isAddingAsset && (
+      {(isAddingAsset || editingAsset) && (
         <AssetForm
-          onClose={() => setIsAddingAsset(false)}
+          asset={editingAsset || undefined}
+          onClose={() => { setIsAddingAsset(false); setEditingAsset(null); loadData(); }}
           onCreated={handleAssetCreated}
           categories={categories}
         />
@@ -177,6 +179,7 @@ function AssetsManageContent() {
           items={filteredAssets}
           onRefresh={loadData}
           entityType="Asset"
+          onEdit={(item) => setEditingAsset(item)}
         />
       )}
     </main>

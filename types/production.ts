@@ -47,6 +47,7 @@ export type Episode = {
   jobWorkflow?: string;
   sceneWorkflow?: string;
   scenes: Scene[];
+  tasks: ProductionTask[];
   createdAt: string;
 };
 
@@ -120,7 +121,7 @@ export type Asset = {
   status: "Active" | "Retired";
   notes?: { id: string; content: string; createdAt: string }[];
   files?: AssetFile[];
-  tasks?: ProductionTask[];
+  tasks: ProductionTask[];
   createdAt: string;
   updatedAt?: string;
 };

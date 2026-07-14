@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { X, UploadCloud, FileIcon, XCircle, CheckCircle2 } from "lucide-react";
 import type { Asset, AssetCategory } from "@/types/production";
-import { createAsset, createAssetCategory } from "@/lib/data/productionRepository";
+import { createAsset, updateAsset, createAssetCategory } from "@/lib/data/productionRepository";
 import { uploadAssetFile } from "@/lib/google-drive-client";
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +11,7 @@ import { Workflow, getWorkflows, generateWorkflowTasks } from "@/lib/data/workfl
 import type { UploadProgress } from "@/lib/google-drive-client";
 
 type AssetFormProps = {
+  asset?: Asset;
   onClose: () => void;
   onCreated: (asset: Asset) => void;
   categories: AssetCategory[];
@@ -26,18 +27,18 @@ type FileEntry = {
 
 const PREVIEW_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp"];
 
-export default function AssetForm({ onClose, onCreated, categories }: AssetFormProps) {
+export default function AssetForm({ asset, onClose, onCreated, categories }: AssetFormProps) {
+  const isEditing = !!asset;
   const [activeTab, setActiveTab] = useState<"info" | "files" | "assembly">("info");
-  const [assetName, setAssetName] = useState("");
-  const [assetCode, setAssetCode] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState(4);
-  const [categoryId, setCategoryId] = useState("");
+  const [assetName, setAssetName] = useState(asset?.assetName ?? "");
+  const [assetCode, setAssetCode] = useState(asset?.assetCode ?? "");
+  const [description, setDescription] = useState(asset?.description ?? "");
+  const [priority, setPriority] = useState(asset?.priority ?? 4);
+  const [categoryId, setCategoryId] = useState(asset?.categoryId ?? "");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [assetType, setAssetType] = useState("");
-  const [workflow, setWorkflow] = useState("Basic");
-  const [tags, setTags] = useState("");
+  const [assetType, setAssetType] = useState(asset?.assetType ?? "");
+  const [tags, setTags] = useState(asset?.tags?.join(", ") ?? "");
   
   const [files, setFiles] = useState<FileEntry[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -174,35 +175,46 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
           finalCategoryId = newCat.id;
         }
 
-        currentAsset = await createAsset({
-          assetName,
-          assetCode,
-          description,
-          priority,
-          categoryId: finalCategoryId || null,
-          assetType,
-          workflow,
-          tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-          status: "Active",
-        });
-        
-        setCreatedAsset(currentAsset);
-        
-        if (workflowId) {
-          try {
-            await generateWorkflowTasks(supabase, "asset", currentAsset.id, workflowId);
-          } catch (taskErr) {
-            console.error("Failed to generate workflow tasks:", taskErr);
+        if (isEditing) {
+          currentAsset = await updateAsset(asset.id, {
+            assetName,
+            assetCode,
+            description,
+            priority,
+            categoryId: finalCategoryId || null,
+            assetType,
+            workflow: "Basic",
+            tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+          });
+          onCreated(currentAsset);
+        } else {
+          currentAsset = await createAsset({
+            assetName,
+            assetCode,
+            description,
+            priority,
+            categoryId: finalCategoryId || null,
+            assetType,
+            workflow: "Basic",
+            tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+            status: "Active",
+          });
+          
+          setCreatedAsset(currentAsset);
+          
+          if (workflowId) {
+            try {
+              await generateWorkflowTasks(supabase, "asset", currentAsset.id, workflowId);
+            } catch (taskErr: unknown) {
+              console.error("Failed to generate workflow tasks:", taskErr);
+              setError(taskErr instanceof Error ? taskErr.message : "The selected Workflow is not valid for this item.");
+              setIsSubmitting(false);
+              return;
+            }
           }
+          
+          onCreated(currentAsset);
         }
-        
-        // Call onCreated to add it to the table immediately without closing the dialog
-        // (Wait, the prop is onCreated, which currently closes. We'll modify the parent to not close it immediately if we change the prop semantics, but we can't change it here yet. Let's assume parent won't close if we don't call it? No, if we call it, parent closes. So we only call onCreated at the VERY end if all success.)
-        // But the prompt says "Display the new Asset immediately". We will update the parent to handle this via a new callback prop or by separating `onCreated` and `onClose`.
-        // We will call `onCreated(currentAsset)` at the very end.
-        // Wait! We can't update the table immediately unless we call a callback.
-        // I will change the props to `onCreated` (adds to table) and we just don't call `onClose` here. The parent doesn't close it on `onCreated`.
-        onCreated(currentAsset);
       }
 
       // Provision folders
@@ -258,7 +270,7 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-lg border border-[#2a2a2a] bg-[#121212] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#2a2a2a] p-6">
-          <h2 className="text-xl font-bold text-white">Create Asset</h2>
+          <h2 className="text-xl font-bold text-white">{isEditing ? "Edit Asset" : "Create Asset"}</h2>
           <button onClick={() => !isUploading && onClose()} disabled={isUploading} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-50">
             <X className="h-5 w-5" />
           </button>
@@ -377,35 +389,26 @@ export default function AssetForm({ onClose, onCreated, categories }: AssetFormP
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-zinc-500">Workflow</label>
-                  <select
-                    value={workflow}
-                    disabled={!!createdAsset}
-                    onChange={(e) => setWorkflow(e.target.value)}
-                    className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500 disabled:opacity-50"
-                  >
-                    <option value="Basic">Basic</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-zinc-500">Generate Tasks via Workflow (Optional)</label>
-                  <select
-                    value={workflowId}
-                    disabled={!!createdAsset}
-                    onChange={(e) => setWorkflowId(e.target.value)}
-                    className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500 disabled:opacity-50"
-                  >
-                    <option value="">No Workflow</option>
-                    {workflows.map(w => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
-                  </select>
-                  {!workflowId && (
-                    <p className="mt-1 text-xs text-zinc-500">No Tasks will be created automatically.</p>
-                  )}
-                </div>
+
+            {!isEditing && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase text-zinc-500">Generate Tasks via Workflow (Optional)</label>
+                <select
+                  value={workflowId}
+                  disabled={!!createdAsset}
+                  onChange={(e) => setWorkflowId(e.target.value)}
+                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500 disabled:opacity-50"
+                >
+                  <option value="">No Workflow</option>
+                  {workflows.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+                {!workflowId && (
+                  <p className="mt-1 text-xs text-zinc-500">No Tasks will be created automatically.</p>
+                )}
+              </div>
+            )}
               </div>
               
               <div className="space-y-2">

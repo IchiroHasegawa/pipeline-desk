@@ -69,6 +69,7 @@ type EpisodeRecord = {
   job_workflow: string | null;
   scene_workflow: string | null;
   scenes: SceneRecord[] | null;
+  production_tasks: ProductionTaskRecord[] | null;
   created_at: string;
 };
 
@@ -105,6 +106,19 @@ const productionEnvironmentSelect = `
     job_workflow,
     scene_workflow,
     created_at,
+    production_tasks (
+      id,
+      name,
+      progress,
+      status,
+      assignee,
+      start_date,
+      end_date,
+      sort_order,
+      source_workflow_process_id,
+      task_status_definition_id,
+      created_at
+    ),
     scenes (
       id,
       scene_name,
@@ -208,6 +222,15 @@ function mapEpisode(record: EpisodeRecord): Episode {
     )
     .map(mapScene);
 
+  const tasks = [...(record.production_tasks ?? [])]
+    .sort(
+      compareBySortOrderThenCreatedAt(
+        (task) => task.sort_order,
+        (task) => task.created_at
+      )
+    )
+    .map(mapProductionTask);
+
   return {
     id: record.id,
     episodeName: record.episode_name,
@@ -220,6 +243,7 @@ function mapEpisode(record: EpisodeRecord): Episode {
     jobWorkflow: record.job_workflow ?? undefined,
     sceneWorkflow: record.scene_workflow ?? undefined,
     scenes,
+    tasks,
     createdAt: record.created_at,
   };
 }
@@ -502,7 +526,7 @@ export async function deleteEnvironment(id: string): Promise<void> {
   }
 }
 
-export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes' | 'createdAt'>[]): Promise<string[]> {
+export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes' | 'tasks' | 'createdAt'>[]): Promise<string[]> {
   const supabase = createClient();
   
   const records = jobs.map((job) => ({
@@ -530,7 +554,7 @@ export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id'
   return data?.map(d => d.id) || [];
 }
 
-export async function updateJob(id: string, updates: Partial<Omit<Episode, 'id' | 'scenes'>>): Promise<void> {
+export async function updateJob(id: string, updates: Partial<Omit<Episode, 'id' | 'scenes' | 'tasks'>>): Promise<void> {
   const supabase = createClient();
   
   const dbUpdates: {
@@ -711,6 +735,7 @@ type AssetRecord = {
   updated_at: string | null;
   asset_categories: AssetCategoryRecord | null;
   asset_files: AssetFileRecord[] | null;
+  asset_tasks: ProductionTaskRecord[] | null;
 };
 
 const assetSelect = `
@@ -755,6 +780,19 @@ const assetSelect = `
     restored_from_file_id,
     created_at,
     updated_at
+  ),
+  asset_tasks (
+    id,
+    name,
+    progress,
+    status,
+    assignee,
+    start_date,
+    end_date,
+    sort_order,
+    source_workflow_process_id,
+    task_status_definition_id,
+    created_at
   )
 `;
 
@@ -794,6 +832,15 @@ function mapAssetFile(record: AssetFileRecord) {
 }
 
 function mapAsset(record: AssetRecord): Asset {
+  const tasks = [...(record.asset_tasks ?? [])]
+    .sort(
+      compareBySortOrderThenCreatedAt(
+        (task) => task.sort_order,
+        (task) => task.created_at
+      )
+    )
+    .map(mapProductionTask);
+
   return {
     id: record.id,
     assetName: record.asset_name,
@@ -816,7 +863,7 @@ function mapAsset(record: AssetRecord): Asset {
     files: [...(record.asset_files ?? [])]
       .sort((first, second) => first.created_at.localeCompare(second.created_at))
       .map(mapAssetFile),
-    tasks: [],
+    tasks,
     notes: [],
     createdAt: record.created_at,
     updatedAt: record.updated_at ?? undefined,
@@ -874,6 +921,60 @@ export async function createAsset(
 
   if (error) {
     throw new Error(`Failed to create asset: ${error.message}`);
+  }
+
+  return mapAsset(data);
+}
+
+export async function updateAsset(
+  id: string,
+  asset: Partial<Pick<
+    Asset,
+    | "assetName"
+    | "assetCode"
+    | "description"
+    | "priority"
+    | "categoryId"
+    | "assetType"
+    | "workflow"
+    | "tags"
+    | "status"
+  >> & { previewUrl?: string }
+): Promise<Asset> {
+  const supabase = createClient();
+
+  const updateData: {
+    asset_name?: string;
+    asset_code?: string;
+    description?: string | null;
+    priority?: number;
+    category_id?: string | null;
+    asset_type?: string;
+    workflow?: string;
+    tags?: string[];
+    preview_url?: string | null;
+    status?: string;
+  } = {};
+  if (asset.assetName !== undefined) updateData.asset_name = asset.assetName.trim();
+  if (asset.assetCode !== undefined) updateData.asset_code = asset.assetCode.trim();
+  if (asset.description !== undefined) updateData.description = asset.description.trim() || null;
+  if (asset.priority !== undefined) updateData.priority = asset.priority;
+  if (asset.categoryId !== undefined) updateData.category_id = asset.categoryId;
+  if (asset.assetType !== undefined) updateData.asset_type = asset.assetType.trim() || "General";
+  if (asset.workflow !== undefined) updateData.workflow = asset.workflow || "Basic";
+  if (asset.tags !== undefined) updateData.tags = asset.tags;
+  if (asset.previewUrl !== undefined) updateData.preview_url = asset.previewUrl ?? null;
+  if (asset.status !== undefined) updateData.status = asset.status;
+
+  const { data, error } = await supabase
+    .from("assets")
+    .update(updateData)
+    .eq("id", id)
+    .select(assetSelect)
+    .single<AssetRecord>();
+
+  if (error) {
+    throw new Error(`Failed to update asset: ${error.message}`);
   }
 
   return mapAsset(data);

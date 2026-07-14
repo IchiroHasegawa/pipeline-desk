@@ -12,9 +12,11 @@ type ManageDialogProps = {
   items: any[];
   onRefresh: () => void;
   entityType: "Asset" | "Project" | "Environment" | "Job" | "Scene";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onEdit?: (item: any) => void;
 };
 
-export default function ManageDialog({ isOpen, onClose, title, items, onRefresh, entityType }: ManageDialogProps) {
+export default function ManageDialog({ isOpen, onClose, title, items, onRefresh, entityType, onEdit }: ManageDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -173,7 +175,7 @@ export default function ManageDialog({ isOpen, onClose, title, items, onRefresh,
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-3">
-                          <button className="text-zinc-500 hover:text-white" title="Edit" disabled={isProcessing}>
+                          <button className="text-zinc-500 hover:text-white" title="Edit" disabled={isProcessing} onClick={() => onEdit?.(item)}>
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button 

@@ -20,7 +20,6 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
   const [sceneName, setSceneName] = useState(scene?.sceneName ?? "");
   const [description, setDescription] = useState(scene?.description ?? "");
   const [previewImage, setPreviewImage] = useState(scene?.previewImage ?? "");
-  const [workflow, setWorkflow] = useState(scene?.workflow ?? "Basic");
   const [numberOfFrames, setNumberOfFrames] = useState(scene?.numberOfFrames ?? 1);
   const [priority, setPriority] = useState(scene?.priority ?? 4);
 
@@ -53,7 +52,7 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           sceneName,
           description,
           previewImage,
-          workflow,
+          workflow: undefined,
           numberOfFrames,
           priority,
         });
@@ -86,7 +85,7 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
           previewImage,
           note: "",
           status: "Active" as const,
-          workflow,
+          workflow: undefined,
           numberOfFrames,
           priority,
         }));
@@ -94,12 +93,20 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
         const newSceneIds = await createScenes(jobId, newScenes);
         
         if (workflowId) {
+          let taskErrorOccurred = false;
           for (const newSceneId of newSceneIds) {
             try {
               await generateWorkflowTasks(supabase, "scene", newSceneId, workflowId);
-            } catch (taskErr) {
+            } catch (taskErr: unknown) {
               console.error("Failed to generate workflow tasks:", taskErr);
+              setError(taskErr instanceof Error ? taskErr.message : "The selected Workflow is not valid for this item.");
+              taskErrorOccurred = true;
+              break;
             }
+          }
+          if (taskErrorOccurred) {
+            setIsSubmitting(false);
+            return;
           }
         }
         
@@ -180,21 +187,7 @@ export default function SceneForm({ jobId, scene, onClose }: SceneFormProps) {
               Production Settings
             </h3>
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-zinc-500">Workflow</label>
-                <select
-                  value={workflow}
-                  onChange={(e) => setWorkflow(e.target.value)}
-                  className="w-full rounded border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-blue-500"
-                >
-                  <option value="Basic">Basic</option>
-                  <option value="Single Approval">Single Approval</option>
-                  <option value="Double Approval">Double Approval</option>
-                  <option value="Complete">Complete</option>
-                  <option value="Custom">Custom</option>
-                </select>
-              </div>
-  
+
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase text-zinc-500">Number of Frames</label>
                 <input

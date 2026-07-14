@@ -7,7 +7,7 @@ import ManageDialog from "@/components/shared/ManageDialog";
 import { DevelopmentFallbackWarning, LoadingMessage, ErrorMessage } from "@/components/ui/LoadingState";
 import { mockProjects } from "@/data/mockProductions";
 import { getProjects } from "@/lib/data/productionRepository";
-import type { Project } from "@/types/production";
+import type { Project, ProductionEnvironment, Episode, Scene } from "@/types/production";
 
 import BottomTaskPanel from "./BottomTaskPanel";
 import EnvironmentDropdown from "./EnvironmentDropdown";
@@ -47,9 +47,13 @@ export default function ProductionPage() {
   const [activeSelection, setActiveSelection] = useState<ActiveSelection>(null);
 
   const [isAddingProject, setIsAddingProject] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isAddingEnvironment, setIsAddingEnvironment] = useState(false);
+  const [editingEnvironment, setEditingEnvironment] = useState<ProductionEnvironment | null>(null);
   const [isAddingJob, setIsAddingJob] = useState(false);
+  const [editingJob, setEditingJob] = useState<Episode | null>(null);
   const [isAddingScene, setIsAddingScene] = useState(false);
+  const [editingScene, setEditingScene] = useState<Scene | null>(null);
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
 
   const [loadState, setLoadState] = useState<LoadState>({
@@ -268,20 +272,20 @@ export default function ProductionPage() {
         {!loadState.isLoading && <RightDetailsPanel selection={detailSelection} />}
       </main>
 
-      {isAddingProject && (
-        <ProjectForm project={null} onClose={() => { setIsAddingProject(false); refreshWithoutDrillIn(); }} />
+      {(isAddingProject || editingProject) && (
+        <ProjectForm project={editingProject} onClose={() => { setIsAddingProject(false); setEditingProject(null); refreshWithoutDrillIn(); }} />
       )}
 
-      {isAddingEnvironment && selectedProject && (
-        <EnvironmentForm projectId={selectedProject.id} environment={null} onClose={() => { setIsAddingEnvironment(false); refreshWithoutDrillIn(); }} />
+      {(isAddingEnvironment || editingEnvironment) && selectedProject && (
+        <EnvironmentForm projectId={selectedProject.id} environment={editingEnvironment} onClose={() => { setIsAddingEnvironment(false); setEditingEnvironment(null); refreshWithoutDrillIn(); }} />
       )}
 
-      {isAddingJob && selectedEnvironment && (
-        <JobForm environmentId={selectedEnvironment.id} job={null} onClose={() => { setIsAddingJob(false); refreshWithoutDrillIn(); }} />
+      {(isAddingJob || editingJob) && selectedEnvironment && (
+        <JobForm environmentId={selectedEnvironment.id} job={editingJob} onClose={() => { setIsAddingJob(false); setEditingJob(null); refreshWithoutDrillIn(); }} />
       )}
 
-      {isAddingScene && selectedEpisode && (
-        <SceneForm jobId={selectedEpisode.id} scene={null} onClose={() => { setIsAddingScene(false); refreshWithoutDrillIn(); }} />
+      {(isAddingScene || editingScene) && selectedEpisode && (
+        <SceneForm jobId={selectedEpisode.id} scene={editingScene} onClose={() => { setIsAddingScene(false); setEditingScene(null); refreshWithoutDrillIn(); }} />
       )}
 
       {isManageDialogOpen && (
@@ -301,6 +305,12 @@ export default function ProductionPage() {
             viewLevel === "ENVIRONMENT" ? "Environment" :
             viewLevel === "JOB" ? "Job" : "Scene"
           }
+          onEdit={(item) => {
+            if (viewLevel === "PROJECT") setEditingProject(item);
+            else if (viewLevel === "ENVIRONMENT") setEditingEnvironment(item);
+            else if (viewLevel === "JOB") setEditingJob(item);
+            else if (viewLevel === "SCENE") setEditingScene(item);
+          }}
         />
       )}
     </div>

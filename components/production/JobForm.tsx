@@ -14,13 +14,7 @@ type JobFormProps = {
   onClose: (createdId?: string) => void;
 };
 
-const WORKFLOW_OPTIONS = [
-  "Basic",
-  "Single Approval",
-  "Double Approval",
-  "Complete",
-  "Custom",
-];
+
 
 function generateJobNames(firstJobName: string, count: number): string[] {
   if (count <= 1) return [firstJobName];
@@ -59,9 +53,7 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
   const [description, setDescription] = useState(job?.description ?? "");
   const [previewImage, setPreviewImage] = useState(job?.previewImage ?? "");
   
-  const [jobWorkflow, setJobWorkflow] = useState(job?.jobWorkflow ?? "Basic");
-  const [sceneWorkflow, setSceneWorkflow] = useState(job?.sceneWorkflow ?? "Basic");
-  
+
   const [workflowId, setWorkflowId] = useState("");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
 
@@ -100,8 +92,8 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
             previewImage,
             startDate,
             endDate,
-            jobWorkflow,
-            sceneWorkflow,
+            jobWorkflow: undefined,
+            sceneWorkflow: undefined,
           });
           onClose(job.id);
         } else {
@@ -123,8 +115,8 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
               previewImage,
               startDate: date.toISOString().split("T")[0],
               status: "Active" as const,
-              jobWorkflow,
-              sceneWorkflow,
+              jobWorkflow: undefined,
+              sceneWorkflow: undefined,
               code: "", 
               endDate: eDate ? eDate.toISOString().split("T")[0] : "", 
             };
@@ -133,12 +125,20 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
           const newJobIds = await createJobs(environmentId, jobsToCreate);
           
           if (workflowId) {
+            let taskErrorOccurred = false;
             for (const newJobId of newJobIds) {
               try {
                 await generateWorkflowTasks(supabase, "job", newJobId, workflowId);
-              } catch (taskErr) {
+              } catch (taskErr: unknown) {
                 console.error("Failed to generate workflow tasks:", taskErr);
+                setError(taskErr instanceof Error ? taskErr.message : "The selected Workflow is not valid for this item.");
+                taskErrorOccurred = true;
+                break;
               }
+            }
+            if (taskErrorOccurred) {
+              setIsSubmitting(false);
+              return; // Do not close form if there's an error
             }
           }
           
@@ -280,36 +280,7 @@ export default function JobForm({ environmentId, job, onClose }: JobFormProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
-                  Job Workflow
-                </label>
-                <select
-                  value={jobWorkflow}
-                  onChange={(e) => setJobWorkflow(e.target.value)}
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                >
-                  {WORKFLOW_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-300">
-                  Scene Workflow
-                </label>
-                <select
-                  value={sceneWorkflow}
-                  onChange={(e) => setSceneWorkflow(e.target.value)}
-                  className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
-                >
-                  {WORKFLOW_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+
 
             <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-[#2a2a2a]">
               <button
