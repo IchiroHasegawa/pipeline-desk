@@ -13,7 +13,7 @@ type WorkflowFormDialogProps = {
 
 export default function WorkflowFormDialog({ isOpen, onClose, onSuccess, workflows }: WorkflowFormDialogProps) {
   const [name, setName] = useState("");
-  const [type, setType] = useState<string>("environment");
+  const [type, setType] = useState<string>("job");
   const [colour, setColour] = useState("#3b82f6");
   const [description, setDescription] = useState("");
   const [copyFromId, setCopyFromId] = useState("");
@@ -40,7 +40,6 @@ export default function WorkflowFormDialog({ isOpen, onClose, onSuccess, workflo
       // 1. Create Workflow
       // Generate a simple readable code, e.g., WF-ENV-0001
       const prefix = {
-        environment: "ENV",
         job: "JOB",
         scene: "SCN",
         asset: "AST",
@@ -137,7 +136,6 @@ export default function WorkflowFormDialog({ isOpen, onClose, onSuccess, workflo
               }}
               className="w-full rounded border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2 text-white focus:border-blue-500 focus:outline-none"
             >
-              <option value="environment">Environment</option>
               <option value="job">Job</option>
               <option value="scene">Scene</option>
               <option value="asset">Asset</option>

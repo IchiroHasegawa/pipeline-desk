@@ -13,17 +13,23 @@ type WorkflowSidebarProps = {
   error: string | null;
 };
 
-type FolderType = "environment" | "job" | "scene" | "asset" | "task_status";
+export type FolderType = "job" | "scene" | "asset" | "task_status";
 
 const folderLabels: Record<FolderType, string> = {
-  environment: "Environments",
   job: "Jobs",
   scene: "Scenes",
   asset: "Assets",
   task_status: "Task Statuses"
 };
 
-const folderOrder: FolderType[] = ["environment", "job", "scene", "asset", "task_status"];
+const DEFAULT_GROUPS: Record<FolderType, Workflow[]> = {
+  job: [],
+  scene: [],
+  asset: [],
+  task_status: []
+};
+
+const folderOrder: FolderType[] = ["job", "scene", "asset", "task_status"];
 
 export default function WorkflowSidebar({
   workflows,
@@ -35,7 +41,6 @@ export default function WorkflowSidebar({
 }: WorkflowSidebarProps) {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Record<FolderType, boolean>>({
-    environment: true,
     job: true,
     scene: true,
     asset: true,
@@ -57,7 +62,6 @@ export default function WorkflowSidebar({
 
   const groupedWorkflows = useMemo(() => {
     const groups: Record<FolderType, Workflow[]> = {
-      environment: [],
       job: [],
       scene: [],
       asset: [],
