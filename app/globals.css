@@ -42,3 +42,98 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
+
+@theme {
+  --color-canvas: #ffffff;
+  --color-grid-dot: #d4d4d4;
+  --color-ink: #000000;
+  --color-ink-muted: #707070;
+  --color-ink-inverse: #ffffff;
+  --color-line: #000000;
+  --color-line-soft: #a9a9a9;
+  --color-selection: #d9d9d9;
+  --color-nav-idle: #ededed;
+  --color-nav-active: #d9d9d9;
+  --color-placeholder: #d9d9d9;
+  --color-panel: #f0f0f0;
+  --color-task-surface: #363636;
+  --color-task-surface-alt: #484747;
+  --color-task-rail: #5dc0d2;
+  --color-tag-status: #b6fdb6;
+  --color-tag-take: #fde4b6;
+  --color-progress: #3cac88;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --text-nav: 9px;
+  --text-tool: 10px;
+  --text-caption: 11px;
+  --text-list: 12px;
+  --text-body: 15px;
+  --text-body-lg: 16px;
+  --text-card-title: 17px;
+  --text-section: 18px;
+  --text-heading: 24px;
+  --text-display: 142px;
+
+  --radius-xs: 1px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-card: 7px;
+  --radius-lg: 10px;
+  --radius-pill: 15px;
+}
+
+:root {
+  --stroke-hairline: 0.5px;
+  --stroke-regular: 1px;
+  --stroke-heavy: 3px;
+
+  --size-nav-bar-width: 34px;
+  --size-nav-bar-height: 138px;
+  --size-list-width: 116px;
+  --size-list-row-height: 46px;   /* was 24px — corrected */
+  --size-list-chip-height: 24px;  /* new: the grey selection chip */
+  --size-list-height: 345px;      /* new: total panel height */
+  --size-tool-icon: 19px;
+
+  --grid-dot-pitch: 26px;
+  --grid-dot-size: 2.5px;
+
+  --canvas-tools-x: 101.5px;
+  --canvas-tools-y: 87px;
+  --canvas-nav-x: 1632.5px;   /* from left edge of 1920 canvas */
+  --canvas-nav-y: 38px;
+  --canvas-list-x: 14px;
+  --canvas-list-y: 346px;
+}
+
+.canvas-grid {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(
+    circle at center,
+    var(--color-grid-dot) 0,
+    var(--color-grid-dot) calc(var(--grid-dot-size) / 2),
+    transparent calc(var(--grid-dot-size) / 2 + 0.5px)
+  );
+  background-size: var(--grid-dot-pitch) var(--grid-dot-pitch);
+  background-position: 0 0;
+}
+
+@keyframes tool-nudge {
+  0%   { transform: rotate(0deg); }
+  35%  { transform: rotate(45deg); }
+  75%  { transform: rotate(45deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.group:hover .group-hover\:animate-tool-nudge {
+  animation: tool-nudge 0.4s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .group-hover\:animate-tool-nudge {
+    animation: none;
+  }
+}
+

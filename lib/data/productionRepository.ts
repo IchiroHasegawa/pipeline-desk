@@ -529,7 +529,14 @@ export async function deleteEnvironment(id: string): Promise<void> {
 export async function createJobs(environmentId: string, jobs: Omit<Episode, 'id' | 'scenes' | 'tasks' | 'createdAt'>[]): Promise<string[]> {
   const supabase = createClient();
   
+  const { data: envData } = await supabase
+    .from("production_environments")
+    .select("project_id")
+    .eq("id", environmentId)
+    .single();
+
   const records = jobs.map((job) => ({
+    project_id: envData?.project_id ?? "",
     environment_id: environmentId,
     episode_name: job.episodeName,
     description: job.description || null,
