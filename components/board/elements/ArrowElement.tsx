@@ -34,7 +34,7 @@ export const ArrowElementComponent: React.FC<ArrowElementProps> = ({
   const markerId = `arrowhead-${element.id}`;
 
   return (
-    <g onClick={onSelect} className="cursor-pointer group">
+    <g onPointerDown={onSelect} className="cursor-pointer group">
       <defs>
         <marker
           id={markerId}
