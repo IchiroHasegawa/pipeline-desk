@@ -84,16 +84,17 @@ export const TimelineBranchComponent: React.FC<TimelineBranchProps> = ({
         className="pointer-events-none"
       />
 
-      {/* Transparent wide 10px hit target */}
+      {/* Transparent wide 12px hit target */}
       <line
         x1={from.x}
         y1={from.y}
         x2={to.x}
         y2={to.y}
         stroke="transparent"
-        strokeWidth={10}
+        strokeWidth={12}
         strokeLinecap="round"
-        className="cursor-pointer pointer-events-auto"
+        style={{ pointerEvents: "stroke" }}
+        className="cursor-pointer"
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
       />

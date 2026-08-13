@@ -14,7 +14,7 @@ import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import {
   createTodo,
   setTodoComplete,
-} from "@/lib/data/v2/todoRepository";
+} from "@/app/actions/todos";
 import type {
   EpisodeV2,
   SceneV2,
@@ -211,6 +211,7 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
           selectedId={selectedKeyframeId}
           onSelect={handleKeyframeSelect}
           onOpenManage={handleKeyframeOpenAssembly}
+          embedded={true}
         />
       }
       commitRail={<CommitRail commits={commits} />}
@@ -236,6 +237,7 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
         />
       }
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 637.5, y: 117 }}
     />
   );
 };

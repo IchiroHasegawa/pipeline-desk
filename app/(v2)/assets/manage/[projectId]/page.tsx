@@ -5,6 +5,8 @@ import {
   getEpisodesByProject,
   getAssetsByProject,
   getProjectsV2,
+  getAssetTasks,
+  getWorkflowTaskStatuses,
 } from "@/lib/data/v2/productionRepositoryV2";
 import AssetsManageEpisodeClient from "@/components/assets-v2/AssetsManageEpisodeClient";
 
@@ -19,22 +21,27 @@ export default async function AssetsManageEpisodePage({
 }: AssetsManageEpisodePageProps) {
   const { projectId } = await params;
 
-  const [project, episodes, assets, allProjects] = await Promise.all([
+  const [project, episodes, assets, allProjects, statuses] = await Promise.all([
     getProjectV2(projectId),
     getEpisodesByProject(projectId),
     getAssetsByProject(projectId),
     getProjectsV2(),
+    getWorkflowTaskStatuses(),
   ]);
 
   if (!project) {
     notFound();
   }
 
+  const assetTasksMap = await getAssetTasks(assets.map((a) => a.id));
+
   return (
     <AssetsManageEpisodeClient
       project={project}
       episodes={episodes}
       assets={assets}
+      assetTasksMap={assetTasksMap}
+      statuses={statuses}
       allProjects={allProjects}
     />
   );

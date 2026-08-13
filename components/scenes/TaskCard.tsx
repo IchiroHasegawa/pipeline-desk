@@ -1,29 +1,22 @@
 "use client";
 
 import React, { memo } from "react";
-import { Point } from "@/lib/timeline/timelineGeometry";
 
 export type TaskCardProps = {
   id: string;
   title: string;
-  description: string;
+  contributesToTaskName?: string | null;
   selected: boolean;
-  anchor: Point; // branch endpoint
   onSelect: (id: string) => void;
 };
 
 export const TaskCardComponent: React.FC<TaskCardProps> = ({
   id,
   title,
-  description,
+  contributesToTaskName,
   selected,
-  anchor,
   onSelect,
 }) => {
-  // Offset card slightly from branch endpoint
-  const cardLeft = anchor.x + 20;
-  const cardTop = anchor.y - 40;
-
   return (
     <div
       role="button"
@@ -38,29 +31,8 @@ export const TaskCardComponent: React.FC<TaskCardProps> = ({
           onSelect(id);
         }
       }}
-      className="absolute z-20 cursor-pointer select-none font-sans pointer-events-auto transition-all duration-300"
-      style={{
-        left: `${cardLeft}px`,
-        top: `${cardTop}px`,
-        width: "155px",
-        height: "180px",
-      }}
+      className="w-[155px] cursor-pointer select-none font-sans pointer-events-auto transition-all duration-200"
     >
-      {/* 0.5px leader line connecting anchor to card edge */}
-      <svg
-        className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible"
-        style={{ left: "-20px", top: "40px", width: "20px", height: "1px" }}
-      >
-        <line
-          x1={0}
-          y1={0}
-          x2={20}
-          y2={0}
-          stroke="var(--color-line, #000000)"
-          strokeWidth={0.5}
-        />
-      </svg>
-
       {/* Tab (75 x 25, overlaps 13px above body) */}
       <div className="w-[75px] h-[25px] bg-[var(--color-placeholder,#d9d9d9)] rounded-t-[var(--radius-sm,3px)] border border-b-0 border-[var(--color-line,#000000)] px-1.5 flex items-center">
         <span className="text-[var(--text-caption,11px)] font-mono text-[var(--color-ink,#000000)] font-medium truncate">
@@ -79,9 +51,11 @@ export const TaskCardComponent: React.FC<TaskCardProps> = ({
         <h4 className="text-[var(--text-caption,11px)] font-medium text-[var(--color-ink-inverse,#ffffff)] truncate">
           {title}
         </h4>
-        <p className="text-[10px] text-[var(--color-ink-inverse,#ffffff)]/80 leading-snug line-clamp-6">
-          {description || "No task description provided."}
-        </p>
+        {contributesToTaskName && (
+          <p className="text-[10px] text-[var(--color-ink-inverse,#ffffff)]/80 leading-snug line-clamp-4">
+            Contributes to: {contributesToTaskName}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,8 @@ type ProjectRecord = {
   id: string;
   title: string;
   project_code: string;
+  asset_code_prefix: string | null;
+  default_asset_workflow_id: string | null;
   description: string | null;
   thumbnail_url: string | null;
   status: string;
@@ -106,19 +108,6 @@ const productionEnvironmentSelect = `
     job_workflow,
     scene_workflow,
     created_at,
-    production_tasks (
-      id,
-      name,
-      progress,
-      status,
-      assignee,
-      start_date,
-      end_date,
-      sort_order,
-      source_workflow_process_id,
-      task_status_definition_id,
-      created_at
-    ),
     scenes (
       id,
       scene_name,
@@ -130,6 +119,11 @@ const productionEnvironmentSelect = `
       number_of_frames,
       priority,
       created_at,
+      scene_notes (
+        id,
+        content,
+        created_at
+      ),
       production_tasks (
         id,
         name,
@@ -142,26 +136,41 @@ const productionEnvironmentSelect = `
         source_workflow_process_id,
         task_status_definition_id,
         created_at
-      ),
-      scene_notes (
-        id,
-        content,
-        created_at
       )
+    ),
+    production_tasks (
+      id,
+      name,
+      progress,
+      status,
+      assignee,
+      start_date,
+      end_date,
+      sort_order,
+      source_workflow_process_id,
+      task_status_definition_id,
+      created_at
     )
   )
 `;
 
 function compareBySortOrderThenCreatedAt<T>(
-  getSortOrder: (item: T) => number | null,
+  getSortOrder: (item: T) => number | null | undefined,
   getCreatedAt: (item: T) => string
 ) {
   return (first: T, second: T) => {
-    const firstSortOrder = getSortOrder(first) ?? Number.MAX_SAFE_INTEGER;
-    const secondSortOrder = getSortOrder(second) ?? Number.MAX_SAFE_INTEGER;
+    const firstSortOrder = getSortOrder(first);
+    const secondSortOrder = getSortOrder(second);
 
-    if (firstSortOrder !== secondSortOrder) {
-      return firstSortOrder - secondSortOrder;
+    if (firstSortOrder !== null && firstSortOrder !== undefined &&
+        secondSortOrder !== null && secondSortOrder !== undefined) {
+      if (firstSortOrder !== secondSortOrder) {
+        return firstSortOrder - secondSortOrder;
+      }
+    } else if (firstSortOrder !== null && firstSortOrder !== undefined) {
+      return -1;
+    } else if (secondSortOrder !== null && secondSortOrder !== undefined) {
+      return 1;
     }
 
     return getCreatedAt(first).localeCompare(getCreatedAt(second));
@@ -184,29 +193,22 @@ function mapProductionTask(record: ProductionTaskRecord): ProductionTask {
 }
 
 function mapScene(record: SceneRecord): Scene {
-  const notes = [...(record.scene_notes ?? [])].sort((first, second) =>
-    first.created_at.localeCompare(second.created_at)
-  );
-
-  const tasks = [...(record.production_tasks ?? [])]
-    .sort(
-      compareBySortOrderThenCreatedAt(
-        (task) => task.sort_order,
-        (task) => task.created_at
-      )
-    )
+  const tasks = (record.production_tasks ?? [])
     .map(mapProductionTask);
+
+  const notes = (record.scene_notes ?? [])
+    .sort((first, second) => second.created_at.localeCompare(first.created_at));
 
   return {
     id: record.id,
     sceneName: record.scene_name,
     previewImage: record.preview_image ?? "",
-    description: record.description ?? undefined,
-    note: notes.map((note) => note.content).join("\n\n"),
+    description: record.description ?? "",
+    note: notes[0]?.content ?? "",
     status: record.status as "Active" | "Retired",
     workflow: record.workflow ?? undefined,
-    numberOfFrames: record.number_of_frames,
-    priority: record.priority,
+    numberOfFrames: record.number_of_frames ?? 0,
+    priority: record.priority ?? 1,
     tasks,
     createdAt: record.created_at,
   };
@@ -222,13 +224,7 @@ function mapEpisode(record: EpisodeRecord): Episode {
     )
     .map(mapScene);
 
-  const tasks = [...(record.production_tasks ?? [])]
-    .sort(
-      compareBySortOrderThenCreatedAt(
-        (task) => task.sort_order,
-        (task) => task.created_at
-      )
-    )
+  const tasks = (record.production_tasks ?? [])
     .map(mapProductionTask);
 
   return {
@@ -281,6 +277,8 @@ export async function getProjects(): Promise<Project[]> {
       id,
       title,
       project_code,
+      asset_code_prefix,
+      default_asset_workflow_id,
       description,
       thumbnail_url,
       status,
@@ -305,6 +303,8 @@ export async function getProjects(): Promise<Project[]> {
       id: record.id,
       title: record.title,
       projectCode: record.project_code,
+      assetCodePrefix: record.asset_code_prefix,
+      defaultAssetWorkflowId: record.default_asset_workflow_id,
       description: record.description ?? "",
       thumbnailUrl: record.thumbnail_url ?? "",
       status: record.status as "Active" | "Retired",
@@ -322,6 +322,8 @@ export async function createProject(project: Omit<Project, 'id' | 'environments'
     .insert({
       title: project.title,
       project_code: project.projectCode,
+      asset_code_prefix: project.assetCodePrefix || null,
+      default_asset_workflow_id: project.defaultAssetWorkflowId || null,
       description: project.description || null,
       thumbnail_url: project.thumbnailUrl || null,
       status: project.status,
@@ -330,6 +332,8 @@ export async function createProject(project: Omit<Project, 'id' | 'environments'
       id,
       title,
       project_code,
+      asset_code_prefix,
+      default_asset_workflow_id,
       description,
       thumbnail_url,
       status,
@@ -345,6 +349,8 @@ export async function createProject(project: Omit<Project, 'id' | 'environments'
     id: data.id,
     title: data.title,
     projectCode: data.project_code,
+    assetCodePrefix: data.asset_code_prefix,
+    defaultAssetWorkflowId: data.default_asset_workflow_id,
     description: data.description ?? "",
     thumbnailUrl: data.thumbnail_url ?? "",
     status: data.status as "Active" | "Retired",
@@ -358,12 +364,16 @@ export async function updateProject(id: string, updates: Partial<Omit<Project, '
   const dbUpdates: {
     title?: string;
     project_code?: string;
+    asset_code_prefix?: string | null;
+    default_asset_workflow_id?: string | null;
     description?: string | null;
     thumbnail_url?: string | null;
     status?: string;
   } = {};
   if (updates.title !== undefined) dbUpdates.title = updates.title;
   if (updates.projectCode !== undefined) dbUpdates.project_code = updates.projectCode;
+  if (updates.assetCodePrefix !== undefined) dbUpdates.asset_code_prefix = updates.assetCodePrefix || null;
+  if (updates.defaultAssetWorkflowId !== undefined) dbUpdates.default_asset_workflow_id = updates.defaultAssetWorkflowId || null;
   if (updates.description !== undefined) dbUpdates.description = updates.description || null;
   if (updates.thumbnailUrl !== undefined) dbUpdates.thumbnail_url = updates.thumbnailUrl || null;
   if (updates.status !== undefined) dbUpdates.status = updates.status;

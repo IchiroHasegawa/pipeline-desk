@@ -110,12 +110,14 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (mode !== "absolute" || focusedId) return;
 
+    // Do not initiate pan capture if clicking an interactive SVG element
+    const targetTag = (e.target as HTMLElement).tagName?.toLowerCase();
+    if (targetTag === "line" || targetTag === "path") return;
+
     isDraggingRef.current = true;
     hasExceededThresholdRef.current = false;
     dragStartRef.current = { x: e.clientX, y: e.clientY };
     initialPanRef.current = { ...panRef.current };
-
-    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -125,8 +127,13 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
     const deltaY = e.clientY - dragStartRef.current.y;
     const distance = Math.hypot(deltaX, deltaY);
 
-    if (distance > 4) {
+    if (distance > 4 && !hasExceededThresholdRef.current) {
       hasExceededThresholdRef.current = true;
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore if capture fails
+      }
     }
 
     if (hasExceededThresholdRef.current) {
@@ -202,7 +209,11 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
       onWheel={handleWheel}
       className="w-full h-full relative overflow-hidden select-none touch-none"
     >
-      <svg className="w-full h-full overflow-visible pointer-events-none">
+      <svg
+        viewBox="0 0 1920 1080"
+        preserveAspectRatio="xMidYMid meet"
+        className="w-full h-full overflow-visible"
+      >
         <g
           ref={wrapperRef}
           className="transition-transform duration-500 ease-out origin-center"

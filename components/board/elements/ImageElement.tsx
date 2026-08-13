@@ -7,6 +7,7 @@ import type { BoardElement } from "@/types/production-v2";
 export type ImageElementProps = {
   element: BoardElement;
   selected?: boolean;
+  isProjectScoped?: boolean;
   onSelect?: (e: React.PointerEvent) => void;
   onDoubleClick?: (element: BoardElement) => void;
 };
@@ -14,11 +15,13 @@ export type ImageElementProps = {
 export const ImageElementComponent: React.FC<ImageElementProps> = ({
   element,
   selected = false,
+  isProjectScoped = false,
   onSelect,
   onDoubleClick,
 }) => {
   const width = element.width || 339;
   const height = element.height || 198;
+  const isStrayKeyframe = isProjectScoped && element.elementType === "keyframe";
 
   return (
     <div
@@ -26,7 +29,9 @@ export const ImageElementComponent: React.FC<ImageElementProps> = ({
       onDoubleClick={() => onDoubleClick && onDoubleClick(element)}
       style={{ width: `${width}px`, height: `${height}px` }}
       className={`relative select-none cursor-grab active:cursor-grabbing border ${
-        selected
+        isStrayKeyframe
+          ? "opacity-50 grayscale border-2 border-dashed border-red-600 bg-red-50"
+          : selected
           ? "border-2 border-[var(--color-ink,#000000)] shadow-md"
           : "border-[var(--color-line-soft,#a9a9a9)] shadow-xs"
       } bg-[var(--color-placeholder,#d9d9d9)] overflow-hidden transition-shadow`}
@@ -46,11 +51,17 @@ export const ImageElementComponent: React.FC<ImageElementProps> = ({
         </div>
       )}
 
-      {/* Keyframe number badge */}
-      {element.keyframeNumber !== null && (
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] font-mono font-bold text-[11px] rounded-[var(--radius-xs,1px)] shadow-xs">
-          #{element.keyframeNumber}
+      {/* Stray Keyframe Badge */}
+      {isStrayKeyframe ? (
+        <div className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-red-700 text-white font-mono font-bold text-[10px] rounded shadow-xs">
+          STRAY KEYFRAME
         </div>
+      ) : (
+        element.keyframeNumber !== null && (
+          <div className="absolute top-2 left-2 px-2 py-0.5 bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] font-mono font-bold text-[11px] rounded-[var(--radius-xs,1px)] shadow-xs">
+            #{element.keyframeNumber}
+          </div>
+        )
       )}
     </div>
   );

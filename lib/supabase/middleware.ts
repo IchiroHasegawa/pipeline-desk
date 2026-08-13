@@ -39,6 +39,7 @@ export async function updateSession(request: NextRequest) {
 
   const protectedRoutes = [
     "/production",
+    "/projects",
     "/assets/manage",
     "/assets/assembly",
     "/open-tasks",

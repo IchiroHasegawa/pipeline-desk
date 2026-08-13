@@ -7,12 +7,15 @@ import VerticalNav from "@/components/shell/VerticalNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import BoardSpace from "@/components/board/BoardSpace";
 import BoardToolbar, { BoardTool } from "@/components/board/BoardToolbar";
-import ProjectListPanel from "@/components/assets-v2/ProjectListPanel";
+import ProjectListPanel, { DropTarget } from "@/components/assets-v2/ProjectListPanel";
 import {
   createElement,
   deleteElement,
   moveElements,
-} from "@/lib/data/v2/boardRepository";
+  createBoardAssetElement,
+  assignBoardElementsToProject,
+  assignBoardElementsToEpisode,
+} from "@/app/actions/board";
 import type {
   ProjectV2,
   BoardElement,
@@ -36,12 +39,18 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
   const [elements, setElements] = useState<BoardElement[]>(initialElements);
   const [activeTool, setActiveTool] = useState<BoardTool>("select");
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [hoveredDropTarget, setHoveredDropTarget] = useState<DropTarget>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setElements(initialElements);
+  }, [boardId, initialElements]);
+
   const handleSelectProject = (projectId: string) => {
     if (projectId === currentProjectId) return;
-    router.push(`/assets/assembly?projectId=${projectId}`);
+    router.replace(`/assets/assembly?projectId=${projectId}`, { scroll: false });
   };
 
   const handleCreateElement = async (input: CreateElementInput) => {
@@ -49,6 +58,78 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
     setElements((prev) => [...prev, newElement]);
     setActiveTool("select");
     return newElement;
+  };
+
+  const handleUploadAssets = async (
+    items: Array<{ filename: string; dataUrl: string; x: number; y: number }>
+  ) => {
+    try {
+      let noWorkflowCount = 0;
+      for (const item of items) {
+        const { element, hasDefaultWorkflow } = await createBoardAssetElement({
+          boardId,
+          projectId: currentProjectId,
+          filename: item.filename,
+          imageUrl: item.dataUrl,
+          x: item.x,
+          y: item.y,
+        });
+        if (!hasDefaultWorkflow) {
+          noWorkflowCount++;
+        }
+        setElements((prev) => [...prev, element]);
+      }
+      if (noWorkflowCount > 0) {
+        alert(
+          "Asset created, but this project has no Default Asset Workflow set in Project Settings. No workflow tasks were generated."
+        );
+      }
+    } catch (err: unknown) {
+      console.error("Failed to upload asset:", err);
+      alert(err instanceof Error ? err.message : "Failed to create asset.");
+    }
+  };
+
+  const handleAssignToProject = async (
+    elementIds: string[],
+    targetProjectId: string
+  ) => {
+    if (targetProjectId === currentProjectId) return;
+    const previousElements = [...elements];
+    // Optimistically remove from current board
+    setElements((prev) => prev.filter((el) => !elementIds.includes(el.id)));
+
+    try {
+      await assignBoardElementsToProject(elementIds, targetProjectId);
+    } catch (err: unknown) {
+      console.error("Failed to assign elements to project:", err);
+      alert(err instanceof Error ? err.message : "Failed to assign to project.");
+      setElements(previousElements);
+    }
+  };
+
+  const handleAssignToEpisode = async (
+    elementIds: string[],
+    targetEpisodeId: string,
+    targetProjectId: string
+  ) => {
+    const previousElements = [...elements];
+    // If target project is different from current board, optimistically remove
+    if (targetProjectId !== currentProjectId) {
+      setElements((prev) => prev.filter((el) => !elementIds.includes(el.id)));
+    }
+
+    try {
+      await assignBoardElementsToEpisode(
+        elementIds,
+        targetEpisodeId,
+        targetProjectId
+      );
+    } catch (err: unknown) {
+      console.error("Failed to assign elements to episode:", err);
+      alert(err instanceof Error ? err.message : "Failed to assign to episode.");
+      setElements(previousElements);
+    }
   };
 
   const handleDeleteElement = async (id: string) => {
@@ -68,21 +149,30 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
     );
     if (files.length === 0) return;
 
+    const uploadItems: Array<{ filename: string; dataUrl: string; x: number; y: number }> = [];
     for (let i = 0; i < files.length; i++) {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-          await handleCreateElement({
-            boardId,
-            elementType: "asset",
-            x: 200 + i * 40,
-            y: 200 + i * 40,
-            imageUrl: dataUrl,
-          });
-        }
-      };
-      reader.readAsDataURL(files[i]);
+      const file = files[i];
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve((event.target?.result as string) || "");
+        reader.readAsDataURL(file);
+      });
+      if (dataUrl) {
+        uploadItems.push({
+          filename: file.name,
+          dataUrl,
+          x: 200 + i * 40,
+          y: 200 + i * 40,
+        });
+      }
+    }
+
+    if (uploadItems.length > 0) {
+      await handleUploadAssets(uploadItems);
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -108,6 +198,7 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
     <CanvasShell
       nav={<VerticalNav active="assets" activeAssetsSubsection="assembly" />}
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 52, y: 56 }}
     >
       <input
         ref={fileInputRef}
@@ -125,6 +216,7 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
           currentProjectId={currentProjectId}
           isCollapsed={isPanelCollapsed}
           onSelectProject={handleSelectProject}
+          hoveredDropTarget={hoveredDropTarget}
         />
 
         {/* Board Space Area */}
@@ -133,8 +225,14 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
             boardId={boardId}
             elements={elements}
             activeTool={activeTool}
+            scope={{ type: "project", projectId: currentProjectId }}
+            onToolSelect={setActiveTool}
             onElementsChange={setElements}
             onElementCreate={handleCreateElement}
+            onUploadAssets={handleUploadAssets}
+            onAssignToProject={handleAssignToProject}
+            onAssignToEpisode={handleAssignToEpisode}
+            onHoverDropTarget={setHoveredDropTarget}
             onElementDelete={handleDeleteElement}
             onElementMove={handleMoveElements}
           />

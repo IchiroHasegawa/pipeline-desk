@@ -14,8 +14,8 @@ import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import {
   createTodo,
   setTodoComplete,
-} from "@/lib/data/v2/todoRepository";
-import { deleteEpisodeV2 } from "@/lib/data/v2/productionRepositoryV2";
+} from "@/app/actions/todos";
+import { deleteEpisodeV2 } from "@/app/actions/production";
 import type {
   ProjectV2,
   EpisodeV2,
@@ -183,6 +183,7 @@ export const EpisodeManageView: React.FC<EpisodeManageViewProps> = ({
           selectedId={selectedSceneId}
           onSelect={handleSceneSelect}
           onOpenManage={handleSceneSelect}
+          embedded={true}
         />
       }
       commitRail={<CommitRail commits={commits} />}
@@ -208,6 +209,7 @@ export const EpisodeManageView: React.FC<EpisodeManageViewProps> = ({
         />
       }
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 677, y: 116 }}
     />
   );
 };

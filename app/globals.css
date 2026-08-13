@@ -97,8 +97,8 @@ body {
   --size-list-height: 345px;      /* new: total panel height */
   --size-tool-icon: 19px;
 
-  --grid-dot-pitch: 26px;
-  --grid-dot-size: 2.5px;
+  --grid-dot-pitch: 36px;
+  --grid-dot-size: 1.5px;
 
   --canvas-tools-x: 101.5px;
   --canvas-tools-y: 87px;

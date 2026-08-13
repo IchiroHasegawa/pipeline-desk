@@ -114,7 +114,8 @@ export const TimelineLineComponent: React.FC<TimelineLineProps> = ({
         stroke="transparent"
         strokeWidth={12}
         strokeLinecap="round"
-        className="cursor-pointer pointer-events-auto"
+        style={{ pointerEvents: "stroke" }}
+        className="cursor-pointer"
         onClick={handleClick}
         onDoubleClick={handleDoubleClick}
       />

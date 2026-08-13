@@ -12,7 +12,7 @@ import {
   createElement,
   deleteElement,
   moveElements,
-} from "@/lib/data/v2/boardRepository";
+} from "@/app/actions/board";
 import type {
   EpisodeV2,
   SceneV2,
@@ -122,6 +122,7 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
     <CanvasShell
       nav={<VerticalNav active="project" />}
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 100.9, y: 86.6 }}
     >
       {/* Hidden File Input for ADD keyframe button */}
       <input
@@ -195,6 +196,8 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
             boardId={boardId}
             elements={elements}
             activeTool={activeTool}
+            scope={{ type: "scene", sceneId: scene.id }}
+            onToolSelect={setActiveTool}
             onElementsChange={setElements}
             onElementCreate={handleCreateElement}
             onElementDelete={handleDeleteElement}

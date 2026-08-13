@@ -9,7 +9,12 @@ import React, {
   useMemo,
   memo,
 } from "react";
-import type { BoardElement, CreateElementInput } from "@/types/production-v2";
+import type {
+  BoardElement,
+  CreateElementInput,
+  BoardScope,
+} from "@/types/production-v2";
+import type { DropTarget } from "@/components/assets-v2/ProjectListPanel";
 import type { BoardTool } from "@/components/board/BoardToolbar";
 import ImageElement from "@/components/board/elements/ImageElement";
 import FolderElement from "@/components/board/elements/FolderElement";
@@ -20,8 +25,20 @@ export type BoardSpaceProps = {
   boardId: string;
   elements: BoardElement[];
   activeTool: BoardTool;
+  scope?: BoardScope;
+  onToolSelect?: (tool: BoardTool) => void;
   onElementsChange: (elements: BoardElement[]) => void;
   onElementCreate?: (input: CreateElementInput) => Promise<BoardElement>;
+  onUploadAssets?: (
+    items: Array<{ filename: string; dataUrl: string; x: number; y: number }>
+  ) => Promise<void>;
+  onAssignToProject?: (elementIds: string[], targetProjectId: string) => Promise<void>;
+  onAssignToEpisode?: (
+    elementIds: string[],
+    targetEpisodeId: string,
+    targetProjectId: string
+  ) => Promise<void>;
+  onHoverDropTarget?: (target: DropTarget) => void;
   onElementDelete?: (id: string) => Promise<void>;
   onElementMove?: (
     moves: Array<{ id: string; x: number; y: number; zIndex?: number }>
@@ -33,8 +50,14 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
   boardId,
   elements,
   activeTool,
+  scope,
+  onToolSelect,
   onElementsChange,
   onElementCreate,
+  onUploadAssets,
+  onAssignToProject,
+  onAssignToEpisode,
+  onHoverDropTarget,
   onElementDelete,
   onElementMove,
   preSelectedId = null,
@@ -68,6 +91,9 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
 
   // Arrow connection in-progress state
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+
+  const effectiveConnectingFromId = activeTool === "arrow" ? connectingFromId : null;
 
   // Refs for tracking in-flight drag without per-pointermove renders
   const isPanningRef = useRef(false);
@@ -155,7 +181,7 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
     }
   }, [selectedIds, elements, elementMap, onElementDelete, onElementsChange]);
 
-  // Keyboard shortcut listener (Delete / Backspace)
+  // Keyboard shortcut listener (Delete / Backspace / Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -166,12 +192,17 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
       }
       if (e.key === "Delete" || e.key === "Backspace") {
         handleDeleteSelection();
+      } else if (e.key === "Escape") {
+        setConnectingFromId(null);
+        if (onToolSelect && activeTool === "arrow") {
+          onToolSelect("select");
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleDeleteSelection]);
+  }, [handleDeleteSelection, activeTool, onToolSelect]);
 
   const isSpacePressedRef = useRef(false);
 
@@ -192,6 +223,14 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
 
   // Handle Pointer Down on Canvas
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    if (effectiveConnectingFromId || activeTool === "arrow") {
+      setConnectingFromId(null);
+      if (onToolSelect && activeTool === "arrow") {
+        onToolSelect("select");
+      }
+      return;
+    }
+
     if (e.button === 1 || isSpacePressedRef.current || activeTool === "select") {
       if (e.button === 1 || isSpacePressedRef.current) {
         // Start Pan
@@ -232,6 +271,9 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
 
   // Handle Pointer Move on Canvas
   const handleCanvasPointerMove = (e: React.PointerEvent) => {
+    const boardPos = screenToBoard(e.clientX, e.clientY);
+    setMousePos(boardPos);
+
     if (isPanningRef.current) {
       setPan({
         x: e.clientX - panStartRef.current.x,
@@ -241,7 +283,6 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
     }
 
     if (marquee) {
-      const boardPos = screenToBoard(e.clientX, e.clientY);
       setMarquee((prev) =>
         prev ? { ...prev, currentX: boardPos.x, currentY: boardPos.y } : null
       );
@@ -298,18 +339,26 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
 
     // Arrow Tool Connection mode
     if (activeTool === "arrow") {
-      if (!connectingFromId) {
+      if (!effectiveConnectingFromId) {
         setConnectingFromId(element.id);
-      } else if (connectingFromId !== element.id && onElementCreate) {
-        onElementCreate({
-          boardId,
-          elementType: "arrow",
-          x: 0,
-          y: 0,
-          fromElementId: connectingFromId,
-          toElementId: element.id,
-        });
+      } else if (effectiveConnectingFromId === element.id) {
+        // Clicking source element again cancels
         setConnectingFromId(null);
+        if (onToolSelect) onToolSelect("select");
+      } else {
+        // Connect to target element
+        if (onElementCreate) {
+          onElementCreate({
+            boardId,
+            elementType: "arrow",
+            x: 0,
+            y: 0,
+            fromElementId: effectiveConnectingFromId,
+            toElementId: element.id,
+          });
+        }
+        setConnectingFromId(null);
+        if (onToolSelect) onToolSelect("select");
       }
       return;
     }
@@ -357,11 +406,71 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
         return el;
       });
       onElementsChange(updatedElements);
+
+      // Check drop target under cursor
+      const hitElement = document.elementFromPoint(moveEvt.clientX, moveEvt.clientY);
+      const targetCard = hitElement?.closest(
+        "[data-drop-target-episode-id], [data-drop-target-project-id]"
+      );
+
+      if (targetCard) {
+        const episodeId = targetCard.getAttribute("data-drop-target-episode-id");
+        const projectId = targetCard.getAttribute("data-drop-target-project-id");
+
+        if (episodeId && projectId) {
+          onHoverDropTarget?.({ type: "episode", episodeId, projectId });
+        } else if (projectId) {
+          onHoverDropTarget?.({ type: "project", projectId });
+        } else {
+          onHoverDropTarget?.(null);
+        }
+      } else {
+        onHoverDropTarget?.(null);
+      }
     };
 
-    const handleWindowPointerUp = () => {
+    const handleWindowPointerUp = async (upEvt: PointerEvent) => {
       window.removeEventListener("pointermove", handleWindowPointerMove);
       window.removeEventListener("pointerup", handleWindowPointerUp);
+
+      onHoverDropTarget?.(null);
+
+      // Check if dropped on assignment target
+      const hitElement = document.elementFromPoint(upEvt.clientX, upEvt.clientY);
+      const targetCard = hitElement?.closest(
+        "[data-drop-target-episode-id], [data-drop-target-project-id]"
+      );
+
+      if (targetCard) {
+        const draggedElements = draggingIdsRef.current
+          .map((id) => elementMap.get(id))
+          .filter(Boolean) as BoardElement[];
+
+        const hasKeyframe = draggedElements.some((e) => e.elementType === "keyframe");
+        if (hasKeyframe) {
+          alert("Keyframes belong to a scene and cannot be assigned to a project");
+          // Revert moved positions to initial
+          const reverted = elements.map((el) => {
+            if (initialPositions[el.id]) {
+              return { ...el, x: initialPositions[el.id].x, y: initialPositions[el.id].y };
+            }
+            return el;
+          });
+          onElementsChange(reverted);
+          return;
+        }
+
+        const episodeId = targetCard.getAttribute("data-drop-target-episode-id");
+        const projectId = targetCard.getAttribute("data-drop-target-project-id");
+
+        if (episodeId && projectId && onAssignToEpisode) {
+          await onAssignToEpisode(draggingIdsRef.current, episodeId, projectId);
+          return;
+        } else if (projectId && onAssignToProject) {
+          await onAssignToProject(draggingIdsRef.current, projectId);
+          return;
+        }
+      }
 
       // Persist moved positions debounced
       if (onElementMove) {
@@ -386,68 +495,122 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
   // Clipboard Paste (Image data / URL)
   const handlePaste = useCallback(
     async (e: React.ClipboardEvent) => {
-      if (!onElementCreate) return;
       const items = e.clipboardData.items;
+      const imageFiles: File[] = [];
 
       for (let i = 0; i < items.length; i++) {
         if (items[i].type.startsWith("image/")) {
           const file = items[i].getAsFile();
-          if (file) {
+          if (file) imageFiles.push(file);
+        }
+      }
+
+      if (imageFiles.length === 0) return;
+
+      const centerPos = screenToBoard(
+        window.innerWidth / 2,
+        window.innerHeight / 2
+      );
+
+      if (scope?.type === "project" && onUploadAssets) {
+        const uploadItems: Array<{ filename: string; dataUrl: string; x: number; y: number }> = [];
+        for (let i = 0; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const dataUrl = await new Promise<string>((resolve) => {
             const reader = new FileReader();
-            reader.onload = async (event) => {
-              const dataUrl = event.target?.result as string;
-              if (dataUrl) {
-                const centerPos = screenToBoard(
-                  window.innerWidth / 2,
-                  window.innerHeight / 2
-                );
-                await onElementCreate({
-                  boardId,
-                  elementType: "keyframe",
-                  x: centerPos.x,
-                  y: centerPos.y,
-                  imageUrl: dataUrl,
-                });
-              }
-            };
+            reader.onload = (event) => resolve((event.target?.result as string) || "");
             reader.readAsDataURL(file);
+          });
+          if (dataUrl) {
+            uploadItems.push({
+              filename: file.name || "Pasted Asset",
+              dataUrl,
+              x: centerPos.x + i * 40,
+              y: centerPos.y + i * 40,
+            });
+          }
+        }
+        if (uploadItems.length > 0) {
+          await onUploadAssets(uploadItems);
+        }
+      } else if (onElementCreate) {
+        for (let i = 0; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve((event.target?.result as string) || "");
+            reader.readAsDataURL(file);
+          });
+          if (dataUrl) {
+            await onElementCreate({
+              boardId,
+              elementType: scope?.type === "project" ? "asset" : "keyframe",
+              title: file.name || (scope?.type === "project" ? "Pasted Asset" : undefined),
+              x: centerPos.x + i * 40,
+              y: centerPos.y + i * 40,
+              imageUrl: dataUrl,
+            });
           }
         }
       }
     },
-    [boardId, onElementCreate, screenToBoard]
+    [boardId, scope, onUploadAssets, onElementCreate, screenToBoard]
   );
 
   // File Drop from OS
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
       e.preventDefault();
-      if (!onElementCreate) return;
-
       const files = Array.from(e.dataTransfer.files).filter((f) =>
         f.type.startsWith("image/")
       );
+      if (files.length === 0) return;
 
       const dropPos = screenToBoard(e.clientX, e.clientY);
 
-      for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const dataUrl = event.target?.result as string;
+      if (scope?.type === "project" && onUploadAssets) {
+        const uploadItems: Array<{ filename: string; dataUrl: string; x: number; y: number }> = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve((event.target?.result as string) || "");
+            reader.readAsDataURL(file);
+          });
+          if (dataUrl) {
+            uploadItems.push({
+              filename: file.name,
+              dataUrl,
+              x: dropPos.x + i * 40,
+              y: dropPos.y + i * 40,
+            });
+          }
+        }
+        if (uploadItems.length > 0) {
+          await onUploadAssets(uploadItems);
+        }
+      } else if (onElementCreate) {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve((event.target?.result as string) || "");
+            reader.readAsDataURL(file);
+          });
           if (dataUrl) {
             await onElementCreate({
               boardId,
-              elementType: "keyframe",
+              elementType: scope?.type === "project" ? "asset" : "keyframe",
+              title: file.name,
               x: dropPos.x + i * 40,
               y: dropPos.y + i * 40,
               imageUrl: dataUrl,
             });
           }
-        };
-        reader.readAsDataURL(files[i]);
+        }
       }
     },
-    [boardId, onElementCreate, screenToBoard]
+    [boardId, scope, onUploadAssets, onElementCreate, screenToBoard]
   );
 
   // Render elements in zIndex order
@@ -498,11 +661,51 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
               }}
             />
           ))}
+
+          {/* Preview Arrow when connecting elements */}
+          {effectiveConnectingFromId && mousePos && (
+            (() => {
+              const srcEl = elementMap.get(effectiveConnectingFromId);
+              if (!srcEl) return null;
+              const srcCenter = {
+                x: srcEl.x + (srcEl.width || 100) / 2,
+                y: srcEl.y + (srcEl.height || 100) / 2,
+              };
+              return (
+                <g className="pointer-events-none z-30">
+                  <defs>
+                    <marker
+                      id="arrowhead-preview"
+                      viewBox="0 0 14 10"
+                      refX="12"
+                      refY="5"
+                      markerWidth="13.5"
+                      markerHeight="10"
+                      orient="auto-start-reverse"
+                    >
+                      <path d="M 0 0 L 14 5 L 0 10 z" fill="var(--color-line,#000000)" />
+                    </marker>
+                  </defs>
+                  <line
+                    x1={srcCenter.x}
+                    y1={srcCenter.y}
+                    x2={mousePos.x}
+                    y2={mousePos.y}
+                    stroke="var(--color-line,#000000)"
+                    strokeWidth={1.5}
+                    strokeDasharray="4,4"
+                    markerEnd="url(#arrowhead-preview)"
+                  />
+                </g>
+              );
+            })()
+          )}
         </svg>
 
         {/* Board Elements */}
         {nonArrowElements.map((el) => {
           const isSelected = selectedIds.has(el.id);
+          const isSourceConnecting = effectiveConnectingFromId === el.id;
 
           return (
             <div
@@ -513,11 +716,13 @@ export const BoardSpaceComponent: React.FC<BoardSpaceProps> = ({
                 top: `${el.y}px`,
                 zIndex: el.zIndex || 1,
               }}
+              className={isSourceConnecting ? "ring-2 ring-black rounded-[var(--radius-sm,3px)]" : ""}
             >
               {el.elementType === "keyframe" || el.elementType === "asset" ? (
                 <ImageElement
                   element={el}
                   selected={isSelected}
+                  isProjectScoped={scope?.type === "project"}
                   onSelect={(e) => handleElementPointerDown(e, el)}
                   onDoubleClick={() => setPreviewImage(el.imageUrl || null)}
                 />

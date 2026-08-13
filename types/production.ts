@@ -66,6 +66,8 @@ export type Project = {
   id: string;
   title: string;
   projectCode: string;
+  assetCodePrefix?: string | null;
+  defaultAssetWorkflowId?: string | null;
   description: string;
   thumbnailUrl: string;
   status: "Active" | "Retired";

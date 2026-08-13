@@ -2,7 +2,7 @@
 
 import React, { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { createAssetV2 } from "@/lib/data/v2/productionRepositoryV2";
+import { createAssetV2 } from "@/app/actions/production";
 import type { AssetV2, ProjectV2 } from "@/types/production-v2";
 
 const emptySubscribe = () => () => {};

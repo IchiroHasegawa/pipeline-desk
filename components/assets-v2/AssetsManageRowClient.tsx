@@ -8,7 +8,7 @@ import VerticalNav from "@/components/shell/VerticalNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import AssetRowTable from "@/components/assets-v2/AssetRowTable";
 import AssetFormDialog from "@/components/assets-v2/AssetFormDialog";
-import { updateAssetTask } from "@/lib/data/v2/productionRepositoryV2";
+import { updateAssetTask } from "@/app/actions/production";
 import type {
   ProjectV2,
   EpisodeV2,
@@ -67,6 +67,7 @@ export const AssetsManageRowClient: React.FC<AssetsManageRowClientProps> = ({
     <CanvasShell
       nav={<VerticalNav active="assets" activeAssetsSubsection="manage" />}
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 505, y: 28 }}
     >
       <div className="w-full h-full overflow-auto p-8 flex flex-col gap-6 font-sans">
         {/* Header Block */}

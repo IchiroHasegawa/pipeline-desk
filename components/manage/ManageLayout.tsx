@@ -17,6 +17,7 @@ export type ManageLayoutProps = {
   todoRail: React.ReactNode;
   entityList: React.ReactNode;
   tools: React.ReactNode;
+  toolsPosition?: { x: number; y: number };
   nav?: React.ReactNode;
 };
 
@@ -33,6 +34,7 @@ export const ManageLayout: React.FC<ManageLayoutProps> = ({
   todoRail,
   entityList,
   tools,
+  toolsPosition,
   nav = <VerticalNav active="project" />,
 }) => {
   const [activeTab, setActiveTab] = React.useState<"detail" | "todo">("todo");
@@ -70,24 +72,30 @@ export const ManageLayout: React.FC<ManageLayoutProps> = ({
             </div>
           </div>
 
-          {/* 2. Left column — Preview, Strip, Commit rail */}
-          <div className="absolute left-[14.5px] top-[193px] w-[722px] flex flex-col gap-4">
-            {/* Preview player */}
-            <div className="w-[722px] h-[389px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] overflow-hidden shadow-sm">
+          {/* 2. Left column — Preview, Strip, Heading, Commit rail */}
+          <div className="absolute left-[14.5px] top-[193px] w-[735px] flex flex-col">
+            {/* Preview player (14.5, 193) -> 722 x 389, ends y=582 */}
+            <div className="w-[722px] h-[389px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] overflow-hidden shadow-sm shrink-0">
               {preview}
             </div>
 
-            {/* Strip section */}
-            <div className="flex flex-col gap-1.5 mt-2">
-              <h3 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)]">
+            {/* Strip thumbnails (y=614, height 75px) */}
+            <div className="mt-[32px] h-[75px] w-[735px] shrink-0 overflow-hidden">
+              {strip}
+            </div>
+
+            {/* Heading (15, 705) & Rule (15, 722) */}
+            <div className="mt-[16px] flex flex-col gap-2 shrink-0">
+              <h3 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)] font-sans">
                 {stripHeading}
               </h3>
               <div className="w-[735px] h-[1px] bg-[var(--color-line,#000000)]" />
-              <div className="pt-2">{strip}</div>
             </div>
 
-            {/* Commit rail */}
-            <div className="mt-4">{commitRail}</div>
+            {/* Commit rail (10, 756.5) */}
+            <div className="mt-[34.5px] pl-[0.5px]">
+              {commitRail}
+            </div>
           </div>
 
           {/* 3. Centre column — Tasks grid, Detail / To do toggle, To Do rail */}
@@ -152,7 +160,19 @@ export const ManageLayout: React.FC<ManageLayoutProps> = ({
       </main>
 
       {/* Tools Anchor */}
-      {tools}
+      <div
+        className="absolute z-20"
+        style={{
+          left: toolsPosition
+            ? `calc((${toolsPosition.x} / 1920) * 100%)`
+            : "calc((637.5 / 1920) * 100%)",
+          top: toolsPosition
+            ? `calc((${toolsPosition.y} / 1080) * 100%)`
+            : "calc((117 / 1080) * 100%)",
+        }}
+      >
+        {tools}
+      </div>
     </div>
   );
 };

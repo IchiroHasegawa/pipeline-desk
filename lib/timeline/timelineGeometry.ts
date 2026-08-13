@@ -65,6 +65,15 @@ export function depthTransform(
   };
 }
 
+export function deterministicInRange(seed: string, min: number, max: number): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  const normalized = Math.abs(hash % 10000) / 10000;
+  return min + normalized * (max - min);
+}
+
 export type BranchSpec = {
   id: string;
   /** 0..1 — where along the parent line this branch attaches */
@@ -159,10 +168,42 @@ export function resolveBranchPaths(
     }
   }
 
-  return Object.values(resolvedMap).map(({ id, from, to, depth }) => ({
+  const results = Object.values(resolvedMap).map(({ id, from, to, depth }) => ({
     id,
     from,
     to,
     depth,
   }));
+
+  const finalResults = results.filter((path) => {
+    const isFromValid = Number.isFinite(path.from.x) && Number.isFinite(path.from.y);
+    const isToValid = Number.isFinite(path.to.x) && Number.isFinite(path.to.y);
+    const isValid = isFromValid && isToValid;
+
+    if (!isValid && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `resolveBranchPaths: Dropped branch '${path.id}' due to non-finite coordinates:`,
+        path
+      );
+    }
+
+    if (isValid && process.env.NODE_ENV !== "production") {
+      const isOffCanvas =
+        path.from.x < 0 || path.from.x > 1920 ||
+        path.from.y < 0 || path.from.y > 1080 ||
+        path.to.x < 0 || path.to.x > 1920 ||
+        path.to.y < 0 || path.to.y > 1080;
+
+      if (isOffCanvas) {
+        console.warn(
+          `resolveBranchPaths: Branch '${path.id}' resolved coordinates fall outside canvas bounds [0..1920, 0..1080]:`,
+          path
+        );
+      }
+    }
+
+    return isValid;
+  });
+
+  return finalResults;
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Project } from "@/types/production";
 import { createProject, updateProject } from "@/lib/data/productionRepository";
+import { createClient } from "@/lib/supabase/client";
 import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
 
 type ProjectFormProps = {
@@ -13,11 +14,31 @@ type ProjectFormProps = {
 export default function ProjectForm({ project, onClose }: ProjectFormProps) {
   const [title, setTitle] = useState(project?.title || "");
   const [projectCode, setProjectCode] = useState(project?.projectCode || "");
+  const [assetCodePrefix, setAssetCodePrefix] = useState(project?.assetCodePrefix || "");
+  const [defaultAssetWorkflowId, setDefaultAssetWorkflowId] = useState(project?.defaultAssetWorkflowId || "");
   const [description, setDescription] = useState(project?.description || "");
   const [thumbnailUrl, setThumbnailUrl] = useState(project?.thumbnailUrl || "");
-  
+
+  const [assetWorkflows, setAssetWorkflows] = useState<Array<{ id: string; name: string }>>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadWorkflows() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("workflows")
+        .select("id, name")
+        .eq("workflow_type", "asset")
+        .eq("status", "active")
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .order("name", { ascending: true });
+      if (data) {
+        setAssetWorkflows(data);
+      }
+    }
+    void loadWorkflows();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,10 +52,21 @@ export default function ProjectForm({ project, onClose }: ProjectFormProps) {
         throw new Error("Project code is invalid. Use only A-Z, a-z, 0-9, and underscores (no spaces or double underscores).");
       }
 
+      if (assetCodePrefix) {
+        const prefixRegex = /^[A-Za-z0-9_-]+$/;
+        if (!prefixRegex.test(assetCodePrefix)) {
+          throw new Error("Asset code prefix is invalid. Use only letters, numbers, dashes, and underscores.");
+        }
+      }
+
+      const finalAssetCodePrefix = assetCodePrefix.trim() || projectCode;
+
       if (project) {
         await updateProject(project.id, {
           title,
           projectCode,
+          assetCodePrefix: finalAssetCodePrefix,
+          defaultAssetWorkflowId: defaultAssetWorkflowId || null,
           description,
           thumbnailUrl,
         });
@@ -43,6 +75,8 @@ export default function ProjectForm({ project, onClose }: ProjectFormProps) {
         const newProject = await createProject({
           title,
           projectCode,
+          assetCodePrefix: finalAssetCodePrefix,
+          defaultAssetWorkflowId: defaultAssetWorkflowId || null,
           description,
           thumbnailUrl,
           status: "Active",
@@ -92,11 +126,46 @@ export default function ProjectForm({ project, onClose }: ProjectFormProps) {
               type="text"
               required
               value={projectCode}
-              onChange={(e) => setProjectCode(e.target.value)}
+              onChange={(e) => {
+                const nextVal = e.target.value;
+                setProjectCode(nextVal);
+                if (!project && !assetCodePrefix) {
+                  // Keep assetCodePrefix in sync if not set
+                }
+              }}
               placeholder="e.g. TBA_JOB00083"
               className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-zinc-500"
             />
             <p className="text-[10px] text-zinc-500">Only letters, numbers, and single underscores allowed. No spaces.</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-zinc-400">Asset Code Prefix</label>
+            <input
+              type="text"
+              value={assetCodePrefix}
+              onChange={(e) => setAssetCodePrefix(e.target.value)}
+              placeholder={projectCode || "Defaults to project code"}
+              className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-zinc-500"
+            />
+            <p className="text-[10px] text-zinc-500">Prefix used when generating asset codes (e.g. {assetCodePrefix || projectCode || "CODE"}_101). Defaults to project code.</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold uppercase text-zinc-400">Default Asset Workflow</label>
+            <select
+              value={defaultAssetWorkflowId}
+              onChange={(e) => setDefaultAssetWorkflowId(e.target.value)}
+              className="w-full rounded border border-zinc-700 bg-black px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-zinc-500"
+            >
+              <option value="">None (No auto-generated tasks)</option>
+              {assetWorkflows.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-zinc-500">Workflow applied automatically to new assets created in this project.</p>
           </div>
 
           <div className="space-y-1">
@@ -130,3 +199,4 @@ export default function ProjectForm({ project, onClose }: ProjectFormProps) {
     </div>
   );
 }
+

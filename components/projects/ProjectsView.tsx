@@ -12,7 +12,7 @@ import FocusCard from "@/components/timeline/FocusCard";
 import ProjectFormDialog from "@/components/projects/ProjectFormDialog";
 
 import useTimelineScale, { TimelineRange } from "@/lib/timeline/useTimelineScale";
-import { createProjectV2, deleteProjectV2 } from "@/lib/data/v2/productionRepositoryV2";
+import { createProjectV2, deleteProjectV2 } from "@/app/actions/production";
 import type { ProjectV2 } from "@/types/production-v2";
 
 export type ProjectsViewProps = {
@@ -198,11 +198,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         tools={<TransformTools actions={toolActions} />}
       >
         <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-[var(--color-panel,#f0f0f0)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] p-8 max-w-md">
-            <p className="text-[var(--text-section,18px)] text-[var(--color-ink,#000000)] font-medium mb-4">
+          <div className="bg-[var(--color-panel)] border border-[var(--color-line)] rounded-[var(--radius-card,7px)] p-8 max-w-md shadow-sm">
+            <p className="text-[var(--text-section,18px)] text-[var(--color-ink)] font-medium mb-4">
               Error Loading Projects
             </p>
-            <p className="text-[var(--text-list,12px)] text-[var(--color-ink-muted,#707070)] mb-6">
+            <p className="text-[var(--text-list,12px)] text-[var(--color-ink)] mb-6 opacity-90 leading-relaxed">
               {errorMsg}
             </p>
             <button
@@ -211,7 +211,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 setErrorMsg(null);
                 window.location.reload();
               }}
-              className="px-4 py-2 bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] text-[var(--text-caption,11px)] font-medium rounded-[var(--radius-sm,3px)] cursor-pointer"
+              className="px-4 py-2 bg-[var(--color-ink)] text-[var(--color-canvas)] text-[var(--text-caption,11px)] font-medium rounded-[var(--radius-sm,3px)] cursor-pointer hover:opacity-90 transition-opacity"
             >
               Retry
             </button>
@@ -258,6 +258,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     <CanvasShell
       nav={<VerticalNav active="project" />}
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 101.5, y: 87 }}
       list={
         <ListPanel
           items={listItems}

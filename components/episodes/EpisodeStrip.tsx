@@ -13,6 +13,9 @@ export type EpisodeStripProps = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onOpenManage: (id: string) => void;
+  onCreate?: () => void;
+  createLabel?: string;
+  embedded?: boolean;
 };
 
 export const EpisodeStripComponent: React.FC<EpisodeStripProps> = ({
@@ -20,6 +23,9 @@ export const EpisodeStripComponent: React.FC<EpisodeStripProps> = ({
   selectedId,
   onSelect,
   onOpenManage,
+  onCreate,
+  createLabel = "Create new",
+  embedded = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -60,31 +66,61 @@ export const EpisodeStripComponent: React.FC<EpisodeStripProps> = ({
     }
   };
 
+  const leftMask = onCreate ? "black 0%" : "transparent 0%, black 10%";
+
   return (
     <div
       role="region"
       aria-label="Episode Strip Picker"
-      className="absolute z-30 pointer-events-auto select-none"
-      style={{
-        left: "calc((335.5 / 1920) * 100%)",
-        top: "calc((937 / 1080) * 100%)",
-        width: "calc((1180 / 1920) * 100%)",
-        height: "82px",
-      }}
+      className={
+        embedded
+          ? "relative w-full h-full pointer-events-auto select-none"
+          : "absolute z-30 pointer-events-auto select-none"
+      }
+      style={
+        embedded
+          ? {}
+          : {
+              left: "calc((335.5 / 1920) * 100%)",
+              bottom: "40px",
+              width: "calc((1180 / 1920) * 100%)",
+              height: "82px",
+            }
+      }
     >
       <div
         ref={containerRef}
         tabIndex={0}
         onWheel={handleWheel}
         onKeyDown={handleKeyDown}
-        className="w-full h-full flex flex-row items-center gap-[58px] overflow-x-auto outline-none scrollbar-none py-1 px-4"
+        className="w-full h-full flex flex-row items-center gap-[13px] overflow-x-auto outline-none scrollbar-none py-1"
         style={{
-          WebkitMaskImage:
-            "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
-          maskImage:
-            "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+          WebkitMaskImage: `linear-gradient(to right, ${leftMask}, black 90%, transparent 100%)`,
+          maskImage: `linear-gradient(to right, ${leftMask}, black 90%, transparent 100%)`,
         }}
       >
+        {onCreate && (
+          <button
+            type="button"
+            onClick={onCreate}
+            aria-label={createLabel}
+            className="sticky left-0 z-10 w-[134px] h-[75px] shrink-0 rounded-[var(--radius-sm,3px)] bg-[var(--color-placeholder,#d9d9d9)] border border-dashed border-[var(--color-line-soft,#a9a9a9)] hover:border-[var(--color-line,#000000)] transition-all cursor-pointer flex items-center justify-center outline-none"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--color-icon,#000000)"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        )}
         {items.map((item) => {
           const isSelected = item.id === selectedId;
 
@@ -94,14 +130,11 @@ export const EpisodeStripComponent: React.FC<EpisodeStripProps> = ({
               type="button"
               onClick={() => onSelect(item.id)}
               onDoubleClick={() => onOpenManage(item.id)}
-              className={`w-[152px] h-[80px] shrink-0 rounded-[var(--radius-sm,3px)] overflow-hidden bg-[var(--color-placeholder,#d9d9d9)] border transition-all cursor-pointer relative flex flex-col items-center justify-center ${
+              className={`w-[134px] h-[75px] shrink-0 rounded-[var(--radius-sm,3px)] overflow-hidden bg-[var(--color-placeholder,#d9d9d9)] border transition-all cursor-pointer relative flex flex-col items-center justify-center ${
                 isSelected
                   ? "border-black ring-2 ring-black font-medium"
                   : "border-[var(--color-line-soft,#a9a9a9)] opacity-80 hover:opacity-100"
               }`}
-              style={{
-                boxShadow: "6px 10px 4px rgba(0, 0, 0, 0.25)",
-              }}
             >
               {item.thumbnailUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */

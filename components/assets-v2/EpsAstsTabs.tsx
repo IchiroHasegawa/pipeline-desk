@@ -13,7 +13,7 @@ export const EpsAstsTabsComponent: React.FC<EpsAstsTabsProps> = ({
 }) => {
   return (
     <div className="flex flex-col gap-0 font-sans select-none w-full">
-      <div className="flex flex-row items-center gap-0 text-[var(--text-caption,11px)]">
+      <div className="flex flex-row items-center gap-0 pl-[105px] text-[var(--text-caption,11px)]">
         <button
           type="button"
           onClick={() => onTabChange("eps")}

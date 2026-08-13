@@ -38,6 +38,7 @@ export const AssetsManagePosterClient: React.FC<AssetsManagePosterClientProps> =
     <CanvasShell
       nav={<VerticalNav active="assets" activeAssetsSubsection="manage" />}
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 105, y: 62 }}
     >
       <div className="w-full h-full overflow-auto p-12">
         <h1 className="text-[var(--text-heading,28px)] font-bold text-[var(--color-ink,#000000)] mb-6 font-sans">

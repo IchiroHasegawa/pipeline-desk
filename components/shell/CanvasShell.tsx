@@ -5,6 +5,7 @@ import React from "react";
 export type CanvasShellProps = {
   nav: React.ReactNode;
   tools: React.ReactNode;
+  toolsPosition?: { x: number; y: number };
   list?: React.ReactNode;
   children: React.ReactNode;
 };
@@ -12,6 +13,7 @@ export type CanvasShellProps = {
 export const CanvasShell: React.FC<CanvasShellProps> = ({
   nav,
   tools,
+  toolsPosition,
   list,
   children,
 }) => {
@@ -33,8 +35,12 @@ export const CanvasShell: React.FC<CanvasShellProps> = ({
         <div
           className="absolute z-20"
           style={{
-            left: "calc((101.5 / 1920) * 100%)",
-            top: "calc((87 / 1080) * 100%)",
+            left: toolsPosition
+              ? `calc((${toolsPosition.x} / 1920) * 100%)`
+              : "calc((101.5 / 1920) * 100%)",
+            top: toolsPosition
+              ? `calc((${toolsPosition.y} / 1080) * 100%)`
+              : "calc((87 / 1080) * 100%)",
           }}
         >
           {tools}

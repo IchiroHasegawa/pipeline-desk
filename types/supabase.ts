@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -539,6 +539,7 @@ export type Database = {
         Row: {
           asset_code: string
           asset_name: string
+          asset_number: number | null
           asset_type: string
           category_id: string | null
           created_at: string
@@ -555,6 +556,7 @@ export type Database = {
         Insert: {
           asset_code: string
           asset_name: string
+          asset_number?: number | null
           asset_type: string
           category_id?: string | null
           created_at?: string
@@ -571,6 +573,7 @@ export type Database = {
         Update: {
           asset_code?: string
           asset_name?: string
+          asset_number?: number | null
           asset_type?: string
           category_id?: string | null
           created_at?: string
@@ -1096,7 +1099,9 @@ export type Database = {
       }
       projects: {
         Row: {
+          asset_code_prefix: string | null
           created_at: string
+          default_asset_workflow_id: string | null
           description: string | null
           end_date: string | null
           id: string
@@ -1109,7 +1114,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          asset_code_prefix?: string | null
           created_at?: string
+          default_asset_workflow_id?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
@@ -1122,7 +1129,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          asset_code_prefix?: string | null
           created_at?: string
+          default_asset_workflow_id?: string | null
           description?: string | null
           end_date?: string | null
           id?: string
@@ -1134,7 +1143,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_default_asset_workflow_id_fkey"
+            columns: ["default_asset_workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scene_notes: {
         Row: {
@@ -1510,25 +1527,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_workflow_tasks:
-        | {
-            Args: {
-              p_entity_id: string
-              p_entity_type: string
-              p_workflow_id: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_entity_data?: Json
-              p_entity_id: string
-              p_entity_type: string
-              p_parent_id?: string
-              p_workflow_id: string
-            }
-            Returns: Json
-          }
+      generate_workflow_tasks: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_workflow_id: string
+        }
+        Returns: undefined
+      }
       get_or_create_board: {
         Args: { p_project_id?: string; p_scene_id?: string }
         Returns: string

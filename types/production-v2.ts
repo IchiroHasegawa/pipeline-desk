@@ -2,6 +2,8 @@ export type ProjectV2 = {
   id: string;
   title: string;
   projectCode: string;
+  assetCodePrefix?: string | null;
+  defaultAssetWorkflowId?: string | null;
   description: string;
   thumbnailUrl: string;
   status: "Active" | "Retired";
@@ -10,6 +12,10 @@ export type ProjectV2 = {
   endDate: string | null;
   createdAt: string;
 };
+
+export type BoardScope =
+  | { type: "scene"; sceneId: string }
+  | { type: "project"; projectId: string };
 
 export type EpisodeV2 = {
   id: string;
@@ -150,6 +156,7 @@ export type AssetV2 = {
   description: string | null;
   createdAt: string;
   updatedAt: string;
+  hasDefaultWorkflow?: boolean;
 };
 
 export type AssetTaskV2 = {

@@ -28,7 +28,7 @@ export const CustomTasksPanelComponent: React.FC<CustomTasksPanelProps> = ({
     >
       {/* Header bar */}
       <div className="h-[36px] px-3 flex items-center border-b border-[var(--color-line-soft,#a9a9a9)] bg-[var(--color-panel,#f0f0f0)]">
-        <span className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)] tracking-tight truncate">
+        <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink,#000000)] tracking-tight truncate">
           Custom Tasks
         </span>
       </div>

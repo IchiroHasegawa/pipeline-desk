@@ -11,6 +11,7 @@ import DayBranchTree, { DayWithTasks } from "@/components/scenes/DayBranchTree";
 import CustomTasksPanel from "@/components/scenes/CustomTasksPanel";
 import EpisodeStrip, { EpisodeStripItem } from "@/components/episodes/EpisodeStrip";
 import AddDialog from "@/components/scenes/AddDialog";
+import SceneFormDialog from "@/components/scenes/SceneFormDialog";
 
 import { computeMainTaskProgress } from "@/lib/timeline/taskRollup";
 import {
@@ -20,7 +21,7 @@ import {
   deleteDayV2,
   deleteCustomTask,
   getMainTasksForScene,
-} from "@/lib/data/v2/productionRepositoryV2";
+} from "@/app/actions/production";
 import type { EpisodeV2, SceneV2, CustomTaskV2, MainTaskV2 } from "@/types/production-v2";
 
 export type ScenesViewProps = {
@@ -39,6 +40,15 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [addedScenes, setAddedScenes] = useState<SceneV2[]>([]);
+
+  const extraScenes = useMemo(
+    () => addedScenes.filter((s) => !scenes.some((existing) => existing.id === s.id)),
+    [scenes, addedScenes]
+  );
+
+  const sceneList = useMemo(() => [...scenes, ...extraScenes], [scenes, extraScenes]);
+
   const [daysWithTasks, setDaysWithTasks] = useState<DayWithTasks[]>(initialDaysWithTasks);
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
   const [focusedDayId, setFocusedDayId] = useState<string | null>(null);
@@ -48,10 +58,30 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
     scenes.length > 0 ? scenes[0].id : null
   );
 
+  console.log("ITEM_1_SCENESVIEW_PROPS:", JSON.stringify({
+    daysCount: daysWithTasks.length,
+    days: daysWithTasks.map((d) => ({
+      id: d.id,
+      day_date: d.dayDate,
+      taskCount: d.tasks?.length,
+    })),
+    scenesCount: sceneList.length,
+    selectedSceneId,
+    selectedDayId,
+    focusedId: focusedDayId,
+  }, null, 2));
+
+  console.log("ITEM_2_DAYBRANCHTREE_GUARDS:", JSON.stringify({
+    errorMsg: initialError,
+    selectedSceneId,
+    scenesLength: sceneList.length,
+  }, null, 2));
+
   const [mainTasks, setMainTasks] = useState<MainTaskV2[]>([]);
   const [isLoadingMainTasks, setIsLoadingMainTasks] = useState(false);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSceneFormOpen, setIsSceneFormOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(initialError);
 
   // Animate episode line X position: ~958 at rest, ~473 when a day is focused
@@ -111,17 +141,23 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
 
   // Scene items for EpisodeStrip
   const stripItems: EpisodeStripItem[] = useMemo(() => {
-    return scenes.map((s) => ({
+    return sceneList.map((s) => ({
       id: s.id,
       label: s.sceneName,
       thumbnailUrl: s.previewImage,
     }));
-  }, [scenes]);
+  }, [sceneList]);
 
   // Focused day object
   const focusedDay = useMemo(() => {
     return daysWithTasks.find((d) => d.id === focusedDayId);
   }, [daysWithTasks, focusedDayId]);
+
+  const handleSceneCreated = (newScene: SceneV2) => {
+    setAddedScenes((prev) => [...prev, newScene]);
+    setSelectedSceneId(newScene.id);
+    router.refresh();
+  };
 
   // Handlers
   const handleListSelect = useCallback((id: string) => {
@@ -326,6 +362,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
     <CanvasShell
       nav={<VerticalNav active="project" />}
       tools={<TransformTools actions={toolActions} />}
+      toolsPosition={{ x: 101, y: 86 }}
       list={
         <ListPanel
           items={listItems}
@@ -337,9 +374,14 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
     >
       <div ref={containerRef} className="w-full h-full relative overflow-hidden">
         {/* Main Canvas rendering vertical episode line & Day/Task branches */}
-        <svg className="w-full h-full overflow-visible pointer-events-none">
+        <svg
+          viewBox="0 0 1920 1080"
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full h-full overflow-visible"
+        >
           <DayBranchTree
             episodeLineX={episodeLineX}
+            episode={episode}
             days={daysWithTasks}
             selectedDayId={selectedDayId}
             focusedDayId={focusedDayId}
@@ -373,7 +415,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           >
             {/* Header bar */}
             <div className="h-[36px] px-3 flex items-center border-b border-[var(--color-line-soft,#a9a9a9)] bg-[var(--color-panel,#f0f0f0)]">
-              <span className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)] tracking-tight">
+              <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink,#000000)] tracking-tight truncate">
                 Main Tasks
               </span>
             </div>
@@ -435,6 +477,8 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           selectedId={selectedSceneId}
           onSelect={handleSceneSelect}
           onOpenManage={handleSceneOpenManage}
+          onCreate={() => setIsSceneFormOpen(true)}
+          createLabel="New Scene"
         />
 
         {/* Two-step Add Dialog */}
@@ -447,6 +491,14 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           onClose={() => setIsAddOpen(false)}
           onCreateDay={handleCreateDay}
           onCreateTask={handleCreateTask}
+        />
+
+        {/* Create Scene Dialog */}
+        <SceneFormDialog
+          isOpen={isSceneFormOpen}
+          episodeId={episode.id}
+          onClose={() => setIsSceneFormOpen(false)}
+          onSuccess={handleSceneCreated}
         />
       </div>
     </CanvasShell>
