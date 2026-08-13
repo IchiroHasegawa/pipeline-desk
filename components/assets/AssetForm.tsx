@@ -203,7 +203,7 @@ export default function AssetForm({ asset, onClose, onCreated, categories }: Ass
                 status: "Active",
               };
               
-              const result = await generateWorkflowTasks(
+              const result = await generateWorkflowTasks<Asset>(
                 supabase, 
                 "asset", 
                 assetId, 
@@ -212,7 +212,7 @@ export default function AssetForm({ asset, onClose, onCreated, categories }: Ass
                 // no parent_id for assets (they belong to project but we don't pass project_id here)
               );
               
-              currentAsset = result.entity;
+              currentAsset = result.entity ?? null;
               setCreatedAsset(currentAsset);
             } catch (taskErr: unknown) {
               console.error("Failed to generate workflow tasks:", taskErr);

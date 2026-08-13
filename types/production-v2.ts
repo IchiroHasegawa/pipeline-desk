@@ -5,6 +5,7 @@ export type ProjectV2 = {
   description: string;
   thumbnailUrl: string;
   status: "Active" | "Retired";
+  isSystem: boolean;
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
@@ -136,5 +137,30 @@ export type CreateElementInput = {
   fromElementId?: string | null;
   toElementId?: string | null;
 };
+
+export type AssetV2 = {
+  id: string;
+  name: string;
+  assetCode: string | null;
+  category: string | null;
+  priority: string | null;
+  projectId: string | null;
+  episodeId: string | null;
+  previewUrl: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AssetTaskV2 = {
+  id: string;
+  assetId: string;
+  taskName: string;
+  status: string;
+  assignee: string | null;
+  sortOrder: number | null;
+  createdAt: string;
+};
+
 
 

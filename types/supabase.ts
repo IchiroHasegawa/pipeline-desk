@@ -1100,6 +1100,7 @@ export type Database = {
           description: string | null
           end_date: string | null
           id: string
+          is_system: boolean
           project_code: string
           start_date: string | null
           status: string
@@ -1112,6 +1113,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          is_system?: boolean
           project_code: string
           start_date?: string | null
           status?: string
@@ -1124,6 +1126,7 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
+          is_system?: boolean
           project_code?: string
           start_date?: string | null
           status?: string

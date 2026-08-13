@@ -306,11 +306,11 @@ export default function ProductionPage() {
             viewLevel === "ENVIRONMENT" ? "Environment" :
             viewLevel === "JOB" ? "Job" : "Scene"
           }
-          onEdit={(item: any) => {
-            if (viewLevel === "PROJECT") setEditingProject(item);
-            else if (viewLevel === "ENVIRONMENT") setEditingEnvironment(item);
-            else if (viewLevel === "JOB") setEditingJob(item);
-            else if (viewLevel === "SCENE") setEditingScene(item);
+          onEdit={(item: Project | ProductionEnvironment | Episode | Scene) => {
+            if (viewLevel === "PROJECT") setEditingProject(item as Project);
+            else if (viewLevel === "ENVIRONMENT") setEditingEnvironment(item as ProductionEnvironment);
+            else if (viewLevel === "JOB") setEditingJob(item as Episode);
+            else if (viewLevel === "SCENE") setEditingScene(item as Scene);
           }}
         />
       )}

@@ -133,29 +133,36 @@ export async function deleteTaskStatus(supabase: SupabaseClient<Database>, id: s
   if (error) throw error;
 }
 
-// Task Generation RPC
+export type WorkflowRpcResult<T = unknown> = {
+  success: boolean;
+  entity?: T;
+  tasks?: unknown[];
+};
 
-export async function generateWorkflowTasks(
+export async function generateWorkflowTasks<T = unknown>(
   supabase: SupabaseClient<Database>, 
   entityType: string, 
   entityId: string, 
   workflowId: string,
   entityData?: Record<string, unknown>,
   parentId?: string
-) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await supabase.rpc("generate_workflow_tasks" as any, {
+): Promise<WorkflowRpcResult<T>> {
+  const rpcCaller = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: WorkflowRpcResult<T> | null; error: { message: string } | null }>;
+
+  const { data, error } = await rpcCaller("generate_workflow_tasks", {
     p_entity_type: entityType,
     p_entity_id: entityId,
     p_workflow_id: workflowId,
     p_entity_data: entityData ?? null,
     p_parent_id: parentId ?? null,
-  } as any);
+  });
 
   if (error) {
     throw new Error(`Failed to generate workflow tasks: ${error.message}`);
   }
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data as any;
+  return (data ?? { success: true }) as WorkflowRpcResult<T>;
 }

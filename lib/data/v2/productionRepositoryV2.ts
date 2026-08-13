@@ -7,6 +7,8 @@ import type {
   DayV2,
   MainTaskV2,
   CustomTaskV2,
+  AssetV2,
+  AssetTaskV2,
 } from "@/types/production-v2";
 
 // ---------------------------------------------------------------------------
@@ -21,6 +23,7 @@ function mapProjectV2(row: Tables<"projects">): ProjectV2 {
     description: row.description ?? "",
     thumbnailUrl: row.thumbnail_url ?? "",
     status: (row.status === "Retired" ? "Retired" : "Active") as "Active" | "Retired",
+    isSystem: Boolean((row as { is_system?: boolean }).is_system),
     startDate: row.start_date ?? null,
     endDate: row.end_date ?? null,
     createdAt: row.created_at,
@@ -115,7 +118,11 @@ export async function getProjectsV2(): Promise<ProjectV2[]> {
       throw error;
     }
 
-    return (data || []).map(mapProjectV2);
+    const mapped = (data || []).map(mapProjectV2);
+    const unknownSys = mapped.filter((p) => p.isSystem);
+    const regularProjects = mapped.filter((p) => !p.isSystem);
+
+    return [...unknownSys, ...regularProjects];
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to fetch projects v2: ${message}`);
@@ -602,3 +609,254 @@ export async function deleteDayV2(id: string): Promise<void> {
     throw new Error(`Failed to delete day ${id}: ${message}`);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Assets V2 Data Layer
+// ---------------------------------------------------------------------------
+
+export async function getAssetsByProject(projectId: string): Promise<AssetV2[]> {
+  try {
+    const supabase = createClient();
+    const { data: linkRows, error: linkError } = await supabase
+      .from("asset_project_links")
+      .select("asset_id")
+      .eq("project_id", projectId);
+
+    if (linkError) throw linkError;
+    const assetIds = (linkRows || []).map((l) => l.asset_id);
+    if (assetIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from("assets")
+      .select("*")
+      .in("id", assetIds)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      name: row.asset_name,
+      assetCode: row.asset_code ?? null,
+      category: row.asset_type ?? null,
+      priority: String(row.priority ?? "Medium"),
+      projectId: projectId,
+      episodeId: null,
+      previewUrl: row.preview_url ?? null,
+      description: row.description ?? null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to fetch assets for project ${projectId}: ${message}`);
+  }
+}
+
+export async function getAssetsByEpisode(episodeId: string): Promise<AssetV2[]> {
+  try {
+    const supabase = createClient();
+    const { data: linkRows, error: linkError } = await supabase
+      .from("asset_job_links")
+      .select("asset_id")
+      .eq("episode_id", episodeId);
+
+    if (linkError) throw linkError;
+    const assetIds = (linkRows || []).map((l) => l.asset_id);
+    if (assetIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from("assets")
+      .select("*")
+      .in("id", assetIds)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      name: row.asset_name,
+      assetCode: row.asset_code ?? null,
+      category: row.asset_type ?? null,
+      priority: String(row.priority ?? "Medium"),
+      projectId: null,
+      episodeId: episodeId,
+      previewUrl: row.preview_url ?? null,
+      description: row.description ?? null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to fetch assets for episode ${episodeId}: ${message}`);
+  }
+}
+
+export async function getAssetTasks(
+  assetIds: string[]
+): Promise<Record<string, AssetTaskV2[]>> {
+  if (assetIds.length === 0) return {};
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("asset_tasks")
+      .select("*")
+      .in("asset_id", assetIds)
+      .order("sort_order", { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+
+    const result: Record<string, AssetTaskV2[]> = {};
+    (data || []).forEach((row) => {
+      const task: AssetTaskV2 = {
+        id: row.id,
+        assetId: row.asset_id,
+        taskName: row.name,
+        status: row.status,
+        assignee: row.assignee ?? null,
+        sortOrder: row.sort_order ?? null,
+        createdAt: row.created_at,
+      };
+      if (!result[row.asset_id]) {
+        result[row.asset_id] = [];
+      }
+      result[row.asset_id].push(task);
+    });
+
+    return result;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to fetch asset tasks: ${message}`);
+  }
+}
+
+export async function getWorkflowTaskStatuses(): Promise<string[]> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("workflow_task_statuses")
+      .select("name")
+      .order("position", { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    const statuses = (data || []).map((row) => row.name);
+    return statuses.length > 0
+      ? statuses
+      : ["Not Started", "In Progress", "In Review", "Done"];
+  } catch (error: unknown) {
+    console.warn("Failed to fetch workflow task statuses, falling back to defaults:", error);
+    return ["Not Started", "In Progress", "In Review", "Done"];
+  }
+}
+
+export async function updateAssetTask(
+  taskId: string,
+  updates: { assignee?: string | null; status?: string }
+): Promise<void> {
+  try {
+    const supabase = createClient();
+    const payload: { assignee?: string | null; status?: string } = {};
+    if (updates.assignee !== undefined) payload.assignee = updates.assignee;
+    if (updates.status !== undefined) payload.status = updates.status;
+
+    const { error } = await supabase
+      .from("asset_tasks")
+      .update(payload)
+      .eq("id", taskId);
+
+    if (error) throw error;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to update asset task ${taskId}: ${message}`);
+  }
+}
+
+export async function createAssetV2(input: {
+  name: string;
+  assetCode?: string;
+  category?: string;
+  priority?: string;
+  projectId?: string | null;
+  episodeId?: string | null;
+  description?: string | null;
+  workflowId?: string;
+  previewUrl?: string | null;
+}): Promise<AssetV2> {
+  try {
+    const supabase = createClient();
+    let targetProjectId = input.projectId;
+
+    if (!targetProjectId) {
+      const { data: sysProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("is_system", true)
+        .limit(1);
+
+      if (sysProjects && sysProjects.length > 0) {
+        targetProjectId = sysProjects[0].id;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("assets")
+      .insert([
+        {
+          asset_name: input.name,
+          asset_code: input.assetCode || `AST-${Date.now().toString().slice(-4)}`,
+          asset_type: input.category || "General",
+          priority: 1,
+          description: input.description || null,
+          preview_url: input.previewUrl || null,
+        },
+      ])
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    if (targetProjectId && data?.id) {
+      await supabase.from("asset_project_links").insert([
+        {
+          asset_id: data.id,
+          project_id: targetProjectId,
+        },
+      ]);
+    }
+
+    if (input.episodeId && data?.id) {
+      await supabase.from("asset_job_links").insert([
+        {
+          asset_id: data.id,
+          episode_id: input.episodeId,
+        },
+      ]);
+    }
+
+    if (input.workflowId && data?.id) {
+      await supabase.rpc("generate_workflow_tasks", {
+        p_entity_type: "asset",
+        p_entity_id: data.id,
+        p_workflow_id: input.workflowId,
+      });
+    }
+
+    return {
+      id: data.id,
+      name: data.asset_name,
+      assetCode: data.asset_code ?? null,
+      category: data.asset_type ?? null,
+      priority: String(data.priority ?? "Medium"),
+      projectId: targetProjectId ?? null,
+      episodeId: input.episodeId ?? null,
+      previewUrl: data.preview_url ?? null,
+      description: data.description ?? null,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to create asset v2: ${message}`);
+  }
+}
+

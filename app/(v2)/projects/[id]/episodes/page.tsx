@@ -45,6 +45,7 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
           description: "",
           thumbnailUrl: "",
           status: "Active",
+          isSystem: false,
           startDate: null,
           endDate: null,
           createdAt: new Date().toISOString(),
