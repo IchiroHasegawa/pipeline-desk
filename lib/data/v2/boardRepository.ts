@@ -9,47 +9,47 @@ export function mapBoardElement(row: {
   id: string;
   board_id: string;
   element_type: string;
-  parent_folder_id: string | null;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  z_index: number;
-  title: string | null;
-  body: string | null;
-  colour: string | null;
-  asset_id: string | null;
-  asset_file_id: string | null;
-  image_url: string | null;
-  keyframe_number: number | null;
-  from_element_id: string | null;
-  to_element_id: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
+  parent_folder_id?: string | null;
+  x?: number | null;
+  y?: number | null;
+  width?: number | null;
+  height?: number | null;
+  z_index?: number | null;
+  title?: string | null;
+  body?: string | null;
+  colour?: string | null;
+  asset_id?: string | null;
+  asset_file_id?: string | null;
+  image_url?: string | null;
+  keyframe_number?: number | null;
+  from_element_id?: string | null;
+  to_element_id?: string | null;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }): BoardElement {
   return {
     id: row.id,
     boardId: row.board_id,
     elementType: row.element_type as BoardElement["elementType"],
-    parentFolderId: row.parent_folder_id,
-    x: Number(row.x),
-    y: Number(row.y),
-    width: Number(row.width),
-    height: Number(row.height),
-    zIndex: row.z_index,
-    title: row.title,
-    body: row.body,
-    colour: row.colour,
-    assetId: row.asset_id,
-    assetFileId: row.asset_file_id,
-    imageUrl: row.image_url,
-    keyframeNumber: row.keyframe_number,
-    fromElementId: row.from_element_id,
-    toElementId: row.to_element_id,
-    createdBy: row.created_by,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    parentFolderId: row.parent_folder_id || null,
+    x: Number(row.x || 0),
+    y: Number(row.y || 0),
+    width: Number(row.width || 100),
+    height: Number(row.height || 100),
+    zIndex: Number(row.z_index || 0),
+    title: row.title || null,
+    body: row.body || null,
+    colour: row.colour || null,
+    assetId: row.asset_id || null,
+    assetFileId: row.asset_file_id || null,
+    imageUrl: row.image_url || null,
+    keyframeNumber: row.keyframe_number ?? null,
+    fromElementId: row.from_element_id || null,
+    toElementId: row.to_element_id || null,
+    createdBy: row.created_by || "",
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
   };
 }
 
