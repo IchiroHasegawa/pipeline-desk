@@ -6,12 +6,19 @@ import CanvasShell from "@/components/shell/CanvasShell";
 import VerticalNav from "@/components/shell/VerticalNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import ListPanel, { ListPanelItem } from "@/components/shell/ListPanel";
+import WorldLayer from "@/components/shell/WorldLayer";
 
 import TimelineCanvas from "@/components/timeline/TimelineCanvas";
 import FocusCard from "@/components/timeline/FocusCard";
 import ProjectFormDialog from "@/components/projects/ProjectFormDialog";
 
 import useTimelineScale, { TimelineRange } from "@/lib/timeline/useTimelineScale";
+import {
+  MAX_VISIBLE_PROJECTS,
+  PROJECT_FOCUS_CONNECTOR,
+  IDENTITY_TRANSFORM,
+  type CanvasTransform,
+} from "@/lib/timeline/timelineGeometry";
 import { createProjectV2, deleteProjectV2 } from "@/app/actions/production";
 import type { ProjectV2 } from "@/types/production-v2";
 
@@ -33,6 +40,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(initialError);
+
+  // §2.2 — the canvas and the name panel share one window, so the five
+  // solid names always correspond to the five foreground lines.
+  const [windowStart, setWindowStart] = useState(0);
+
+  // §2.1 — mirrored out of the canvas so the dot grid can follow it.
+  const [gridTransform, setGridTransform] =
+    useState<CanvasTransform>(IDENTITY_TRANSFORM);
 
   // ResizeObserver for canvas container width
   useEffect(() => {
@@ -101,27 +116,21 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     setFocusedId(id);
   }, []);
 
-  const handleCanvasLineSelect = useCallback(
-    (id: string) => {
-      if (selectedId === id) {
-        setFocusedId(id);
-      } else {
-        setSelectedId(id);
-      }
-    },
-    [selectedId]
-  );
+  // §2.5 — a single click selects. It must not darken the line; it opens
+  // the detail overlay and the canvas eases the line to display centre.
+  const handleCanvasLineSelect = useCallback((id: string) => {
+    setSelectedId(id);
+    setFocusedId(id);
+  }, []);
 
+  // §2.6 — a double click goes straight to the Episode page. The canvas
+  // has already cancelled the pending single-click, so no stray centring
+  // fires first.
   const handleCanvasLineOpen = useCallback(
     (id: string) => {
-      if (focusedId === id) {
-        router.push(`/projects/${id}/episodes`);
-      } else {
-        setSelectedId(id);
-        setFocusedId(id);
-      }
+      router.push(`/projects/${id}/episodes`);
     },
-    [focusedId, router]
+    [router]
   );
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
@@ -253,11 +262,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       nav={<VerticalNav active="project" />}
       tools={<TransformTools actions={toolActions} />}
       toolsPosition={{ x: 101.5, y: 87 }}
+      gridTransform={gridTransform}
       list={
         <ListPanel
           items={listItems}
           selectedId={selectedId}
           onSelect={handleListSelect}
+          windowStart={windowStart}
+          windowSize={MAX_VISIBLE_PROJECTS}
+          onWindowStartChange={setWindowStart}
         />
       }
     >
@@ -271,19 +284,31 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           items={timelineItems}
           selectedId={selectedId}
           focusedId={focusedId}
-          mode="clamped"
           onSelect={handleCanvasLineSelect}
           onOpen={handleCanvasLineOpen}
+          windowStart={windowStart}
+          windowSize={MAX_VISIBLE_PROJECTS}
+          autoCenter
+          centerOnSelect
+          // §2.8 — while the detail overlay is open the line is not
+          // draggable and shows no drag cursor. Canvas panning is untouched.
+          lineDragEnabled={focusedId === null}
+          onCanvasTransformChange={setGridTransform}
+          connector={PROJECT_FOCUS_CONNECTOR}
+          connectorItemId={focusedId}
         />
 
-        {/* Spec A4 Focus Card Overlay */}
+        {/* Spec A4 Focus Card Overlay — in world space so its thumbnail
+            lands where the canvas expects it at any window size. */}
         {focusedProject && (
-          <FocusCard
-            title={focusedProject.projectCode || focusedProject.title}
-            creationDate={focusedProject.createdAt}
-            description={focusedProject.description}
-            thumbnailUrl={focusedProject.thumbnailUrl}
-          />
+          <WorldLayer>
+            <FocusCard
+              title={focusedProject.projectCode || focusedProject.title}
+              creationDate={focusedProject.createdAt}
+              description={focusedProject.description}
+              thumbnailUrl={focusedProject.thumbnailUrl}
+            />
+          </WorldLayer>
         )}
 
         {/* Create Project Modal */}

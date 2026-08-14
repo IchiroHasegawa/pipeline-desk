@@ -3,77 +3,66 @@
 import React, { useId, memo } from "react";
 import {
   lineEndpoint,
-  depthTransform,
   TIMELINE_LINE_FADE_STOPS,
+  TIMELINE_ANGLE_DEG,
+  LINE_STROKE_WIDTH,
+  GHOST_BLUR_PX,
+  GHOST_OPACITY,
   Point,
 } from "@/lib/timeline/timelineGeometry";
 
 export type TimelineLineProps = {
   id: string;
-  length: number; // px, from useTimelineScale
+  length: number;
   origin: Point;
-  depthIndex: number; // 0 = frontmost
-  depthTotal: number;
-  selected?: boolean;
-  dimmed?: boolean; // true when another line is focused
-  onSelect?: (id: string) => void;
-  onOpen?: (id: string) => void; // second click / double click
-  children?: React.ReactNode; // branch lines, anchored by the parent
+  angleDeg?: number;
+  /** Another line is focused; this one recedes. */
+  dimmed?: boolean;
+  /** Outside the visible window — blurred, behind, and non-interactive. */
+  ghost?: boolean;
+  /** Whether this line offers a drag affordance (false in focus mode). */
+  draggable?: boolean;
+  /** Receives the raw click count so the caller can split single from double. */
+  onClick?: (id: string, detail: number) => void;
+  children?: React.ReactNode;
 };
 
+/**
+ * A project line.
+ *
+ * This is the ONLY line type that carries the endpoint fade
+ * (TIMELINE_LINE_FADE_STOPS). Episode, scene, day and task lines are solid
+ * — see TimelineBranch.
+ */
 export const TimelineLineComponent: React.FC<TimelineLineProps> = ({
   id,
   length,
   origin,
-  depthIndex,
-  depthTotal,
-  selected = false,
+  angleDeg = TIMELINE_ANGLE_DEG,
   dimmed = false,
-  onSelect,
-  onOpen,
+  ghost = false,
+  draggable = true,
+  onClick,
   children,
 }) => {
   const gradientId = useId();
+  const end = lineEndpoint(origin, length, angleDeg);
 
-  const end = lineEndpoint(origin, length);
-  const transform = depthTransform(depthIndex, depthTotal);
-
-  // Compute visual opacity: selected forces full opacity; dimmed forces low opacity
-  let computedOpacity = transform.opacity;
-  if (selected) {
-    computedOpacity = 1.0;
-  } else if (dimmed) {
-    computedOpacity = 0.15;
-  }
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (selected && onOpen) {
-      onOpen(id);
-    } else if (onSelect) {
-      onSelect(id);
-    }
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onOpen) {
-      onOpen(id);
-    }
-  };
+  // §2.5 — selection must not darken or recolour the line, so there is
+  // deliberately no `selected` branch here. Selection is expressed by the
+  // detail overlay and by the line easing to the centre of the display.
+  const opacity = ghost ? GHOST_OPACITY : dimmed ? 0.15 : 1;
 
   return (
     <g
-      className="transition-[transform,opacity,filter] duration-300 ease-out"
+      className="transition-opacity duration-300 ease-out"
       style={{
-        transform: `translate(0px, ${transform.offsetY}px) scale(${transform.scale})`,
-        transformOrigin: `${origin.x}px ${origin.y}px`,
-        opacity: computedOpacity,
-        filter: transform.blurPx > 0 ? `blur(${transform.blurPx}px)` : undefined,
+        opacity,
+        filter: ghost ? `blur(${GHOST_BLUR_PX}px)` : undefined,
+        pointerEvents: ghost ? "none" : undefined,
       }}
     >
       <defs>
-        {/* Axis-aligned linear gradient along line axis */}
         <linearGradient
           id={gradientId}
           gradientUnits="userSpaceOnUse"
@@ -93,34 +82,38 @@ export const TimelineLineComponent: React.FC<TimelineLineProps> = ({
         </linearGradient>
       </defs>
 
-      {/* Visible 1px line */}
       <line
         x1={origin.x}
         y1={origin.y}
         x2={end.x}
         y2={end.y}
         stroke={`url(#${gradientId})`}
-        strokeWidth={selected ? 2 : 1}
+        strokeWidth={LINE_STROKE_WIDTH}
         strokeLinecap="round"
         className="pointer-events-none"
       />
 
-      {/* Transparent wide hit target for click/double-click */}
-      <line
-        x1={origin.x}
-        y1={origin.y}
-        x2={end.x}
-        y2={end.y}
-        stroke="transparent"
-        strokeWidth={12}
-        strokeLinecap="round"
-        style={{ pointerEvents: "stroke" }}
-        className="cursor-pointer"
-        onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
-      />
+      {/* Wide transparent hit target. Ghosts never render one, so a click
+          where a blurred line sits falls through to the canvas. */}
+      {!ghost && (
+        <line
+          data-line-hit="true"
+          x1={origin.x}
+          y1={origin.y}
+          x2={end.x}
+          y2={end.y}
+          stroke="transparent"
+          strokeWidth={12}
+          strokeLinecap="round"
+          style={{ pointerEvents: "stroke" }}
+          className={draggable ? "cursor-grab" : "cursor-pointer"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.(id, e.detail);
+          }}
+        />
+      )}
 
-      {/* Branch children */}
       {children}
     </g>
   );

@@ -1,16 +1,39 @@
 "use client";
 
-import React, { useId, useMemo, memo } from "react";
+import React, { useMemo, memo } from "react";
 import TimelineBranch from "@/components/timeline/TimelineBranch";
 import TaskCard from "@/components/scenes/TaskCard";
 import {
   deterministicInRange,
-  Point,
-  TIMELINE_LINE_FADE_STOPS,
+  getAttachmentPoint,
+  resolveAttachmentGap,
   sceneBranchSpec,
   sceneLineExtent,
+  clamp,
+  DAY_ATTACH_START_RATIO,
+  DAY_ATTACH_GAP_RATIO,
+  TASK_ATTACH_START_RATIO,
+  TASK_ATTACH_GAP_RATIO,
+  LINE_STROKE_WIDTH,
+  BRANCH_STROKE_WIDTH,
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
+  Point,
+  LineSegment,
 } from "@/lib/timeline/timelineGeometry";
-import type { EpisodeV2, DayV2, CustomTaskV2 } from "@/types/production-v2";
+import type { DayV2, CustomTaskV2 } from "@/types/production-v2";
+
+/**
+ * The bottom scene-card rail, in world units — DESIGN_SPEC §5 episode
+ * strip, which the Scene page reuses: 1180 × 82 at (335.5, 937), plus the
+ * shadow. Task cards are kept clear of this band (§4).
+ */
+const SCENE_RAIL_TOP = 925;
+
+/** DESIGN_SPEC §7 task card frame. */
+const CARD_WIDTH = 217.7;
+const CARD_HEIGHT = 235.6;
+const CARD_PADDING = 16;
 
 export type DayWithTasks = DayV2 & { tasks: CustomTaskV2[] };
 
@@ -32,7 +55,6 @@ export type ResolvedTaskBranch = {
 export type DayBranchTreeProps = {
   episodeLineX: number; // 957.8 at rest, 473.2 when focused (DESIGN_SPEC §7)
   zoom: number; // 1 at rest, SCENE_ZOOM_FOCUS when a day is focused
-  episode?: EpisodeV2;
   days: DayWithTasks[];
   selectedDayId: string | null;
   focusedDayId: string | null;
@@ -45,7 +67,6 @@ export type DayBranchTreeProps = {
 export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
   episodeLineX,
   zoom,
-  episode,
   days,
   selectedDayId,
   focusedDayId,
@@ -54,116 +75,69 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
   onOpenDay,
   onSelectTask,
 }) => {
-  const gradientId = useId();
-
   // DESIGN_SPEC §7: two contiguous segments meeting at y 384, lengths scaled by zoom.
   const { top: lineTop, bottom: lineBottom } = sceneLineExtent(zoom);
   const episodeTop: Point = { x: episodeLineX, y: lineTop };
   const episodeBottom: Point = { x: episodeLineX, y: lineBottom };
-  const lineLength = lineBottom - lineTop;
+  const episodeSegment: LineSegment = useMemo(
+    () => ({
+      x1: episodeTop.x,
+      y1: episodeTop.y,
+      x2: episodeBottom.x,
+      y2: episodeBottom.y,
+    }),
+    [episodeTop.x, episodeTop.y, episodeBottom.x, episodeBottom.y]
+  );
 
   // Calculate branch paths for Days and Custom Tasks
   const { dayBranches, taskBranches } = useMemo(() => {
     if (days.length === 0) {
-      return {
-        dayBranches: [],
-        taskBranches: [],
-      };
+      return { dayBranches: [], taskBranches: [] };
     }
 
-    // Sort days by dayDate ascending
+    // Sort days by dayDate ascending so the order along the line is stable.
     const sortedDays = [...days].sort(
       (a, b) => new Date(a.dayDate).getTime() - new Date(b.dayDate).getTime()
     );
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const todayMs = new Date(todayStr).getTime();
-
-    const earliestDayMs =
-      sortedDays.length > 0 && !isNaN(new Date(sortedDays[0].dayDate).getTime())
-        ? new Date(sortedDays[0].dayDate).getTime()
-        : null;
-
-    const latestDayMs =
-      sortedDays.length > 0 &&
-      !isNaN(new Date(sortedDays[sortedDays.length - 1].dayDate).getTime())
-        ? new Date(sortedDays[sortedDays.length - 1].dayDate).getTime()
-        : null;
-
-    const episodeStartMs =
-      episode?.startDate && !isNaN(new Date(episode.startDate).getTime())
-        ? new Date(episode.startDate).getTime()
-        : null;
-
-    const episodeEndMs =
-      episode?.endDate && !isNaN(new Date(episode.endDate).getTime())
-        ? new Date(episode.endDate).getTime()
-        : null;
-
-    // Explicit fallbacks for start and end date
-    const startMs = episodeStartMs ?? earliestDayMs ?? todayMs;
-    const endMs = episodeEndMs ?? latestDayMs ?? todayMs;
-    const spanMs = endMs - startMs;
-
     const resolvedDays: ResolvedDayBranch[] = [];
     const resolvedTasks: ResolvedTaskBranch[] = [];
 
+    // §4 — day junctions come from the same helper and the same approach as
+    // the Episode page's episode-to-project-line attachment, driven by
+    // DAY_ATTACH_*. Dates previously drove this, which is what pushed
+    // junctions off the line whenever an episode's span was missing or
+    // degenerate.
+    const dayGap = resolveAttachmentGap(
+      sortedDays.length,
+      DAY_ATTACH_START_RATIO,
+      DAY_ATTACH_GAP_RATIO
+    );
+
     sortedDays.forEach((day, idx) => {
-      // Calculate anchorT along downward vertical episode line
-      let anchorT: number;
-      if (spanMs <= 0) {
-        anchorT = (idx + 1) / (sortedDays.length + 1);
-      } else {
-        const dayMs = !isNaN(new Date(day.dayDate).getTime())
-          ? new Date(day.dayDate).getTime()
-          : startMs;
-        anchorT = (dayMs - startMs) / spanMs;
-      }
+      const dayFrom = getAttachmentPoint(
+        episodeSegment,
+        idx,
+        DAY_ATTACH_START_RATIO,
+        dayGap
+      );
 
-      // Clamp anchorT to [0.05, 0.95] so branches never sit on line's ends
-      anchorT = Math.max(0.05, Math.min(0.95, anchorT));
-
-      // Anchor along the downward vertical episode line
-      const dayFrom: Point = {
-        x: episodeLineX,
-        y: lineTop + anchorT * lineLength,
-      };
-
-      // DESIGN_SPEC §7: angle 32°–47.15° and rest length 139–411.3, both derived
-      // deterministically from the day id. Angle is constant across zoom states;
-      // only the length scales.
+      // DESIGN_SPEC §7: angle 32°–47.15°, rest length 139–411.3, both
+      // deterministic from the day id. Angle is constant across zoom
+      // states; only the length scales.
       const { angleDeg, restLength } = sceneBranchSpec(day.id);
       const dayLength = restLength * zoom;
 
-      const side = idx % 2 === 0 ? 1 : -1; // even right (+1), odd left (-1)
+      const side = idx % 2 === 0 ? 1 : -1; // even right, odd left
       const theta = (angleDeg * Math.PI) / 180;
       const dx = side * dayLength * Math.cos(theta);
       const dy = dayLength * Math.sin(theta);
 
-      // Branches run downward. Mirror vertically (preserving the angle magnitude)
-      // when a downward branch would leave the canvas.
-      const vSign = dayFrom.y + dy > 1060 ? -1 : 1;
+      // Branches run downward, but must clear the scene-card rail rather
+      // than plunging through it. Mirror upward when they would.
+      const vSign = dayFrom.y + dy > SCENE_RAIL_TOP - CARD_HEIGHT * 0.5 ? -1 : 1;
 
-      const dayTo: Point = {
-        x: dayFrom.x + dx,
-        y: dayFrom.y + vSign * dy,
-      };
-
-      // FIX 5: Dev off-canvas warning
-      if (process.env.NODE_ENV !== "production") {
-        const isOffCanvas =
-          dayFrom.x < 0 || dayFrom.x > 1920 ||
-          dayFrom.y < 0 || dayFrom.y > 1080 ||
-          dayTo.x < 0 || dayTo.x > 1920 ||
-          dayTo.y < 0 || dayTo.y > 1080;
-
-        if (isOffCanvas) {
-          console.warn(
-            `DayBranchTree: Day branch '${day.id}' coordinates fall outside canvas [0..1920, 0..1080]:`,
-            { from: dayFrom, to: dayTo }
-          );
-        }
-      }
+      const dayTo: Point = { x: dayFrom.x + dx, y: dayFrom.y + vSign * dy };
 
       resolvedDays.push({
         dayId: day.id,
@@ -172,96 +146,111 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
         tasks: day.tasks || [],
       });
 
-      // Custom task branches parent-relative behavior
-      if (day.tasks && day.tasks.length > 0) {
-        const dayVectorX = dayTo.x - dayFrom.x;
-        const dayVectorY = dayTo.y - dayFrom.y;
-        const dayAngle = Math.atan2(dayVectorY, dayVectorX);
+      if (!day.tasks || day.tasks.length === 0) return;
 
-        const taskMap: Record<string, ResolvedTaskBranch> = {};
+      const daySegment: LineSegment = {
+        x1: dayFrom.x,
+        y1: dayFrom.y,
+        x2: dayTo.x,
+        y2: dayTo.y,
+      };
+      const dayAngle = Math.atan2(dayTo.y - dayFrom.y, dayTo.x - dayFrom.x);
 
-        day.tasks.forEach((task, tIdx) => {
-          const tFraction = 0.2 + (tIdx * 0.6) / Math.max(1, day.tasks.length);
+      const taskGap = resolveAttachmentGap(
+        day.tasks.length,
+        TASK_ATTACH_START_RATIO,
+        TASK_ATTACH_GAP_RATIO
+      );
 
-          let taskFrom: Point;
-          let baseAngle: number;
+      const taskMap: Record<string, ResolvedTaskBranch> = {};
 
-          if (task.branchesFromTaskId && taskMap[task.branchesFromTaskId]) {
-            const parentTask = taskMap[task.branchesFromTaskId];
-            const pVecX = parentTask.to.x - parentTask.from.x;
-            const pVecY = parentTask.to.y - parentTask.from.y;
-            taskFrom = {
-              x: parentTask.from.x + tFraction * pVecX,
-              y: parentTask.from.y + tFraction * pVecY,
-            };
-            baseAngle = Math.atan2(pVecY, pVecX);
-          } else {
-            taskFrom = {
-              x: dayFrom.x + tFraction * dayVectorX,
-              y: dayFrom.y + tFraction * dayVectorY,
-            };
-            baseAngle = dayAngle;
-          }
+      day.tasks.forEach((task, tIdx) => {
+        // Tasks attach along their parent — the day branch normally, or
+        // another task when one explicitly branches off it — using the
+        // same helper again, so all three levels share one implementation.
+        const parentTask = task.branchesFromTaskId
+          ? taskMap[task.branchesFromTaskId]
+          : undefined;
 
-          // Deterministic spread of +/- 35 degrees, length 160
-          let spreadDeg = deterministicInRange(task.id, -35, 35);
-          if (taskFrom.y > 750 && (baseAngle > 0 || spreadDeg > 0)) {
-            spreadDeg = -Math.abs(spreadDeg);
-          }
-          const spread = (spreadDeg * Math.PI) / 180;
-          const taskAngle = baseAngle + spread;
-          const taskLength = 160 * zoom;
-
-          const taskTo: Point = {
-            x: taskFrom.x + taskLength * Math.cos(taskAngle),
-            y: taskFrom.y + taskLength * Math.sin(taskAngle),
-          };
-
-          // Dev off-canvas warning
-          if (process.env.NODE_ENV !== "production") {
-            const isOffCanvas =
-              taskFrom.x < 0 || taskFrom.x > 1920 ||
-              taskFrom.y < 0 || taskFrom.y > 1080 ||
-              taskTo.x < 0 || taskTo.x > 1920 ||
-              taskTo.y < 0 || taskTo.y > 1080;
-
-            if (isOffCanvas) {
-              console.warn(
-                `DayBranchTree: Task branch '${task.id}' coordinates fall outside canvas [0..1920, 0..1080]:`,
-                { from: taskFrom, to: taskTo }
-              );
+        const parentSegment: LineSegment = parentTask
+          ? {
+              x1: parentTask.from.x,
+              y1: parentTask.from.y,
+              x2: parentTask.to.x,
+              y2: parentTask.to.y,
             }
-          }
+          : daySegment;
 
-          const resolvedTask: ResolvedTaskBranch = {
-            id: task.id,
-            dayId: day.id,
-            from: taskFrom,
-            to: taskTo,
-            task,
-          };
+        const baseAngle = parentTask
+          ? Math.atan2(
+              parentTask.to.y - parentTask.from.y,
+              parentTask.to.x - parentTask.from.x
+            )
+          : dayAngle;
 
-          taskMap[task.id] = resolvedTask;
-          resolvedTasks.push(resolvedTask);
-        });
-      }
+        const taskFrom = getAttachmentPoint(
+          parentSegment,
+          tIdx,
+          TASK_ATTACH_START_RATIO,
+          taskGap
+        );
+
+        let spreadDeg = deterministicInRange(task.id, -35, 35);
+        const taskLength = 160 * zoom;
+
+        // Steer away from the rail before committing to the angle, so the
+        // card that hangs off this endpoint has somewhere legal to sit.
+        const wouldHitRail =
+          taskFrom.y + taskLength * Math.sin(baseAngle + (spreadDeg * Math.PI) / 180) >
+          SCENE_RAIL_TOP - CARD_HEIGHT * 0.5;
+        if (wouldHitRail) spreadDeg = -Math.abs(spreadDeg);
+
+        const taskAngle = baseAngle + (spreadDeg * Math.PI) / 180;
+
+        const taskTo: Point = {
+          x: taskFrom.x + taskLength * Math.cos(taskAngle),
+          y: taskFrom.y + taskLength * Math.sin(taskAngle),
+        };
+
+        const resolvedTask: ResolvedTaskBranch = {
+          id: task.id,
+          dayId: day.id,
+          from: taskFrom,
+          to: taskTo,
+          task,
+        };
+
+        taskMap[task.id] = resolvedTask;
+        resolvedTasks.push(resolvedTask);
+      });
     });
 
-    return {
-      dayBranches: resolvedDays,
-      taskBranches: resolvedTasks,
-    };
-  }, [days, episode, episodeLineX, zoom, lineTop, lineLength]);
+    return { dayBranches: resolvedDays, taskBranches: resolvedTasks };
+  }, [days, episodeSegment, zoom]);
 
   // Compute Task Card placements and leader lines with collision avoidance
   const cardPlacements = useMemo(() => {
-    // DESIGN_SPEC §7 task card frame
-    const cardWidth = 217.7;
-    const cardHeight = 235.6;
-    const padding = 16;
+    const cardWidth = CARD_WIDTH;
+    const cardHeight = CARD_HEIGHT;
+    const padding = CARD_PADDING;
+
+    // §4 — a card may never overlap the scene-card rail. This is the hard
+    // floor every candidate position is tested against.
+    const maxCardY = SCENE_RAIL_TOP - cardHeight - padding;
 
     type CardBox = { id: string; x: number; y: number; w: number; h: number };
     const placed: CardBox[] = [];
+
+    const collides = (box: CardBox): boolean =>
+      placed.some(
+        (b) =>
+          !(
+            box.x + box.w + padding <= b.x ||
+            box.x >= b.x + b.w + padding ||
+            box.y + box.h + padding <= b.y ||
+            box.y >= b.y + b.h + padding
+          )
+      );
 
     const taskNameMap: Record<string, string> = {};
     days.forEach((d) => {
@@ -279,63 +268,45 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
       const px = -uy;
       const py = ux;
 
-      // Initial placement: offset 12px along branch direction
+      // The card hangs off the branch endpoint. §4 says to offset ALONG
+      // the line rather than allow an overlap, so every candidate walks
+      // further out along the branch direction first; only once that is
+      // exhausted does it step sideways.
       let cardX = tb.to.x + 12 * ux - cardWidth / 2;
       let cardY = tb.to.y + 12 * uy - cardHeight / 2;
+      let settled = false;
 
-      // Test collision & push along branch direction (up to 6 attempts)
-      let attempt = 0;
-      while (attempt < 6) {
+      for (let attempt = 0; attempt < 8 && !settled; attempt++) {
         const stepDist = 12 + attempt * 24;
         const testX = tb.to.x + stepDist * ux - cardWidth / 2;
         const testY = tb.to.y + stepDist * uy - cardHeight / 2;
+        const box: CardBox = { id: tb.id, x: testX, y: testY, w: cardWidth, h: cardHeight };
 
-        const testBox: CardBox = { id: tb.id, x: testX, y: testY, w: cardWidth, h: cardHeight };
-        const hasCollision = placed.some(
-          (b) =>
-            !(
-              testBox.x + testBox.w + padding <= b.x ||
-              testBox.x >= b.x + b.w + padding ||
-              testBox.y + testBox.h + padding <= b.y ||
-              testBox.y >= b.y + b.h + padding
-            )
-        );
-
-        if (!hasCollision) {
+        if (!collides(box) && testY <= maxCardY) {
           cardX = testX;
           cardY = testY;
-          break;
+          settled = true;
         }
-        attempt++;
       }
 
-      // If still collides, offset perpendicular
-      if (attempt >= 6) {
-        const perpOffsets = [24, -24, 48, -48, 72, -72];
-        for (const perp of perpOffsets) {
+      if (!settled) {
+        for (const perp of [24, -24, 48, -48, 72, -72, 96, -96]) {
           const testX = cardX + perp * px;
           const testY = cardY + perp * py;
-          const testBox: CardBox = { id: tb.id, x: testX, y: testY, w: cardWidth, h: cardHeight };
-          const hasCollision = placed.some(
-            (b) =>
-              !(
-                testBox.x + testBox.w + padding <= b.x ||
-                testBox.x >= b.x + b.w + padding ||
-                testBox.y + testBox.h + padding <= b.y ||
-                testBox.y >= b.y + b.h + padding
-              )
-          );
-          if (!hasCollision) {
+          const box: CardBox = { id: tb.id, x: testX, y: testY, w: cardWidth, h: cardHeight };
+          if (!collides(box) && testY <= maxCardY) {
             cardX = testX;
             cardY = testY;
+            settled = true;
             break;
           }
         }
       }
 
-      // Clamp within canvas boundaries
-      cardX = Math.max(10, Math.min(1920 - cardWidth - 10, cardX));
-      cardY = Math.max(10, Math.min(1080 - cardHeight - 10, cardY));
+      // Clamp within the canvas, and above the rail. The rail clamp is
+      // applied last so it always wins.
+      cardX = clamp(cardX, 10, WORLD_WIDTH - cardWidth - 10);
+      cardY = clamp(cardY, 10, Math.min(WORLD_HEIGHT - cardHeight - 10, maxCardY));
 
       placed.push({ id: tb.id, x: cardX, y: cardY, w: cardWidth, h: cardHeight });
 
@@ -374,34 +345,17 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
       className="transition-transform duration-500 ease-out"
       transform={`translate(0, ${panY})`}
     >
-      <defs>
-        <linearGradient
-          id={gradientId}
-          gradientUnits="userSpaceOnUse"
-          x1={episodeTop.x}
-          y1={episodeTop.y}
-          x2={episodeBottom.x}
-          y2={episodeBottom.y}
-        >
-          {TIMELINE_LINE_FADE_STOPS.map((stop, i) => (
-            <stop
-              key={i}
-              offset={stop.offset}
-              stopColor="var(--color-line, #000000)"
-              stopOpacity={stop.opacity}
-            />
-          ))}
-        </linearGradient>
-      </defs>
-
-      {/* 1px Vertical Episode Line */}
+      {/* The vertical episode spine — 1px, SOLID.
+          §3.5: the endpoint fade is exclusive to the project line, and this
+          is an episode line, so it carries no gradient. Reference images 8
+          and 9 show it as a uniform stroke. */}
       <line
         x1={episodeTop.x}
         y1={episodeTop.y}
         x2={episodeBottom.x}
         y2={episodeBottom.y}
-        stroke={`url(#${gradientId})`}
-        strokeWidth={1}
+        stroke="var(--color-line, #000000)"
+        strokeWidth={LINE_STROKE_WIDTH}
         strokeLinecap="round"
         className="pointer-events-none transition-[x1,x2] duration-500 ease-out"
       />
@@ -453,7 +407,7 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
           x2={leaderTo.x}
           y2={leaderTo.y}
           stroke="var(--color-line, #000000)"
-          strokeWidth={0.5}
+          strokeWidth={BRANCH_STROKE_WIDTH}
           className="pointer-events-none"
         />
       ))}

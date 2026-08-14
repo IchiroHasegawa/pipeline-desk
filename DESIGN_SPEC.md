@@ -63,9 +63,15 @@ design file, and that is stated explicitly.
 
 ### Grid
 
-26px pitch, 2.5px dot, `--color-grid-dot`. Fixed to viewport; does not pan.
+26px pitch, 2.5px dot, `--color-grid-dot`.
 *(If you prefer the finer grid discussed earlier, use 36px / 1.5px — that was a
 deliberate deviation from the file, not a measurement.)*
+
+> **Superseded 2026-08-14.** This section previously read "Fixed to viewport;
+> does not pan." The canvas now maintains two independent transforms: dragging
+> empty canvas pans the grid (`canvasTransform`), while dragging a line moves
+> only the line assembly (`lineTransform`) and leaves the grid still. See
+> `CanvasShell`'s `gridTransform` prop and `TimelineCanvas`.
 
 ### Stroke weights
 
@@ -186,6 +192,18 @@ Measured from the rendered design, as a gradient along the line's axis:
 
 Peak at 37%, not the midpoint.
 
+> **Scope rule, added 2026-08-14.** This endpoint fade is **exclusive to the
+> project line**, on the Project page and the Episode page. Episode, scene, day
+> and task lines are solid strokes with no endpoint fade — in particular no
+> fade-in where a branch meets its parent, so the junction reads as attached.
+> The Scene page's vertical episode spine is an episode line and is therefore
+> solid too.
+>
+> The Episode page's bounding-box edge fade (§5) is a **separate** mechanism
+> that applies to any line reaching the boundary. The two are named apart on
+> purpose — `TIMELINE_LINE_FADE_STOPS` / `PROJECT_LINE_FADE_*` versus
+> `BOX_EDGE_FADE_RATIO` — and must not be merged.
+
 ### Glow streaks
 
 1123.9 × 474.3 rounded rects at (234.1, 587.2), (612, 667.2), (950, 760.2),
@@ -228,6 +246,18 @@ Focused line: 956 × 403.5 at (541.5, 296.5).
 
 **Branch angles range 12°–85.5°** and lengths 60–466. They are free, not a fixed
 slope. Derive both deterministically from the episode id within these ranges.
+
+> **Attachment, added 2026-08-14.** Only two of the eight vectors above touch
+> the project line — Vector 19 at t = 0.469 and Vector 27 at t = 0.737; the
+> other six are sub-branches of those two. Junctions are now driven by
+> `EPISODE_ATTACH_START_RATIO` (0.47) and `EPISODE_ATTACH_GAP_RATIO` (0.27)
+> through `getAttachmentPoint`, with the gap compressing when episodes would
+> overrun `ATTACH_MAX_RATIO`. Episode start dates no longer move the junction.
+>
+> **Bounding box.** Episode-page content is bounded by an invisible box: width
+> = the project line's full extent, height = topmost branch to bottommost.
+> A `<clipPath>` gives the hard edge and a `<mask>` fades lines out at it.
+> Toggle the dev overlay with **Shift+B** (development builds only).
 
 ### Episode strip
 

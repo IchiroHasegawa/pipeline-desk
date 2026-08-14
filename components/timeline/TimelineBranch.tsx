@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useId, memo } from "react";
-import { TIMELINE_LINE_FADE_STOPS, Point } from "@/lib/timeline/timelineGeometry";
+import React, { useRef, useEffect, memo } from "react";
+import {
+  BRANCH_STROKE_WIDTH,
+  LINE_STROKE_WIDTH,
+  Point,
+} from "@/lib/timeline/timelineGeometry";
 
 export type TimelineBranchProps = {
   id: string;
@@ -14,6 +18,16 @@ export type TimelineBranchProps = {
   children?: React.ReactNode;
 };
 
+/**
+ * Episode / day / task branch line.
+ *
+ * §3.5 — branches are SOLID strokes with no endpoint fade. In particular
+ * there is no fade-in at `from`, which is the point where the branch meets
+ * its parent line, so the junction reads as attached rather than dissolving
+ * into it. The endpoint fade belongs to the project line alone
+ * (see TimelineLine); the Episode page's boundary fade is a separate
+ * mechanism applied by the bounding-box mask, not here.
+ */
 export const TimelineBranchComponent: React.FC<TimelineBranchProps> = ({
   id,
   from,
@@ -24,68 +38,49 @@ export const TimelineBranchComponent: React.FC<TimelineBranchProps> = ({
   onOpen,
   children,
 }) => {
-  const gradientId = useId();
+  const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  let computedOpacity = 1.0;
-  if (dimmed) {
-    computedOpacity = 0.15;
-  }
+  useEffect(
+    () => () => {
+      if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    },
+    []
+  );
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (selected && onOpen) {
-      onOpen(id);
-    } else if (onSelect) {
-      onSelect(id);
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
     }
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onOpen) {
-      onOpen(id);
+    if (e.detail >= 2) {
+      onOpen?.(id);
+      return;
     }
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      onSelect?.(id);
+    }, 220);
   };
 
   return (
     <g
-      className="transition-[opacity] duration-300 ease-out"
-      style={{ opacity: computedOpacity }}
+      className="transition-opacity duration-300 ease-out"
+      style={{ opacity: dimmed ? 0.15 : 1 }}
     >
-      <defs>
-        <linearGradient
-          id={gradientId}
-          gradientUnits="userSpaceOnUse"
-          x1={from.x}
-          y1={from.y}
-          x2={to.x}
-          y2={to.y}
-        >
-          {TIMELINE_LINE_FADE_STOPS.map((stop, i) => (
-            <stop
-              key={i}
-              offset={stop.offset}
-              stopColor="var(--color-line, #000000)"
-              stopOpacity={stop.opacity}
-            />
-          ))}
-        </linearGradient>
-      </defs>
-
-      {/* Visible 0.5px hairline branch line */}
       <line
         x1={from.x}
         y1={from.y}
         x2={to.x}
         y2={to.y}
-        stroke={`url(#${gradientId})`}
-        strokeWidth={selected ? 1.5 : 0.5}
+        stroke="var(--color-line, #000000)"
+        strokeWidth={selected ? LINE_STROKE_WIDTH : BRANCH_STROKE_WIDTH}
         strokeLinecap="round"
         className="pointer-events-none"
       />
 
-      {/* Transparent wide 12px hit target */}
       <line
+        data-branch-hit="true"
         x1={from.x}
         y1={from.y}
         x2={to.x}
@@ -96,10 +91,8 @@ export const TimelineBranchComponent: React.FC<TimelineBranchProps> = ({
         style={{ pointerEvents: "stroke" }}
         className="cursor-pointer"
         onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
       />
 
-      {/* Sub-branch children */}
       {children}
     </g>
   );

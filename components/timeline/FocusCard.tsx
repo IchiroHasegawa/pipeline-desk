@@ -68,25 +68,13 @@ export const FocusCardComponent: React.FC<FocusCardProps> = ({
         </p>
       </div>
 
-      {/* Connector line (50 x 13, 0.5px stroke) at (1093.5, 467) */}
-      <div className="absolute left-[1093.5px] top-[467px] w-[50px] h-[13px] pointer-events-none">
-        <svg
-          width="50"
-          height="13"
-          viewBox="0 0 50 13"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-[50px] h-[13px]"
-        >
-          <path
-            d="M0 6.5H50"
-            stroke="var(--color-line, #000000)"
-            strokeWidth="0.5"
-          />
-        </svg>
-      </div>
+      {/* The connector is NOT drawn here. TimelineCanvas draws it from the
+          project line's live anchor to this frame's edge, so it stays
+          attached under pan, zoom and resize (§2.7). Its geometry comes
+          from PROJECT_FOCUS_CONNECTOR — keep this frame's position in step
+          with that constant. */}
 
-      {/* Thumbnail Frame (214 x 125) at (1143.5, 468) */}
+      {/* Thumbnail Frame (214 x 125) at (1143.5, 468) — PROJECT_FOCUS_CONNECTOR.rect */}
       <div className="absolute left-[1143.5px] top-[468px] w-[214px] h-[125px] rounded-[var(--radius-sm,3px)] overflow-hidden bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line-soft,#a9a9a9)] pointer-events-auto flex items-center justify-center">
         {thumbnailUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */

@@ -371,7 +371,6 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           <DayBranchTree
             episodeLineX={episodeLineX}
             zoom={zoom}
-            episode={episode}
             days={daysWithTasks}
             selectedDayId={selectedDayId}
             focusedDayId={focusedDayId}

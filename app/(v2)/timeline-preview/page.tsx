@@ -195,9 +195,10 @@ export default function TimelinePreviewPage() {
           items={timelineItems}
           selectedId={selectedId}
           focusedId={focusedId}
-          mode={mode}
           onSelect={handleSelect}
           onOpen={handleOpen}
+          autoCenter
+          centerOnSelect
         />
 
         {/* Focus Card overlay when an item is focused */}

@@ -9,13 +9,20 @@ import ListPanel, { ListPanelItem } from "@/components/shell/ListPanel";
 
 import TimelineCanvas from "@/components/timeline/TimelineCanvas";
 import TimelineBranch from "@/components/timeline/TimelineBranch";
+import BoundingBoxLayer from "@/components/timeline/BoundingBoxLayer";
+import OriginDot from "@/components/timeline/OriginDot";
+import WorldLayer from "@/components/shell/WorldLayer";
 import EpisodeStrip, { EpisodeStripItem } from "@/components/episodes/EpisodeStrip";
 import EpisodeFormDialog from "@/components/episodes/EpisodeFormDialog";
 import MainTasksPanel from "@/components/shared/MainTasksPanel";
 
 import {
   resolveEpisodeBranchPaths,
+  computeEpisodeBoundingBox,
+  toSegment,
+  IDENTITY_TRANSFORM,
   Point,
+  type CanvasTransform,
 } from "@/lib/timeline/timelineGeometry";
 import {
   createEpisodeV2,
@@ -85,22 +92,58 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
     };
   }, [focusedId]);
 
-  // Parent project line geometry per Spec B1: 981 x 408.5 at (457, 317.5), length 1062.7, angle 22.61°, 1px stroke
-  const parentOrigin: Point = useMemo(() => ({ x: 457, y: 317.5 }), []);
+  // §3.3 — the project detail anchored on the origin dot.
+  const [isOriginOpen, setIsOriginOpen] = useState(false);
+
+  // §3.1 — dev-only bounding-box overlay, toggled with Shift+B. The guard
+  // is `process.env.NODE_ENV`, which is statically replaced at build time,
+  // so neither the state nor the listener survives a production build.
+  const [showBoundingBox, setShowBoundingBox] = useState(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.shiftKey && (e.key === "B" || e.key === "b")) {
+        setShowBoundingBox((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // §3.6 — mirrored out of the canvas so the dot grid follows canvas pans
+  // only. Dragging the project line leaves this untouched, so the grid,
+  // the bottom episode rail and the floating panels all stay put.
+  const [gridTransform, setGridTransform] =
+    useState<CanvasTransform>(IDENTITY_TRANSFORM);
+
+  // Parent project line geometry — DESIGN_SPEC §5: bbox 981 × 408.5 at
+  // (457, 317.5), so the line runs from (457, 726) up-right at 22.61°.
+  const parentOrigin: Point = useMemo(() => ({ x: 457, y: 726 }), []);
   const parentLength = 1062.7;
   const parentAngleDeg = 22.61;
 
-  // Resolve episode branch paths per Spec B2: 0.5px stroke, angle 12°..85.5°, length 60..466, alternating sides
+  const parentSegment = useMemo(
+    () => toSegment(parentOrigin, parentLength, parentAngleDeg),
+    [parentOrigin, parentLength, parentAngleDeg]
+  );
+
+  // §3.4 — junctions come from EPISODE_ATTACH_* via getAttachmentPoint.
   const branchPaths = useMemo(() => {
     return resolveEpisodeBranchPaths(
       parentOrigin,
       parentLength,
       parentAngleDeg,
-      episodes,
-      project.startDate,
-      project.endDate
+      episodes
     );
-  }, [parentOrigin, parentLength, parentAngleDeg, episodes, project.startDate, project.endDate]);
+  }, [parentOrigin, parentLength, parentAngleDeg, episodes]);
+
+  // §3.1 — width is the project line's full extent (its fade reaches zero
+  // at its own end); height is the span from the topmost branch above the
+  // line to the bottommost below it.
+  const boundingBox = useMemo(
+    () => computeEpisodeBoundingBox(parentSegment, branchPaths),
+    [parentSegment, branchPaths]
+  );
 
   const timelineCanvasItems = useMemo(() => {
     return [
@@ -108,9 +151,11 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
         id: project.id,
         length: parentLength,
         label: project.title,
+        origin: parentOrigin,
+        angleDeg: parentAngleDeg,
       },
     ];
-  }, [project, parentLength]);
+  }, [project, parentLength, parentOrigin, parentAngleDeg]);
 
   const listItems: ListPanelItem[] = useMemo(() => {
     return episodes.map((ep) => ({
@@ -266,6 +311,7 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
       nav={<VerticalNav active="project" />}
       tools={<TransformTools actions={toolActions} />}
       toolsPosition={{ x: 101.5, y: 87 }}
+      gridTransform={gridTransform}
       list={
         <ListPanel
           items={listItems}
@@ -276,14 +322,24 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
       }
     >
       <div ref={containerRef} className="w-full h-full relative overflow-hidden select-none font-sans">
-        {/* Main Canvas rendering parent project line (1px) and hairline branches (0.5px) */}
+        {/* §3.2 — autoCenter puts the project line at the centre of the
+            display. It does not need to be centred within the box. */}
         <TimelineCanvas
           items={timelineCanvasItems}
           selectedId={null}
           focusedId={null}
-          mode="absolute"
           onSelect={() => {}}
           onOpen={() => {}}
+          autoCenter
+          onCanvasTransformChange={setGridTransform}
+          // §3.1 — every line inside the layer is clipped to the box and
+          // fades at its edges. Branches are children of the project line,
+          // so they translate with it and stay attached at the junction.
+          wrapLineLayer={(content) => (
+            <BoundingBoxLayer box={boundingBox} debug={showBoundingBox}>
+              {content}
+            </BoundingBoxLayer>
+          )}
           renderBranches={() => (
             <>
               {branchPaths.map((bp) => {
@@ -306,10 +362,25 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
               })}
             </>
           )}
-        />
+        >
+          {/* §3.3 — sits at t = 0 inside the line's transform group, so it
+              is off-screen until the line is dragged far enough to reveal
+              it, then travels with the line. */}
+          <OriginDot
+            at={parentOrigin}
+            open={isOriginOpen}
+            onToggle={() => setIsOriginOpen((v) => !v)}
+            title={project.projectCode || project.title}
+            creationDate={project.createdAt}
+            description={project.description}
+          />
+        </TimelineCanvas>
 
-        {/* Spec B4 Focus Card Overlay when Episode is Focused */}
+        {/* Spec B4 Focus Card Overlay when Episode is Focused — in world
+            space so its measured design coordinates line up with the canvas
+            at any window size. */}
         {focusedEpisode && (
+          <WorldLayer>
           <div aria-label="Focused Episode Details" className="absolute inset-0 pointer-events-none">
             {/* Episode Title (343.5, 201), size 680 x 126 */}
             <div className="absolute left-[343.5px] top-[201px] w-[680px] h-[126px] flex items-baseline pointer-events-auto">
@@ -351,6 +422,7 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
               )}
             </div>
           </div>
+          </WorldLayer>
         )}
 
         {/* Spec C Main Tasks Panel at (1766, 225) shown when an episode is focused */}
