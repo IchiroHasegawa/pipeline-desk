@@ -21,6 +21,18 @@ export type ManageLayoutProps = {
   nav?: React.ReactNode;
 };
 
+/**
+ * Manage page frame — DESIGN_SPEC §8.
+ *
+ * Not a canvas page: no dotted grid, three-column document layout. Every child
+ * is positioned against the 1920-wide document frame using the measured
+ * coordinates, so slots are rendered as direct children of the frame and
+ * position themselves rather than being wrapped in flow containers.
+ *
+ * Frame height is 1271 — the entity list panel (193 + 1078) is the lowest
+ * element, below the commit rail (ends 1080) and the left vertical rule
+ * (ends 1122).
+ */
 export const ManageLayout: React.FC<ManageLayoutProps> = ({
   parentThumbnailUrl,
   parentName,
@@ -34,145 +46,148 @@ export const ManageLayout: React.FC<ManageLayoutProps> = ({
   todoRail,
   entityList,
   tools,
-  toolsPosition,
+  toolsPosition = { x: 677, y: 116 },
   nav = <VerticalNav active="project" />,
 }) => {
   const [activeTab, setActiveTab] = React.useState<"detail" | "todo">("todo");
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[var(--color-canvas,#ffffff)] text-[var(--color-ink,#000000)] font-sans select-none">
-      {/* Navigation Anchor */}
       {nav}
 
-      {/* Main 3-Column Document Body (Offset by Nav width) */}
-      <main className="absolute left-[64px] top-0 right-0 bottom-0 overflow-auto">
-        <div className="relative w-[1856px] h-[1080px] min-w-[1280px]">
-          {/* 1. Header block (top-left) */}
-          <div className="absolute left-[14.5px] top-[35px] flex flex-row items-center gap-4">
-            <div className="w-[97px] h-[136px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] overflow-hidden shrink-0">
-              {parentThumbnailUrl ? (
-                <img
-                  src={parentThumbnailUrl}
-                  alt={parentName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[10px] text-[var(--color-ink-muted,#707070)] font-mono">
-                  [THUMB]
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col gap-1">
-              <h1 className="text-[var(--text-heading,28px)] font-bold tracking-tight text-[var(--color-ink,#000000)]">
-                {parentName}
-              </h1>
-              <h2 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink-muted,#707070)]">
-                {title}
-              </h2>
-            </div>
-          </div>
-
-          {/* 2. Left column — Preview, Strip, Heading, Commit rail */}
-          <div className="absolute left-[14.5px] top-[193px] w-[735px] flex flex-col">
-            {/* Preview player (14.5, 193) -> 722 x 389, ends y=582 */}
-            <div className="w-[722px] h-[389px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] overflow-hidden shadow-sm shrink-0">
-              {preview}
-            </div>
-
-            {/* Strip thumbnails (y=614, height 75px) */}
-            <div className="mt-[32px] h-[75px] w-[735px] shrink-0 overflow-hidden">
-              {strip}
-            </div>
-
-            {/* Heading (15, 705) & Rule (15, 722) */}
-            <div className="mt-[16px] flex flex-col gap-2 shrink-0">
-              <h3 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)] font-sans">
-                {stripHeading}
-              </h3>
-              <div className="w-[735px] h-[1px] bg-[var(--color-line,#000000)]" />
-            </div>
-
-            {/* Commit rail (10, 756.5) */}
-            <div className="mt-[34.5px] pl-[0.5px]">
-              {commitRail}
-            </div>
-          </div>
-
-          {/* 3. Centre column — Tasks grid, Detail / To do toggle, To Do rail */}
-          <div className="absolute left-[775px] top-[199px] w-[790px] flex flex-col gap-3">
-            {/* Tasks section */}
-            <div className="flex flex-col gap-2">
-              <h3 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)]">
-                Tasks
-              </h3>
-              <div className="w-[424px] h-[1px] bg-[var(--color-line,#000000)]" />
-              <div className="pt-2">{tasks}</div>
-            </div>
-
-            {/* Detail / To do toggle */}
-            <div className="mt-6 flex flex-col gap-2">
-              <div className="w-[790px] h-[1px] bg-[var(--color-line,#000000)]" />
-              <div className="flex flex-row items-center gap-0 text-[var(--text-caption,11px)]">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("detail")}
-                  className={`w-[66px] h-[32px] rounded-t-[var(--radius-sm,3px)] border border-b-0 border-[var(--color-line,#000000)] font-medium cursor-pointer transition-colors ${
-                    activeTab === "detail"
-                      ? "bg-[var(--color-panel,#f0f0f0)] text-[var(--color-ink,#000000)] z-10"
-                      : "bg-[var(--color-selection,#d9d9d9)] text-[var(--color-ink-muted,#707070)]"
-                  }`}
-                >
-                  Detail
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("todo")}
-                  className={`w-[66px] h-[32px] -ml-2 rounded-t-[var(--radius-sm,3px)] border border-b-0 border-[var(--color-line,#000000)] font-medium cursor-pointer transition-colors ${
-                    activeTab === "todo"
-                      ? "bg-[var(--color-panel,#f0f0f0)] text-[var(--color-ink,#000000)] z-10"
-                      : "bg-[var(--color-selection,#d9d9d9)] text-[var(--color-ink-muted,#707070)]"
-                  }`}
-                >
-                  To do
-                </button>
+      <main className="absolute inset-0 overflow-auto">
+        <div className="relative w-[1920px] h-[1271px] shrink-0">
+          {/* Parent thumbnail (14.5, 35) 97 × 136 */}
+          <div className="absolute left-[14.5px] top-[35px] w-[97px] h-[136px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] overflow-hidden">
+            {parentThumbnailUrl ? (
+              <img
+                src={parentThumbnailUrl}
+                alt={parentName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[10px] text-[var(--color-ink-muted,#707070)] font-mono">
+                [THUMB]
               </div>
-
-              {/* Tab Body */}
-              <div className="pt-2">
-                {activeTab === "todo" ? (
-                  todoRail
-                ) : (
-                  detailPanel || (
-                    <div className="p-4 border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] bg-[var(--color-panel,#f0f0f0)] text-[var(--text-list,12px)]">
-                      No additional detail metadata available.
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* 4. Right column — Pinned entity list */}
-          <div className="absolute left-[1593px] top-[193px] w-[260px] h-[860px]">
-            {entityList}
+          {/* Parent name (131.5, 92) 578 × 79 */}
+          <h1 className="absolute left-[131.5px] top-[92px] w-[578px] h-[79px] text-[var(--text-heading,24px)] leading-tight font-bold tracking-tight text-[var(--color-ink,#000000)] truncate">
+            {parentName}
+          </h1>
+
+          {/* Title (132, 142) 664 × 29 */}
+          <h2 className="absolute left-[132px] top-[142px] w-[664px] h-[29px] flex items-center text-[var(--text-section,18px)] leading-none font-medium text-[var(--color-ink-muted,#707070)] truncate">
+            {title}
+          </h2>
+
+          {/* Preview player (14.5, 193) 722 × 389 */}
+          <div className="absolute left-[14.5px] top-[193px] w-[722px] h-[389px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] overflow-hidden shadow-sm">
+            {preview}
+          </div>
+
+          {/*
+            Strip thumbnails: y 614, x 14.5 + 147·n, 134 × 75, 5 visible.
+            Sits above the heading and below the preview, and must never overlap
+            the commit rail (which starts at y 756.5).
+          */}
+          <div className="absolute left-[14.5px] top-[614px] w-[722px] h-[75px] overflow-hidden">
+            {strip}
+          </div>
+
+          {/* Strip heading (15, 705) 211 × 62 */}
+          <h3 className="absolute left-[15px] top-[705px] w-[211px] h-[62px] text-[var(--text-section,18px)] leading-none font-medium text-[var(--color-ink,#000000)]">
+            {stripHeading}
+          </h3>
+
+          {/* Rule under the heading (15, 722) 735 × 1 */}
+          <div className="absolute left-[15px] top-[722px] w-[735px] h-[1px] bg-[var(--color-line,#000000)]" />
+
+          {/* Commit rail positions itself at (10, 756.5) */}
+          {commitRail}
+
+          {/* "Tasks" heading (775, 199) 311 × 31 */}
+          <h3 className="absolute left-[775px] top-[199px] w-[311px] h-[31px] flex items-center text-[var(--text-section,18px)] leading-none font-medium text-[var(--color-ink,#000000)]">
+            Tasks
+          </h3>
+
+          {/* Top rule (768, 224) 424 × 1 */}
+          <div className="absolute left-[768px] top-[224px] w-[424px] h-[1px] bg-[var(--color-line,#000000)]" />
+
+          {/* Left vertical rule (768, 224) 1 × 898 */}
+          <div className="absolute left-[768px] top-[224px] w-[1px] h-[898px] bg-[var(--color-line,#000000)]" />
+
+          {/* Task cards position themselves at y 253 / 369, x 775 + 191.7·n */}
+          {tasks}
+
+          {/* Detail / To do rule (768, 618.5) 828 × 1 */}
+          <div className="absolute left-[768px] top-[618.5px] w-[828px] h-[1px] bg-[var(--color-line,#000000)]" />
+
+          {/* Detail tab (775, 619) and To do tab (833, 619), 66 × 32 each */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("detail")}
+            className={`absolute left-[775px] top-[619px] w-[66px] h-[32px] rounded-t-[var(--radius-sm,3px)] border border-b-0 border-[var(--color-line,#000000)] cursor-pointer transition-colors ${
+              activeTab === "detail"
+                ? "bg-[var(--color-panel,#f0f0f0)] z-20"
+                : "bg-[var(--color-selection,#d9d9d9)] z-10"
+            }`}
+          >
+            {/* Tab label (786, 628) */}
+            <span
+              className={`absolute left-[11px] top-[9px] text-[var(--text-caption,11px)] leading-none font-medium ${
+                activeTab === "detail"
+                  ? "text-[var(--color-ink,#000000)]"
+                  : "text-[var(--color-ink-muted,#707070)]"
+              }`}
+            >
+              Detail
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("todo")}
+            className={`absolute left-[833px] top-[619px] w-[66px] h-[32px] rounded-t-[var(--radius-sm,3px)] border border-b-0 border-[var(--color-line,#000000)] cursor-pointer transition-colors ${
+              activeTab === "todo"
+                ? "bg-[var(--color-panel,#f0f0f0)] z-20"
+                : "bg-[var(--color-selection,#d9d9d9)] z-10"
+            }`}
+          >
+            {/* Tab label (845, 628) */}
+            <span
+              className={`absolute left-[12px] top-[9px] text-[var(--text-caption,11px)] leading-none font-medium ${
+                activeTab === "todo"
+                  ? "text-[var(--color-ink,#000000)]"
+                  : "text-[var(--color-ink-muted,#707070)]"
+              }`}
+            >
+              To do
+            </span>
+          </button>
+
+          {/* Tab body — the To Do rail positions itself at (789, 686) */}
+          {activeTab === "todo" ? (
+            todoRail
+          ) : (
+            <div className="absolute left-[789px] top-[673px] w-[790px] p-4 border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] bg-[var(--color-panel,#f0f0f0)] text-[var(--text-list,12px)]">
+              {detailPanel || "No additional detail metadata available."}
+            </div>
+          )}
+
+          {/* Entity list panel positions itself at (1593, 193) 319 × 1078 */}
+          {entityList}
+
+          {/* Transform tools */}
+          <div
+            className="absolute z-20"
+            style={{ left: `${toolsPosition.x}px`, top: `${toolsPosition.y}px` }}
+          >
+            {tools}
           </div>
         </div>
       </main>
-
-      {/* Tools Anchor */}
-      <div
-        className="absolute z-20"
-        style={{
-          left: toolsPosition
-            ? `calc((${toolsPosition.x} / 1920) * 100%)`
-            : "calc((637.5 / 1920) * 100%)",
-          top: toolsPosition
-            ? `calc((${toolsPosition.y} / 1080) * 100%)`
-            : "calc((117 / 1080) * 100%)",
-        }}
-      >
-        {tools}
-      </div>
     </div>
   );
 };

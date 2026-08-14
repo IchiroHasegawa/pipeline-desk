@@ -17,6 +17,17 @@ export type EntityListPanelProps = {
   onOpen?: (id: string) => void;
 };
 
+/**
+ * Entity list panel — DESIGN_SPEC §8.
+ * Panel (1593, 193) 319 × 1078; divider (1594, 219) 1 × 1052;
+ * thumbnails x 1604, y 219 + 222·n, 308 × 171; name x 1607, thumb y + 171, 180 × 22.
+ *
+ * Coordinates are frame-absolute, matching how the spec expresses them, so the
+ * panel is rendered as a direct child of the ManageLayout frame.
+ */
+const THUMB_PITCH = 222;
+const FIRST_THUMB_Y = 219;
+
 export const EntityListPanelComponent: React.FC<EntityListPanelProps> = ({
   heading,
   items,
@@ -24,7 +35,7 @@ export const EntityListPanelComponent: React.FC<EntityListPanelProps> = ({
   onSelect,
   onOpen,
 }) => {
-  // Pin currently-open item first, followed by the rest
+  // Pin the currently-open item first, followed by the rest
   const sortedItems = useMemo(() => {
     const currentItem = items.find((i) => i.id === currentId);
     const otherItems = items.filter((i) => i.id !== currentId);
@@ -34,59 +45,71 @@ export const EntityListPanelComponent: React.FC<EntityListPanelProps> = ({
   return (
     <aside
       aria-label={`${heading} List`}
-      className="w-[260px] h-full bg-[var(--color-panel,#f0f0f0)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] p-4 flex flex-col gap-4 font-sans overflow-hidden shadow-xs"
+      className="absolute left-[1593px] top-[193px] w-[319px] h-[1078px] overflow-y-auto overflow-x-hidden font-sans"
     >
-      <div className="flex flex-row items-center justify-between pb-2 border-b border-[var(--color-line-soft,#a9a9a9)]">
-        <h3 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)]">
-          {heading}
-        </h3>
-        <span className="text-[var(--text-caption,11px)] font-mono text-[var(--color-ink-muted,#707070)]">
-          {items.length} total
-        </span>
-      </div>
+      {/* Divider (1594, 219) 1 × 1052 — panel-relative x 1, y 26 */}
+      <div className="absolute left-[1px] top-[26px] w-[1px] h-[1052px] bg-[var(--color-line,#000000)] pointer-events-none" />
 
-      <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-1">
-        {sortedItems.map((item) => {
-          const isCurrent = item.id === currentId;
+      {sortedItems.map((item, idx) => {
+        const isCurrent = item.id === currentId;
+        // Panel-relative: thumbnails sit at x 1604 (panel + 11)
+        const top = FIRST_THUMB_Y - 193 + idx * THUMB_PITCH;
 
-          return (
+        return (
+          <div
+            key={item.id}
+            onClick={() => onSelect(item.id)}
+            onDoubleClick={() => onOpen && onOpen(item.id)}
+            style={{ top: `${top}px` }}
+            className="absolute left-[11px] w-[308px] cursor-pointer group"
+          >
+            {/* Thumbnail 308 × 171 */}
             <div
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              onDoubleClick={() => onOpen && onOpen(item.id)}
-              className={`flex flex-col gap-2 p-2 border rounded-[var(--radius-sm,3px)] cursor-pointer transition-all ${
+              className={`w-[308px] h-[171px] bg-[var(--color-placeholder,#d9d9d9)] overflow-hidden flex items-center justify-center transition-all ${
                 isCurrent
-                  ? "border-[var(--color-ink,#000000)] bg-[var(--color-selection,#d9d9d9)] shadow-sm"
-                  : "border-[var(--color-line-soft,#a9a9a9)] bg-white/50 hover:bg-white"
+                  ? "border-2 border-[var(--color-ink,#000000)]"
+                  : "border border-[var(--color-line-soft,#a9a9a9)] opacity-80 group-hover:opacity-100"
               }`}
             >
-              <div className="w-full h-[120px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line-soft,#a9a9a9)] rounded-[var(--radius-xs,1px)] overflow-hidden flex items-center justify-center">
-                {item.thumbnailUrl ? (
-                  <img
-                    src={item.thumbnailUrl}
-                    alt={item.label}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-[10px] font-mono text-[var(--color-ink-muted,#707070)]">
-                    [NO PREVIEW]
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-row items-center justify-between">
-                <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink,#000000)] truncate max-w-[170px]">
-                  {item.label}
+              {item.thumbnailUrl ? (
+                <img
+                  src={item.thumbnailUrl}
+                  alt={item.label}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] text-[var(--color-ink-muted,#707070)]">
+                  [NO PREVIEW]
                 </span>
-                {isCurrent && (
-                  <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-xs,1px)]">
-                    OPEN
-                  </span>
-                )}
-              </div>
+              )}
             </div>
-          );
-        })}
-      </div>
+
+            {/* Name — x 1607 (panel + 14), thumb y + 171, 180 × 22 */}
+            <div className="absolute left-[3px] top-[171px] w-[180px] h-[22px] flex items-center gap-2">
+              <span
+                className={`text-[var(--text-list,12px)] leading-none truncate ${
+                  isCurrent
+                    ? "font-medium text-[var(--color-ink,#000000)]"
+                    : "text-[var(--color-ink,#000000)]"
+                }`}
+              >
+                {item.label}
+              </span>
+              {isCurrent && (
+                <span className="text-[9px] font-medium px-1 py-0.5 bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-xs,1px)] shrink-0">
+                  OPEN
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Absolutely positioned rows: establishes scroll height. */}
+      <div
+        aria-hidden="true"
+        style={{ height: `${FIRST_THUMB_Y - 193 + sortedItems.length * THUMB_PITCH}px` }}
+      />
     </aside>
   );
 };

@@ -7,6 +7,8 @@ import {
   deterministicInRange,
   Point,
   TIMELINE_LINE_FADE_STOPS,
+  sceneBranchSpec,
+  sceneLineExtent,
 } from "@/lib/timeline/timelineGeometry";
 import type { EpisodeV2, DayV2, CustomTaskV2 } from "@/types/production-v2";
 
@@ -28,7 +30,8 @@ export type ResolvedTaskBranch = {
 };
 
 export type DayBranchTreeProps = {
-  episodeLineX: number; // ~958 at rest, ~473 when focused
+  episodeLineX: number; // 957.8 at rest, 473.2 when focused (DESIGN_SPEC §7)
+  zoom: number; // 1 at rest, SCENE_ZOOM_FOCUS when a day is focused
   episode?: EpisodeV2;
   days: DayWithTasks[];
   selectedDayId: string | null;
@@ -41,6 +44,7 @@ export type DayBranchTreeProps = {
 
 export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
   episodeLineX,
+  zoom,
   episode,
   days,
   selectedDayId,
@@ -52,9 +56,11 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
 }) => {
   const gradientId = useId();
 
-  const episodeTop: Point = { x: episodeLineX, y: 50 };
-  const episodeBottom: Point = { x: episodeLineX, y: 1000 };
-  const lineLength = 950;
+  // DESIGN_SPEC §7: two contiguous segments meeting at y 384, lengths scaled by zoom.
+  const { top: lineTop, bottom: lineBottom } = sceneLineExtent(zoom);
+  const episodeTop: Point = { x: episodeLineX, y: lineTop };
+  const episodeBottom: Point = { x: episodeLineX, y: lineBottom };
+  const lineLength = lineBottom - lineTop;
 
   // Calculate branch paths for Days and Custom Tasks
   const { dayBranches, taskBranches } = useMemo(() => {
@@ -63,15 +69,6 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
         dayBranches: [],
         taskBranches: [],
       };
-    }
-
-    // FIX 1: Dev-only assertion for exact vertical line anchor points
-    if (process.env.NODE_ENV !== "production") {
-      const testAnchor05 = 50 + 0.05 * 950;
-      const testAnchor95 = 50 + 0.95 * 950;
-      if (Math.abs(testAnchor05 - 97.5) > 1e-6 || Math.abs(testAnchor95 - 952.5) > 1e-6) {
-        console.error("Vertical line calculation assertion failed:", { testAnchor05, testAnchor95 });
-      }
     }
 
     // Sort days by dayDate ascending
@@ -126,29 +123,30 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
       // Clamp anchorT to [0.05, 0.95] so branches never sit on line's ends
       anchorT = Math.max(0.05, Math.min(0.95, anchorT));
 
-      // FIX 1: Explicit downward descending line calculation (y = 50 + anchorT * 950)
+      // Anchor along the downward vertical episode line
       const dayFrom: Point = {
         x: episodeLineX,
-        y: 50 + anchorT * lineLength,
+        y: lineTop + anchorT * lineLength,
       };
 
-      // Day branch length: clamp(280 + 60 * customTaskCount, 280, 640)
-      const customTaskCount = day.tasks ? day.tasks.length : 0;
-      const dayLength = Math.max(280, Math.min(640, 280 + 60 * customTaskCount));
+      // DESIGN_SPEC §7: angle 32°–47.15° and rest length 139–411.3, both derived
+      // deterministically from the day id. Angle is constant across zoom states;
+      // only the length scales.
+      const { angleDeg, restLength } = sceneBranchSpec(day.id);
+      const dayLength = restLength * zoom;
 
-      // FIX 2: Compute day branch endpoints in ABSOLUTE screen space
       const side = idx % 2 === 0 ? 1 : -1; // even right (+1), odd left (-1)
-      let thetaDeg = deterministicInRange(day.id, -55, 55);
-      // Bias upward if near the bottom edge (y > 650) so it doesn't exceed y=1080
-      if (dayFrom.y > 650 && thetaDeg > -10) {
-        thetaDeg = -Math.abs(thetaDeg) - 15;
-      } else if (dayFrom.y < 350 && thetaDeg < 10) {
-        thetaDeg = Math.abs(thetaDeg) + 15;
-      }
-      const theta = (thetaDeg * Math.PI) / 180;
+      const theta = (angleDeg * Math.PI) / 180;
+      const dx = side * dayLength * Math.cos(theta);
+      const dy = dayLength * Math.sin(theta);
+
+      // Branches run downward. Mirror vertically (preserving the angle magnitude)
+      // when a downward branch would leave the canvas.
+      const vSign = dayFrom.y + dy > 1060 ? -1 : 1;
+
       const dayTo: Point = {
-        x: dayFrom.x + side * dayLength * Math.cos(theta),
-        y: dayFrom.y + dayLength * Math.sin(theta),
+        x: dayFrom.x + dx,
+        y: dayFrom.y + vSign * dy,
       };
 
       // FIX 5: Dev off-canvas warning
@@ -212,7 +210,7 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
           }
           const spread = (spreadDeg * Math.PI) / 180;
           const taskAngle = baseAngle + spread;
-          const taskLength = 160;
+          const taskLength = 160 * zoom;
 
           const taskTo: Point = {
             x: taskFrom.x + taskLength * Math.cos(taskAngle),
@@ -253,12 +251,13 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
       dayBranches: resolvedDays,
       taskBranches: resolvedTasks,
     };
-  }, [days, episode, episodeLineX, lineLength]);
+  }, [days, episode, episodeLineX, zoom, lineTop, lineLength]);
 
   // Compute Task Card placements and leader lines with collision avoidance
   const cardPlacements = useMemo(() => {
-    const cardWidth = 155;
-    const cardHeight = 179; // 167 body + 25 tab - 13 overlap
+    // DESIGN_SPEC §7 task card frame
+    const cardWidth = 217.7;
+    const cardHeight = 235.6;
     const padding = 16;
 
     type CardBox = { id: string; x: number; y: number; w: number; h: number };
@@ -358,8 +357,23 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
     });
   }, [taskBranches, days]);
 
+  /*
+   * At focus the line is 3.15× longer than the 1080 canvas, so the focused day's
+   * anchor has to be brought back into view. DESIGN_SPEC does not specify panning
+   * (§7 gives only the zoomed lengths), so this centres the focused anchor
+   * vertically — an implementation decision, not a measured value.
+   */
+  const panY = useMemo(() => {
+    if (focusedDayId === null) return 0;
+    const focused = dayBranches.find((b) => b.dayId === focusedDayId);
+    return focused ? 540 - focused.from.y : 0;
+  }, [focusedDayId, dayBranches]);
+
   return (
-    <g className="transition-[transform] duration-500 ease-out">
+    <g
+      className="transition-transform duration-500 ease-out"
+      transform={`translate(0, ${panY})`}
+    >
       <defs>
         <linearGradient
           id={gradientId}
@@ -453,8 +467,8 @@ export const DayBranchTreeComponent: React.FC<DayBranchTreeProps> = ({
             key={tb.id}
             x={x}
             y={y}
-            width={155}
-            height={180}
+            width={217.7}
+            height={235.6}
             className="overflow-visible pointer-events-none"
           >
             <TaskCard

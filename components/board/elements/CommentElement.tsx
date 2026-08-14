@@ -30,25 +30,25 @@ export const CommentElementComponent: React.FC<CommentElementProps> = ({
     <div
       onPointerDown={onSelect}
       onDoubleClick={() => setIsEditing(true)}
-      style={{
-        minWidth: "168px",
-        minHeight: "28px",
-      }}
-      className={`relative p-2 rounded-[9px] bg-[var(--color-comment-surface,#565656)] text-[var(--color-ink-inverse,#ffffff)] text-[12px] font-sans shadow-md cursor-grab active:cursor-grabbing border ${
-        selected ? "border-2 border-white ring-2 ring-black" : "border-transparent"
+      style={{ width: "168px", height: "28px" }}
+      className={`relative rounded-[9px] bg-[var(--color-comment-surface,#565656)] text-[var(--color-ink-inverse,#ffffff)] font-sans shadow-md cursor-grab active:cursor-grabbing ${
+        selected ? "ring-2 ring-black outline outline-1 outline-white" : ""
       }`}
     >
+      {/* Text (8, 6) 117 x 15 */}
       {isEditing ? (
-        <textarea
+        <input
           autoFocus
           value={bodyText}
           onChange={(e) => setBodyText(e.target.value)}
           onBlur={handleBlur}
-          className="w-full bg-transparent text-white border-none outline-none resize-none font-sans text-[12px] leading-snug"
-          rows={Math.max(1, bodyText.split("\n").length)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
+          className="absolute left-[8px] top-[6px] w-[117px] h-[15px] bg-transparent text-[var(--color-ink-inverse,#ffffff)] border-none outline-none font-sans text-[var(--text-caption,11px)] leading-none p-0"
         />
       ) : (
-        <div className="whitespace-pre-wrap break-words leading-snug text-[12px]">
+        <div className="absolute left-[8px] top-[6px] w-[117px] h-[15px] flex items-center text-[var(--text-caption,11px)] leading-none truncate">
           {bodyText}
         </div>
       )}

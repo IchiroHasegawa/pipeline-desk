@@ -7,6 +7,12 @@ export type TodoCheckboxProps = {
   checked: boolean;
   label: string;
   disabled?: boolean;
+  /**
+   * Render the 12 × 12 box alone, keeping `label` as the accessible name only.
+   * DESIGN_SPEC §8 positions the To Do checkbox and its text label at separate
+   * measured coordinates, so they cannot be laid out as one inline pair.
+   */
+  hideLabel?: boolean;
   onToggle: (id: string, next: boolean) => void;
 };
 
@@ -15,6 +21,7 @@ export const TodoCheckboxComponent: React.FC<TodoCheckboxProps> = ({
   checked,
   label,
   disabled = false,
+  hideLabel = false,
   onToggle,
 }) => {
   const [prevCheckedProp, setPrevCheckedProp] = useState(checked);
@@ -34,9 +41,9 @@ export const TodoCheckboxComponent: React.FC<TodoCheckboxProps> = ({
   return (
     <label
       htmlFor={`todo-checkbox-${id}`}
-      className={`inline-flex items-center gap-2 cursor-pointer select-none font-sans text-[var(--text-list,12px)] ${
-        disabled ? "opacity-50 cursor-not-allowed" : ""
-      }`}
+      className={`inline-flex items-center cursor-pointer select-none font-sans text-[var(--text-list,12px)] ${
+        hideLabel ? "" : "gap-2"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <input
         id={`todo-checkbox-${id}`}
@@ -63,15 +70,17 @@ export const TodoCheckboxComponent: React.FC<TodoCheckboxProps> = ({
           </svg>
         )}
       </span>
-      <span
-        className={`truncate ${
-          internalChecked
-            ? "line-through text-[var(--color-ink-muted,#707070)]"
-            : "text-[var(--color-ink,#000000)]"
-        }`}
-      >
-        {label}
-      </span>
+      {!hideLabel && (
+        <span
+          className={`truncate ${
+            internalChecked
+              ? "line-through text-[var(--color-ink-muted,#707070)]"
+              : "text-[var(--color-ink,#000000)]"
+          }`}
+        >
+          {label}
+        </span>
+      )}
     </label>
   );
 };

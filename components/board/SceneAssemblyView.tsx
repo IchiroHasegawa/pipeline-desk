@@ -134,64 +134,9 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
         className="hidden"
       />
 
-      <div className="relative w-full h-full flex flex-row overflow-hidden select-none">
-        {/* Left Scenes List Sidebar */}
-        {!isSidebarHidden && (
-          <aside className="w-[300px] h-full border-r border-[var(--color-line,#000000)] bg-[var(--color-canvas,#ffffff)] flex flex-col p-4 z-20 shadow-xs">
-            <h2 className="text-[var(--text-section,18px)] font-medium text-[var(--color-ink,#000000)] mb-3">
-              Scenes list
-            </h2>
-
-            <div className="flex-1 overflow-y-auto flex flex-col gap-4 pr-1">
-              {sortedScenes.map((s) => {
-                const isCurrent = s.id === scene.id;
-                const width = isCurrent ? "267px" : "199px";
-                const height = isCurrent ? "133px" : "99px";
-
-                return (
-                  <div
-                    key={s.id}
-                    onClick={() => {
-                      if (!isCurrent) {
-                        router.push(
-                          `/projects/${episode.projectId}/episodes/${episode.id}/scenes/${s.id}/assembly`
-                        );
-                      }
-                    }}
-                    className={`flex flex-col gap-1.5 p-2 rounded-[var(--radius-sm,3px)] cursor-pointer transition-all ${
-                      isCurrent
-                        ? "border-2 border-black bg-[var(--color-selection,#d9d9d9)] shadow-sm"
-                        : "border border-[var(--color-line-soft,#a9a9a9)] hover:bg-[var(--color-panel,#f0f0f0)]"
-                    }`}
-                  >
-                    <div
-                      style={{ width, height }}
-                      className="bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line-soft,#a9a9a9)] rounded-[var(--radius-xs,1px)] overflow-hidden flex items-center justify-center"
-                    >
-                      {s.previewImage ? (
-                        <img
-                          src={s.previewImage}
-                          alt={s.sceneName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-[10px] font-mono text-[var(--color-ink-muted,#707070)]">
-                          [SCENE THUMB]
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink,#000000)] truncate max-w-[250px]">
-                      {s.sceneName}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </aside>
-        )}
-
-        {/* Board Canvas Area */}
-        <main className="flex-1 h-full relative">
+      <div className="relative w-full h-full overflow-hidden select-none">
+        {/* Board fills the frame; the scenes list floats above it (DESIGN_SPEC §9) */}
+        <div className="absolute inset-0">
           <BoardSpace
             boardId={boardId}
             elements={elements}
@@ -204,10 +149,84 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
             onElementMove={handleMoveElements}
             preSelectedId={targetKeyframeId}
           />
+        </div>
 
-          {/* Bottom Centre Floating Toolbar */}
-          <BoardToolbar activeTool={activeTool} onToolSelect={setActiveTool} />
-        </main>
+        {/*
+          Scenes list — DESIGN_SPEC §9.
+          Heading (14.9, 190.6) 155 × 41; current scene thumb (14.9, 217.6)
+          267 × 133; other thumbs x 15, y 375.6 + 124·n, 199 × 99.
+        */}
+        {!isSidebarHidden && (
+          <aside
+            aria-label="Scenes list"
+            className="absolute left-0 top-0 w-[300px] h-full z-20 overflow-y-auto overflow-x-hidden pointer-events-none"
+          >
+            <h2 className="absolute left-[14.9px] top-[190.6px] w-[155px] h-[41px] flex items-center text-[var(--text-section,18px)] leading-none font-medium text-[var(--color-ink,#000000)]">
+              Scenes list
+            </h2>
+
+            {sortedScenes.map((s, idx) => {
+              const isCurrent = s.id === scene.id;
+              const left = isCurrent ? 14.9 : 15;
+              const top = isCurrent ? 217.6 : 375.6 + (idx - 1) * 124;
+              const width = isCurrent ? 267 : 199;
+              const height = isCurrent ? 133 : 99;
+
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-current={isCurrent ? "true" : undefined}
+                  onClick={() => {
+                    if (!isCurrent) {
+                      router.push(
+                        `/projects/${episode.projectId}/episodes/${episode.id}/scenes/${s.id}/assembly`
+                      );
+                    }
+                  }}
+                  style={{
+                    left: `${left}px`,
+                    top: `${top}px`,
+                    width: `${width}px`,
+                    height: `${height}px`,
+                  }}
+                  className={`absolute block overflow-hidden bg-[var(--color-placeholder,#d9d9d9)] transition-all pointer-events-auto outline-none ${
+                    isCurrent
+                      ? "border-2 border-[var(--color-ink,#000000)] cursor-default"
+                      : "border border-[var(--color-line-soft,#a9a9a9)] opacity-80 hover:opacity-100 cursor-pointer"
+                  }`}
+                >
+                  {s.previewImage ? (
+                    <img
+                      src={s.previewImage}
+                      alt={s.sceneName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center px-2 text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] truncate">
+                      {s.sceneName}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Absolutely positioned thumbs: establishes the scroll height. */}
+            <div
+              aria-hidden="true"
+              style={{
+                height: `${375.6 + Math.max(0, sortedScenes.length - 1) * 124 + 24}px`,
+              }}
+            />
+          </aside>
+        )}
+
+        {/* Tools bar (840.9, 979.6) 235 × 59 */}
+        <BoardToolbar
+          activeTool={activeTool}
+          onToolSelect={setActiveTool}
+          position={{ x: 840.9, y: 979.6 }}
+        />
       </div>
     </CanvasShell>
   );

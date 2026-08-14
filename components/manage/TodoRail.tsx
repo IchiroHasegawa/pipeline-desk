@@ -10,6 +10,18 @@ export type TodoRailProps = {
   onCreateTodo?: (title: string) => Promise<void>;
 };
 
+/**
+ * To Do rail — DESIGN_SPEC §8.
+ * Rail (789, 686) 0.5 × 409.
+ * Latest — dot (786, 679) 6 × 8, label (796, 673) 196 × 56, rule (879, 683) 596,
+ *          checkbox (879.5, 676) 12 × 12.
+ * Next   — dot (786, 864) 6 × 7, label (796, 857) 179 × 50, rule (885, 868) 596,
+ *          checkbox (864.5, 860) 12 × 12.
+ *
+ * The design provides exactly two slots. The quick-add form below the rail is an
+ * addition — DESIGN_SPEC §14 lists empty states and overflow past the measured
+ * item counts as unspecified.
+ */
 export const TodoRailComponent: React.FC<TodoRailProps> = ({
   todos,
   onToggleComplete,
@@ -32,69 +44,84 @@ export const TodoRailComponent: React.FC<TodoRailProps> = ({
     }
   };
 
-  return (
-    <div className="relative pl-6 py-2 min-h-[160px] font-sans">
-      {/* Hairline vertical rail */}
-      <div className="absolute left-[7px] top-2 bottom-2 w-[0.5px] bg-[var(--color-line,#000000)] pointer-events-none" />
+  const latest = todos.length > 0 ? todos[0] : null;
+  const next = todos.length > 1 ? todos[1] : null;
 
-      {/* Quick Add Input */}
+  return (
+    <>
+      {/* Rail (789, 686) 0.5 × 409 */}
+      <div className="absolute left-[789px] top-[686px] w-[0.5px] h-[409px] bg-[var(--color-line,#000000)] pointer-events-none" />
+
+      {/* ---- Latest To do ---- */}
+      <div className="absolute left-[786px] top-[679px] w-[6px] h-[8px] rounded-full bg-[var(--color-ink,#000000)]" />
+      <div className="absolute left-[879px] top-[683px] w-[596px] h-[1px] bg-[var(--color-line-soft,#a9a9a9)]" />
+      <div className="absolute left-[796px] top-[673px] w-[196px] h-[56px] font-sans">
+        <span className="block text-[var(--text-list,12px)] leading-none font-medium text-[var(--color-ink-muted,#707070)]">
+          Latest To do
+        </span>
+        <span className="block pt-[8px] text-[var(--text-caption,11px)] leading-tight text-[var(--color-ink,#000000)] line-clamp-2">
+          {latest ? latest.title : "No open To Dos."}
+        </span>
+      </div>
+      {latest && (
+        <div className="absolute left-[879.5px] top-[676px]">
+          <TodoCheckbox
+            id={latest.id}
+            checked={false}
+            label={latest.title}
+            hideLabel
+            onToggle={(id, nextVal) => onToggleComplete(id, nextVal)}
+          />
+        </div>
+      )}
+
+      {/* ---- Next To do ---- */}
+      <div className="absolute left-[786px] top-[864px] w-[6px] h-[7px] rounded-full bg-[var(--color-ink,#000000)]" />
+      <div className="absolute left-[885px] top-[868px] w-[596px] h-[1px] bg-[var(--color-line-soft,#a9a9a9)]" />
+      <div className="absolute left-[796px] top-[857px] w-[179px] h-[50px] font-sans">
+        <span className="block text-[var(--text-list,12px)] leading-none font-medium text-[var(--color-ink-muted,#707070)]">
+          Next To do
+        </span>
+        <span className="block pt-[8px] text-[var(--text-caption,11px)] leading-tight text-[var(--color-ink,#000000)] line-clamp-2">
+          {next ? next.title : "Nothing queued."}
+        </span>
+      </div>
+      {next && (
+        <div className="absolute left-[864.5px] top-[860px]">
+          <TodoCheckbox
+            id={next.id}
+            checked={false}
+            label={next.title}
+            hideLabel
+            onToggle={(id, nextVal) => onToggleComplete(id, nextVal)}
+          />
+        </div>
+      )}
+
+      {/* Quick add — below the rail (686 + 409 = 1095) */}
       {onCreateTodo && (
-        <form onSubmit={handleAddSubmit} className="mb-4 flex flex-row items-center gap-2">
+        <form
+          onSubmit={handleAddSubmit}
+          className="absolute left-[796px] top-[1110px] w-[596px] flex flex-row items-center gap-2 font-sans"
+        >
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="+ Add a new To Do..."
+            placeholder="+ Add a new To Do…"
             disabled={isAdding}
             className="flex-1 px-3 py-1 text-[var(--text-list,12px)] border border-[var(--color-line-soft,#a9a9a9)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:border-black font-sans"
           />
           <button
             type="submit"
             disabled={isAdding || !newTitle.trim()}
-            className="px-3 py-1 text-[11px] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] font-medium cursor-pointer disabled:opacity-40"
+            className="px-3 py-1 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] font-medium cursor-pointer disabled:opacity-40"
           >
             Add
           </button>
         </form>
       )}
-
-      {/* To Do Items list */}
-      {todos.length === 0 ? (
-        <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] py-4 italic">
-          No open To Dos. All caught up!
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {todos.map((todo, idx) => {
-            const isLatest = idx === 0;
-            const label = isLatest ? "Latest To do" : "Next To do";
-
-            return (
-              <div key={todo.id} className="relative flex flex-col gap-1.5">
-                {/* Dot */}
-                <div className="absolute -left-[20px] top-[8px] w-[6px] h-[6px] rounded-full bg-[var(--color-ink,#000000)]" />
-
-                <div className="flex flex-row items-center justify-between gap-4">
-                  <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink-muted,#707070)] shrink-0">
-                    {label}
-                  </span>
-                  <div className="flex-1 h-[1px] bg-[var(--color-line-soft,#a9a9a9)]" />
-                </div>
-
-                <div className="pl-1 pt-0.5">
-                  <TodoCheckbox
-                    id={todo.id}
-                    checked={false}
-                    label={todo.title}
-                    onToggle={(id, next) => onToggleComplete(id, next)}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

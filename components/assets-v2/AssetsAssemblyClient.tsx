@@ -236,10 +236,18 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
             onElementDelete={handleDeleteElement}
             onElementMove={handleMoveElements}
           />
-
-          {/* Bottom Floating Toolbar */}
-          <BoardToolbar activeTool={activeTool} onToolSelect={setActiveTool} />
         </main>
+
+        {/*
+          Tools bar (842, 981) 235 × 59 — DESIGN_SPEC §13.
+          Positioned against the viewport frame, not the board column, so the
+          coordinates hold whether or not the 330px panel is collapsed.
+        */}
+        <BoardToolbar
+          activeTool={activeTool}
+          onToolSelect={setActiveTool}
+          position={{ x: 842, y: 981 }}
+        />
       </div>
     </CanvasShell>
   );

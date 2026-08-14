@@ -11,7 +11,7 @@ import TimelineCanvas from "@/components/timeline/TimelineCanvas";
 import TimelineBranch from "@/components/timeline/TimelineBranch";
 import EpisodeStrip, { EpisodeStripItem } from "@/components/episodes/EpisodeStrip";
 import EpisodeFormDialog from "@/components/episodes/EpisodeFormDialog";
-import MainTasksPanel from "@/components/episodes/MainTasksPanel";
+import MainTasksPanel from "@/components/shared/MainTasksPanel";
 
 import {
   resolveEpisodeBranchPaths,

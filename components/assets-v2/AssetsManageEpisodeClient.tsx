@@ -94,10 +94,8 @@ export const AssetsManageEpisodeClient: React.FC<AssetsManageEpisodeClientProps>
           </h1>
         </div>
 
-        {/* Tabs & Rule section */}
-        <div className="absolute left-[43px] top-[145px] w-[1353.5px]">
-          <EpsAstsTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        </div>
+        {/* Tabs & rule — EpsAstsTabs positions itself per DESIGN_SPEC §11 */}
+        <EpsAstsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Content section (96, 258) */}
         <div className="absolute left-[96px] top-[258px] pb-16">

@@ -91,19 +91,14 @@ export const ProjectListPanelComponent: React.FC<ProjectListPanelProps> = ({
       }}
       className="h-full bg-[var(--color-selection,#d9d9d9)] border-r border-[var(--color-line,#000000)] overflow-hidden transition-all duration-300 ease-in-out z-20 flex flex-col font-sans select-none shrink-0"
     >
-      <div className="w-[330px] h-full pt-[120px] px-6 pb-6 flex flex-col gap-5">
-        {/* Panel Header */}
+      <div className="relative w-[330px] h-full overflow-y-auto overflow-x-hidden">
+        {/* Panel Header — "Projects" (121, 56) 202 × 88 (DESIGN_SPEC §13) */}
         {viewMode === "projects" ? (
-          <div className="flex flex-col gap-1">
-            <h2 className="text-[var(--text-heading,28px)] font-bold text-[var(--color-ink,#000000)]">
-              Projects
-            </h2>
-            <p className="text-[11px] font-mono text-[var(--color-ink-muted,#707070)]">
-              Single-click to view · Double-click to drill
-            </p>
-          </div>
+          <h2 className="absolute left-[121px] top-[56px] w-[202px] h-[88px] text-[var(--text-heading,24px)] leading-tight font-bold text-[var(--color-ink,#000000)]">
+            Projects
+          </h2>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 pt-[56px] px-6">
             <button
               onClick={handleBackToProjects}
               className="self-start flex items-center gap-1.5 text-xs font-bold text-[var(--color-ink,#000000)] hover:underline py-1"
@@ -122,10 +117,10 @@ export const ProjectListPanelComponent: React.FC<ProjectListPanelProps> = ({
           </div>
         )}
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto flex flex-col gap-6 pr-2">
+        {/* Content */}
+        <div className={viewMode === "projects" ? "" : "flex flex-col gap-6 px-6 pb-6 pt-4"}>
           {viewMode === "projects" ? (
-            sortedProjects.map((proj) => {
+            sortedProjects.map((proj, idx) => {
               const isSelected = proj.id === currentProjectId;
               const isHoveredTarget =
                 hoveredDropTarget?.type === "project" &&
@@ -137,7 +132,8 @@ export const ProjectListPanelComponent: React.FC<ProjectListPanelProps> = ({
                   data-drop-target-project-id={proj.id}
                   onClick={() => onSelectProject(proj.id)}
                   onDoubleClick={() => handleDoubleClickProject(proj)}
-                  className={`w-[202px] h-[282px] rounded-[var(--radius-card,7px)] border flex flex-col justify-between p-3.5 cursor-pointer transition-all ${
+                  style={{ left: "64px", top: `${148 + idx * 318}px` }}
+                  className={`absolute w-[202px] h-[282px] rounded-[var(--radius-card,7px)] border flex flex-col justify-between p-3.5 cursor-pointer transition-all ${
                     isHoveredTarget
                       ? "border-blue-600 bg-blue-500/20 ring-4 ring-blue-500 shadow-xl scale-[1.02]"
                       : isSelected
@@ -239,6 +235,14 @@ export const ProjectListPanelComponent: React.FC<ProjectListPanelProps> = ({
             </>
           )}
         </div>
+
+        {/* Project cards are absolutely positioned: establishes the scroll height. */}
+        {viewMode === "projects" && (
+          <div
+            aria-hidden="true"
+            style={{ height: `${148 + sortedProjects.length * 318}px` }}
+          />
+        )}
       </div>
     </aside>
   );

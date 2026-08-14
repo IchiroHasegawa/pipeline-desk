@@ -9,18 +9,35 @@ export type ProjectPosterGridProps = {
   onSelectProject: (projectId: string) => void;
 };
 
+/**
+ * DESIGN_SPEC §10 — posters 226 × 345 at x 78, 379, 680, 980, 1282, 1583
+ * (column pitch 301) and y 227 & 656 (row pitch 429), six per row.
+ * The grid's own origin is (78, 227), set by the page, so offsets here are
+ * relative to it.
+ */
+const COLUMN_PITCH = 301;
+const ROW_PITCH = 429;
+const PER_ROW = 6;
+
 export const ProjectPosterGridComponent: React.FC<ProjectPosterGridProps> = ({
   projects,
   onSelectProject,
 }) => {
   return (
-    <div className="grid grid-cols-6 gap-[75px] w-[1731px] pt-4 font-sans select-none">
-      {projects.map((project) => {
+    <div
+      className="relative w-[1731px] font-sans select-none"
+      style={{ height: `${Math.ceil(projects.length / PER_ROW) * ROW_PITCH}px` }}
+    >
+      {projects.map((project, idx) => {
+        const col = idx % PER_ROW;
+        const row = Math.floor(idx / PER_ROW);
+
         return (
           <div
             key={project.id}
             onClick={() => onSelectProject(project.id)}
-            className="flex flex-col gap-2 cursor-pointer group"
+            style={{ left: `${col * COLUMN_PITCH}px`, top: `${row * ROW_PITCH}px` }}
+            className="absolute w-[226px] flex flex-col gap-2 cursor-pointer group"
           >
             {/* Poster Card: 226 x 345 */}
             <div className="relative w-[226px] h-[345px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] overflow-hidden shadow-sm group-hover:shadow-md transition-all group-hover:border-black flex flex-col justify-between p-3">

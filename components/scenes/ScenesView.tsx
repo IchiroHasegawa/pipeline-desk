@@ -9,11 +9,16 @@ import ListPanel, { ListPanelItem } from "@/components/shell/ListPanel";
 
 import DayBranchTree, { DayWithTasks } from "@/components/scenes/DayBranchTree";
 import CustomTasksPanel from "@/components/scenes/CustomTasksPanel";
+import MainTasksPanel from "@/components/shared/MainTasksPanel";
 import EpisodeStrip, { EpisodeStripItem } from "@/components/episodes/EpisodeStrip";
 import AddDialog from "@/components/scenes/AddDialog";
 import SceneFormDialog from "@/components/scenes/SceneFormDialog";
 
-import { computeMainTaskProgress } from "@/lib/timeline/taskRollup";
+import {
+  SCENE_LINE_X_ENTRANCE,
+  SCENE_LINE_X_FOCUS,
+  SCENE_ZOOM_FOCUS,
+} from "@/lib/timeline/timelineGeometry";
 import {
   createDay,
   createCustomTask,
@@ -58,25 +63,6 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
     scenes.length > 0 ? scenes[0].id : null
   );
 
-  console.log("ITEM_1_SCENESVIEW_PROPS:", JSON.stringify({
-    daysCount: daysWithTasks.length,
-    days: daysWithTasks.map((d) => ({
-      id: d.id,
-      day_date: d.dayDate,
-      taskCount: d.tasks?.length,
-    })),
-    scenesCount: sceneList.length,
-    selectedSceneId,
-    selectedDayId,
-    focusedId: focusedDayId,
-  }, null, 2));
-
-  console.log("ITEM_2_DAYBRANCHTREE_GUARDS:", JSON.stringify({
-    errorMsg: initialError,
-    selectedSceneId,
-    scenesLength: sceneList.length,
-  }, null, 2));
-
   const [mainTasks, setMainTasks] = useState<MainTaskV2[]>([]);
   const [isLoadingMainTasks, setIsLoadingMainTasks] = useState(false);
 
@@ -84,8 +70,11 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
   const [isSceneFormOpen, setIsSceneFormOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(initialError);
 
-  // Animate episode line X position: ~958 at rest, ~473 when a day is focused
-  const episodeLineX = focusedDayId ? 473 : 958;
+  // DESIGN_SPEC §7: line x 957.8 at rest, 473.2 when a day is focused;
+  // branch/segment lengths scale by 3.15× in the focused state.
+  const isFocused = focusedDayId !== null;
+  const episodeLineX = isFocused ? SCENE_LINE_X_FOCUS : SCENE_LINE_X_ENTRANCE;
+  const zoom = isFocused ? SCENE_ZOOM_FOCUS : 1;
 
   // Flatten all custom tasks across all days for rollup calculation
   const allCustomTasks = useMemo(() => {
@@ -381,6 +370,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
         >
           <DayBranchTree
             episodeLineX={episodeLineX}
+            zoom={zoom}
             episode={episode}
             days={daysWithTasks}
             selectedDayId={selectedDayId}
@@ -392,84 +382,19 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
           />
         </svg>
 
-        {/* Custom Tasks Panel (Figma 70:409) at offset (1611, 226) */}
-        {focusedDay && (
-          <CustomTasksPanel
-            tasks={focusedDay.tasks}
-            selectedTaskId={selectedTaskId}
-            onSelectTask={handleTaskSelect}
-            onToggleComplete={handleToggleTaskComplete}
-          />
-        )}
+        {/* DESIGN_SPEC §7: both panels show simultaneously on the Scene page. */}
+        <CustomTasksPanel
+          tasks={focusedDay ? focusedDay.tasks : []}
+          selectedTaskId={selectedTaskId}
+          onSelectTask={handleTaskSelect}
+          onToggleComplete={handleToggleTaskComplete}
+        />
 
-        {/* Main Tasks Panel (Figma 70:412) at offset (1765, 225) */}
-        {selectedSceneId && (
-          <aside
-            aria-label="Main Tasks Panel"
-            className="absolute z-30 pointer-events-auto w-[124px] bg-[var(--color-panel,#f0f0f0)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] shadow-lg overflow-hidden transition-all duration-300 font-sans"
-            style={{
-              left: "calc((1765 / 1920) * 100%)",
-              top: "calc((225 / 1080) * 100%)",
-              height: "414px",
-            }}
-          >
-            {/* Header bar */}
-            <div className="h-[36px] px-3 flex items-center border-b border-[var(--color-line-soft,#a9a9a9)] bg-[var(--color-panel,#f0f0f0)]">
-              <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink,#000000)] tracking-tight truncate">
-                Main Tasks
-              </span>
-            </div>
-
-            {/* Task list body */}
-            <div className="p-2 flex flex-col gap-3 relative h-[378px] overflow-y-auto">
-              {/* Hairline vertical rail */}
-              <div className="absolute left-[7px] top-2 bottom-2 w-[0.5px] bg-[var(--color-line,#000000)] pointer-events-none" />
-
-              {isLoadingMainTasks ? (
-                <div className="py-6 text-center text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono">
-                  Loading...
-                </div>
-              ) : mainTasks.length === 0 ? (
-                <div className="py-6 text-center text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)]">
-                  No tasks
-                </div>
-              ) : (
-                mainTasks.map((task) => {
-                  // Real-time progress rollup calculation
-                  const displayedPct = computeMainTaskProgress(task, allCustomTasks);
-
-                  return (
-                    <div key={task.id} className="relative pl-4 flex flex-col gap-1">
-                      {/* Row Dot */}
-                      <div className="absolute left-[5px] top-1.5 w-[5px] h-[5px] rounded-full bg-[var(--color-ink,#000000)] -translate-x-1/2" />
-
-                      <div className="flex flex-row items-center justify-between">
-                        <span className="text-[var(--text-list,12px)] font-medium text-[var(--color-ink,#000000)] truncate max-w-[80px]">
-                          {task.name}
-                        </span>
-                        <span className="text-[var(--text-caption,11px)] font-mono text-[var(--color-ink-muted,#707070)]">
-                          {displayedPct}%
-                        </span>
-                      </div>
-
-                      {/* Progress Bar Track */}
-                      <div className="w-[110px] h-[4px] bg-[var(--color-line-soft,#a9a9a9)] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[var(--color-progress,#000000)] transition-all duration-300"
-                          style={{ width: `${Math.min(100, Math.max(0, displayedPct))}%` }}
-                        />
-                      </div>
-
-                      <span className="text-[9px] font-mono text-[var(--color-ink-muted,#707070)] truncate">
-                        Last commit 2d ago
-                      </span>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </aside>
-        )}
+        <MainTasksPanel
+          mainTasks={mainTasks}
+          customTasks={allCustomTasks}
+          isLoading={isLoadingMainTasks}
+        />
 
         {/* Scene Strip Picker at (221, 938) */}
         <EpisodeStrip

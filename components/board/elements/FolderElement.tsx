@@ -51,17 +51,17 @@ export const FolderElementComponent: React.FC<FolderElementProps> = ({
       {/* 3. Front: (0, 27) 203 x 133, radius 10 */}
       <div
         style={{ backgroundColor: frontFill }}
-        className="absolute left-0 top-[27px] w-[203px] h-[133px] rounded-[10px] border border-black/10 shadow-sm flex flex-col justify-between p-3"
-      >
-        {/* Label */}
-        <div className="flex flex-col gap-0.5 max-w-[170px]">
-          <span className="text-[var(--text-list,12px)] font-bold text-[var(--color-ink-inverse,#ffffff)] truncate">
-            {element.title || "Untitled Folder"}
-          </span>
-          <span className="text-[10px] font-mono text-[var(--color-ink-inverse,#ffffff)] opacity-80">
-            {childCount} item{childCount === 1 ? "" : "s"}
-          </span>
-        </div>
+        className="absolute left-0 top-[27px] w-[203px] h-[133px] rounded-[10px] border border-black/10 shadow-sm"
+      />
+
+      {/* 4. Label: (12, 52) 71 x 30, --color-ink-inverse */}
+      <div className="absolute left-[12px] top-[52px] w-[71px] h-[30px] flex flex-col justify-center text-[var(--color-ink-inverse,#ffffff)]">
+        <span className="block text-[var(--text-list,12px)] leading-none font-bold truncate">
+          {element.title || "Untitled Folder"}
+        </span>
+        <span className="block pt-[3px] text-[10px] leading-none opacity-80 truncate">
+          {childCount} item{childCount === 1 ? "" : "s"}
+        </span>
       </div>
     </div>
   );

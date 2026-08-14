@@ -200,21 +200,38 @@ export const VerticalNav: React.FC<VerticalNavProps> = ({
         ))}
       </nav>
 
-      {/* Decorative underline rect on Assets pages (364 x 14 at 1565, 185) */}
+      {/*
+        Decorative underline rect on Assets pages (364 x 14 at 1565, 185).
+        1565 + 364 = 1929, so it runs 9px past the 1920 canvas — that overflow is
+        present in the design file itself. The rect keeps its measured 364px
+        width; the clipping container trims the overhang instead of resizing it.
+      */}
       {isAssetsRoute && (
         <div
+          aria-hidden="true"
           style={{
             position: "fixed",
-            left: "1565px",
+            left: 0,
             top: "185px",
-            width: "364px",
+            width: "100vw",
             height: "14px",
-            borderRadius: "7px",
-            backgroundColor: "var(--color-selection,#d9d9d9)",
+            overflow: "hidden",
             zIndex: 49,
             pointerEvents: "none",
           }}
-        />
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: "1565px",
+              top: 0,
+              width: "364px",
+              height: "14px",
+              borderRadius: "7px",
+              backgroundColor: "var(--color-selection,#d9d9d9)",
+            }}
+          />
+        </div>
       )}
     </>
   );

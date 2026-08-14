@@ -97,6 +97,60 @@ export function pointAlongLine(
   };
 }
 
+/* ------------------------------------------------------------------ *
+ * Scene page geometry (DESIGN_SPEC §7)
+ * ------------------------------------------------------------------ */
+
+/** Vertical episode line x: 957.8 at entrance, 473.2 when a day is focused. */
+export const SCENE_LINE_X_ENTRANCE = 957.8;
+export const SCENE_LINE_X_FOCUS = 473.2;
+
+/**
+ * The line is two contiguous segments meeting at y = 384.
+ * Entrance: 0 × 409 from y −25, then 0 × 434 from y 384.
+ * Focus lengths (1288.7 / 1367.5) are these same values × 3.15.
+ */
+export const SCENE_LINE_JUNCTION_Y = 384;
+export const SCENE_LINE_SEG_UPPER = 409;
+export const SCENE_LINE_SEG_LOWER = 434;
+
+/** Entrance → focus zoom. 139→438 and 411.3→1295.8 both give 3.15. */
+export const SCENE_ZOOM_FOCUS = 3.15;
+
+/** Day branch angle range, measured: 32.16° and 47.15°. */
+export const SCENE_BRANCH_ANGLE_MIN = 32;
+export const SCENE_BRANCH_ANGLE_MAX = 47.15;
+
+/** Day branch length range at rest, measured: 139.0 and 411.3. */
+export const SCENE_BRANCH_LEN_MIN = 139;
+export const SCENE_BRANCH_LEN_MAX = 411.3;
+
+/** Vertical extent of the episode line at a given zoom. */
+export function sceneLineExtent(zoom: number): { top: number; bottom: number } {
+  return {
+    top: SCENE_LINE_JUNCTION_Y - SCENE_LINE_SEG_UPPER * zoom,
+    bottom: SCENE_LINE_JUNCTION_Y + SCENE_LINE_SEG_LOWER * zoom,
+  };
+}
+
+/**
+ * Day branch angle and rest-length, both derived deterministically from the
+ * day id. Angle is identical across zoom states — only length scales.
+ */
+export function sceneBranchSpec(dayId: string): {
+  angleDeg: number;
+  restLength: number;
+} {
+  return {
+    angleDeg:
+      SCENE_BRANCH_ANGLE_MIN +
+      hash01(dayId, "angle") * (SCENE_BRANCH_ANGLE_MAX - SCENE_BRANCH_ANGLE_MIN),
+    restLength:
+      SCENE_BRANCH_LEN_MIN +
+      hash01(dayId, "len") * (SCENE_BRANCH_LEN_MAX - SCENE_BRANCH_LEN_MIN),
+  };
+}
+
 export type BranchSpec = {
   id: string;
   startDate?: string | null;
