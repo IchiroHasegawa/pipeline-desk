@@ -21,12 +21,12 @@ export const FolderElementComponent: React.FC<FolderElementProps> = ({
   const isGreen = element.colour === "green";
 
   const tabFill = isGreen
-    ? "var(--color-folder-green-tab, #3b6b45)"
-    : "var(--color-folder-teal-tab, #2e6e76)";
+    ? "var(--color-folder-green-tab, #75d592)"
+    : "var(--color-folder-teal-tab, #b5ffe5)";
 
   const frontFill = isGreen
-    ? "var(--color-folder-green, #4e8f5c)"
-    : "var(--color-folder-teal, #3f939e)";
+    ? "var(--color-folder-green, #327c53)"
+    : "var(--color-folder-teal, #32717c)";
 
   return (
     <div

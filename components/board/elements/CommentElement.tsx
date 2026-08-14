@@ -34,7 +34,7 @@ export const CommentElementComponent: React.FC<CommentElementProps> = ({
         minWidth: "168px",
         minHeight: "28px",
       }}
-      className={`relative p-2 rounded-[9px] bg-[var(--color-comment-surface,#2b2b2b)] text-[var(--color-ink-inverse,#ffffff)] text-[12px] font-sans shadow-md cursor-grab active:cursor-grabbing border ${
+      className={`relative p-2 rounded-[9px] bg-[var(--color-comment-surface,#565656)] text-[var(--color-ink-inverse,#ffffff)] text-[12px] font-sans shadow-md cursor-grab active:cursor-grabbing border ${
         selected ? "border-2 border-white ring-2 ring-black" : "border-transparent"
       }`}
     >

@@ -56,7 +56,7 @@ export const ListPanel: React.FC<ListPanelProps> = ({
       tabIndex={0}
       aria-label="Selection List"
       onKeyDown={handleKeyDown}
-      className="w-[var(--size-list-width,116px)] h-[var(--size-list-height,345px)] overflow-y-auto outline-none select-none"
+      className="w-[116.5px] h-[var(--size-list-height,345px)] overflow-y-auto outline-none select-none font-sans"
       style={{
         WebkitMaskImage:
           "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)",
@@ -65,7 +65,7 @@ export const ListPanel: React.FC<ListPanelProps> = ({
       }}
     >
       {items.length === 0 ? (
-        <div className="h-[var(--size-list-row-height,46px)] flex items-center justify-center text-[var(--text-list,12px)] text-[var(--color-ink-muted,#707070)]">
+        <div className="h-[46.4px] flex items-center justify-center text-[var(--text-list,12px)] text-[var(--color-ink-muted,#707070)]">
           {emptyLabel}
         </div>
       ) : (
@@ -83,19 +83,27 @@ export const ListPanel: React.FC<ListPanelProps> = ({
                 setUserFocusedIndex(idx);
                 onSelect(item.id);
               }}
-              className="w-full h-[var(--size-list-row-height,46px)] flex items-center justify-center border-b border-[var(--color-line,#000000)] last:border-b-0 cursor-pointer relative"
+              style={{ height: "46.4px" }}
+              className="relative w-[116.5px] block text-left cursor-pointer outline-none shrink-0"
             >
-              <div
-                className={`w-full h-[var(--size-list-chip-height,24px)] px-2 flex items-center text-left transition-colors ${
-                  isSelected
-                    ? "bg-[var(--color-selection,#d9d9d9)] font-medium"
-                    : "bg-transparent hover:bg-neutral-200/50"
-                } ${isFocused ? "outline-1 outline-black" : ""}`}
-              >
-                <span className="truncate text-[var(--text-list,12px)] font-sans text-[var(--color-ink,#000000)]">
+              {/* Selection chip (116 x 24 behind the row) */}
+              {(isSelected || isFocused) && (
+                <div
+                  className={`absolute left-0 top-0 w-[116px] h-[24px] bg-[var(--color-selection,#d9d9d9)] z-0 ${
+                    isFocused ? "ring-1 ring-black" : ""
+                  }`}
+                />
+              )}
+
+              {/* Row Label (110 x 16 at var(--text-list)) */}
+              <div className="absolute left-0 top-0 w-[110px] h-[16px] flex items-center z-10">
+                <span className="truncate text-[var(--text-list,12px)] font-sans font-medium text-[var(--color-ink,#000000)]">
                   {item.label}
                 </span>
               </div>
+
+              {/* Separator (1px full width, 22px below label top) */}
+              <div className="absolute left-0 top-[22px] w-[116.5px] h-[1px] bg-[var(--color-line,#000000)] z-10" />
             </button>
           );
         })
@@ -105,4 +113,3 @@ export const ListPanel: React.FC<ListPanelProps> = ({
 };
 
 export default ListPanel;
-

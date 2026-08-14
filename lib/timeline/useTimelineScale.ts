@@ -15,7 +15,7 @@ export type TimelineScaleOptions = {
   maxFraction?: number;
   /** absolute mode: pixels per day. Default 4 */
   pixelsPerDay?: number;
-  /** Minimum rendered length so a one-day range is still visible. Default 24 */
+  /** Minimum rendered length so a line is never shorter than Spec §4 min. Default 478 */
   minLength?: number;
 };
 
@@ -25,10 +25,8 @@ export function useTimelineScale(
 ): { lengthById: Record<string, number>; durationDaysById: Record<string, number> } {
   const {
     mode,
-    viewportWidth,
-    maxFraction = 0.72,
     pixelsPerDay = 4,
-    minLength = 24,
+    minLength = 478,
   } = options;
 
   return useMemo(() => {
@@ -72,32 +70,34 @@ export function useTimelineScale(
       }
     }
 
-    // Compute pixel lengths based on mode
+    // Compute pixel lengths based on Spec §4: length = 478 + normalisedDuration * 713 (range 478 to 1191)
+    const minPx = Math.max(478, minLength);
+    const maxPx = 1191;
+    const rangePx = maxPx - minPx;
+
     if (mode === "absolute") {
       for (const range of ranges) {
         const days = durationDaysById[range.id] || 0;
         const rawLength = days * pixelsPerDay;
-        lengthById[range.id] = Math.max(minLength, rawLength);
+        lengthById[range.id] = Math.max(minPx, rawLength);
       }
     } else {
       // "clamped" mode
       if (maxDuration === 0) {
-        // Prevent division by zero when all durations are 0
         for (const range of ranges) {
-          lengthById[range.id] = minLength;
+          lengthById[range.id] = minPx;
         }
       } else {
-        const targetMaxPixels = Math.max(minLength, viewportWidth * maxFraction);
         for (const range of ranges) {
           const days = durationDaysById[range.id] || 0;
-          const rawLength = (days / maxDuration) * targetMaxPixels;
-          lengthById[range.id] = Math.max(minLength, rawLength);
+          const normalisedDuration = days / maxDuration;
+          lengthById[range.id] = Math.round(minPx + normalisedDuration * rangePx);
         }
       }
     }
 
     return { lengthById, durationDaysById };
-  }, [ranges, mode, viewportWidth, maxFraction, pixelsPerDay, minLength]);
+  }, [ranges, mode, pixelsPerDay, minLength]);
 }
 
 export default useTimelineScale;

@@ -32,42 +32,51 @@ export const FocusCardComponent: React.FC<FocusCardProps> = ({
       })()
     : "N/A";
 
+  // Scale title font size between 142px and 64px so long titles do not overflow
+  const titleFontSize = (() => {
+    const len = title.trim().length;
+    if (len <= 5) return 142;
+    return Math.max(64, Math.min(142, Math.round(142 * (5 / len))));
+  })();
+
   return (
     <div
       aria-label="Focus Details"
-      className="relative flex flex-row items-start gap-6 pointer-events-auto select-none transition-all duration-500 ease-out"
+      className="absolute inset-0 pointer-events-none select-none font-sans"
     >
-      {/* Left Details Block */}
-      <div className="flex flex-col items-start max-w-[420px]">
-        {/* Title (142px display text) */}
+      {/* Title at (329.5, 147), size 680 x 126 */}
+      <div className="absolute left-[329.5px] top-[147px] w-[680px] h-[126px] flex items-baseline pointer-events-auto">
         <h1
-          className="font-sans font-normal text-[var(--color-ink,#000000)] tracking-tighter leading-none select-text"
-          style={{ fontSize: "var(--text-display, 142px)" }}
+          className="font-sans font-normal text-[var(--color-ink,#000000)] tracking-tighter leading-none select-text truncate"
+          style={{ fontSize: `${titleFontSize}px` }}
         >
           {title}
         </h1>
+      </div>
 
-        {/* Creation Date */}
-        <p className="mt-2 text-[var(--text-list,12px)] text-[var(--color-ink-muted,#707070)] font-sans font-medium tracking-wide">
+      {/* Creation Date at (622.5, 346), size 147 x 88 */}
+      <div className="absolute left-[622.5px] top-[346px] w-[147px] h-[88px] flex items-start pointer-events-auto">
+        <p className="text-[var(--text-list,12px)] text-[var(--color-ink-muted,#707070)] font-sans font-medium tracking-wide">
           Creation Date - {formattedDate}
         </p>
+      </div>
 
-        {/* Description */}
-        <p className="mt-3 text-[var(--text-list,12px)] text-[var(--color-ink,#000000)] font-sans leading-relaxed max-w-[257px]">
+      {/* Description at (329.5, 393), size 257 x 395 */}
+      <div className="absolute left-[329.5px] top-[393px] w-[257px] h-[395px] overflow-auto pointer-events-auto">
+        <p className="text-[var(--text-list,12px)] text-[var(--color-ink,#000000)] font-sans leading-relaxed">
           {description}
         </p>
       </div>
 
-      {/* 50x13 Connector Line & 214x125 Thumbnail */}
-      <div className="flex flex-row items-center gap-2 mt-12">
-        {/* Connector SVG line (50x13, 0.5px stroke) */}
+      {/* Connector line (50 x 13, 0.5px stroke) at (1093.5, 467) */}
+      <div className="absolute left-[1093.5px] top-[467px] w-[50px] h-[13px] pointer-events-none">
         <svg
           width="50"
           height="13"
           viewBox="0 0 50 13"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-[50px] h-[13px] shrink-0"
+          className="w-[50px] h-[13px]"
         >
           <path
             d="M0 6.5H50"
@@ -75,22 +84,22 @@ export const FocusCardComponent: React.FC<FocusCardProps> = ({
             strokeWidth="0.5"
           />
         </svg>
+      </div>
 
-        {/* Thumbnail Frame (214 x 125) */}
-        <div className="w-[214px] h-[125px] rounded-[var(--radius-sm,3px)] overflow-hidden bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line-soft,#a9a9a9)] shrink-0 flex items-center justify-center">
-          {thumbnailUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={thumbnailUrl}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-[var(--color-placeholder,#d9d9d9)] flex items-center justify-center text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono">
-              THUMBNAIL
-            </div>
-          )}
-        </div>
+      {/* Thumbnail Frame (214 x 125) at (1143.5, 468) */}
+      <div className="absolute left-[1143.5px] top-[468px] w-[214px] h-[125px] rounded-[var(--radius-sm,3px)] overflow-hidden bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line-soft,#a9a9a9)] pointer-events-auto flex items-center justify-center">
+        {thumbnailUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={thumbnailUrl}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-[182px] h-[96px] bg-[var(--color-placeholder,#d9d9d9)] flex items-center justify-center text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono">
+            THUMBNAIL
+          </div>
+        )}
       </div>
     </div>
   );

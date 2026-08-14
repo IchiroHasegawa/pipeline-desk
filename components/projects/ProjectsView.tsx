@@ -66,13 +66,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     mode: "clamped",
     viewportWidth,
     maxFraction: 0.72,
-    minLength: 280,
+    minLength: 478,
   });
 
   const timelineItems = useMemo(() => {
     return sortedProjects.map((p) => ({
       id: p.id,
-      length: lengthById[p.id] || 280,
+      length: lengthById[p.id] || 478,
       label: p.title,
     }));
   }, [sortedProjects, lengthById]);
@@ -97,7 +97,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
   // Interaction handlers
   const handleListSelect = useCallback((id: string) => {
-    // Click name in ListPanel -> Select AND Focus
     setSelectedId(id);
     setFocusedId(id);
   }, []);
@@ -105,10 +104,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const handleCanvasLineSelect = useCallback(
     (id: string) => {
       if (selectedId === id) {
-        // Already selected -> Focus
         setFocusedId(id);
       } else {
-        // Select only (no focus)
         setSelectedId(id);
       }
     },
@@ -118,10 +115,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const handleCanvasLineOpen = useCallback(
     (id: string) => {
       if (focusedId === id) {
-        // Already focused -> Navigate to episodes
         router.push(`/projects/${id}/episodes`);
       } else {
-        // Select and Focus
         setSelectedId(id);
         setFocusedId(id);
       }
@@ -130,7 +125,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   );
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    // Click empty canvas -> Clear focus AND selection
     if (e.target === e.currentTarget) {
       setFocusedId(null);
       setSelectedId(null);
@@ -270,7 +264,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
-        className="w-full h-full relative overflow-hidden"
+        className="w-full h-full relative overflow-hidden select-none font-sans"
       >
         {/* Main Canvas with Staggered Lines */}
         <TimelineCanvas
@@ -282,23 +276,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           onOpen={handleCanvasLineOpen}
         />
 
-        {/* Focus Card Overlay */}
+        {/* Spec A4 Focus Card Overlay */}
         {focusedProject && (
-          <div
-            aria-label="Focused Project Details"
-            className="absolute z-30 pointer-events-auto transition-all duration-500 ease-out"
-            style={{
-              left: "calc((329.5 / 1920) * 100%)",
-              top: "calc((147 / 1080) * 100%)",
-            }}
-          >
-            <FocusCard
-              title={focusedProject.projectCode || focusedProject.title}
-              creationDate={focusedProject.createdAt}
-              description={focusedProject.description}
-              thumbnailUrl={focusedProject.thumbnailUrl}
-            />
-          </div>
+          <FocusCard
+            title={focusedProject.projectCode || focusedProject.title}
+            creationDate={focusedProject.createdAt}
+            description={focusedProject.description}
+            thumbnailUrl={focusedProject.thumbnailUrl}
+          />
         )}
 
         {/* Create Project Modal */}

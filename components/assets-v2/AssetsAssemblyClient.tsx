@@ -198,7 +198,7 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
     <CanvasShell
       nav={<VerticalNav active="assets" activeAssetsSubsection="assembly" />}
       tools={<TransformTools actions={toolActions} />}
-      toolsPosition={{ x: 52, y: 56 }}
+      toolsPosition={isPanelCollapsed ? { x: 53, y: 55 } : { x: 360, y: 56 }}
     >
       <input
         ref={fileInputRef}

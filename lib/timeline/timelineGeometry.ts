@@ -1,19 +1,73 @@
-export const TIMELINE_ANGLE_DEG = 22;
+export const TIMELINE_ANGLE_DEG = 22.5;
 
 export type Point = { x: number; y: number };
 
 export type GradientStop = { offset: string; opacity: number };
 
 export const TIMELINE_LINE_FADE_STOPS: GradientStop[] = [
-  { offset: "0%", opacity: 0 },
+  { offset: "0%", opacity: 0.00 },
   { offset: "8%", opacity: 0.15 },
   { offset: "22%", opacity: 0.65 },
   { offset: "37%", opacity: 1.00 },
   { offset: "52%", opacity: 0.85 },
   { offset: "68%", opacity: 0.40 },
   { offset: "85%", opacity: 0.08 },
-  { offset: "100%", opacity: 0 },
+  { offset: "100%", opacity: 0.00 },
 ];
+
+/**
+ * Deterministic hash returning a float in range [0, 1).
+ * Never uses Math.random().
+ */
+export function hash01(seed: string, salt: string = ""): number {
+  const str = seed + salt;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash % 100000) / 100000;
+}
+
+export function deterministicInRange(seed: string, min: number, max: number): number {
+  const norm = hash01(seed);
+  return min + norm * (max - min);
+}
+
+/** Stacking transform for depth. index 0 = newest = frontmost. */
+export function depthTransform(
+  index: number,
+  _total: number
+): {
+  scale: number;
+  offsetY: number;
+  opacity: number;
+  blurPx: number;
+} {
+  void _total;
+  const clampedIdx = Math.min(Math.max(0, index), 8);
+  const factor = clampedIdx / 8;
+
+  return {
+    scale: 1.0 - factor * 0.18,
+    offsetY: -clampedIdx * 18,
+    opacity: 1.0 - factor * 0.75,
+    blurPx: factor * 2.5,
+  };
+}
+
+/** Compute deterministic line origin for a project: originX 240..1010, originY 145..545 */
+export function getProjectLineOrigin(id: string): Point {
+  return {
+    x: Math.round((240 + hash01(id, "x") * 770) * 10) / 10,
+    y: Math.round((145 + hash01(id, "y") * 400) * 10) / 10,
+  };
+}
+
+/** Compute deterministic line angle for a project: 22.0°..23.0° */
+export function getProjectLineAngle(id: string): number {
+  const jitter = (hash01(id, "angle") - 0.5) * 1.0; // -0.5°..+0.5°
+  return Math.round((22.5 + jitter) * 100) / 100;
+}
 
 /** Endpoint of a line of `length` starting at `origin`, ascending right at the given angle. */
 export function lineEndpoint(
@@ -43,167 +97,68 @@ export function pointAlongLine(
   };
 }
 
-/** Stacking transform for depth. index 0 = newest = frontmost. */
-export function depthTransform(
-  index: number,
-  _total: number
-): {
-  scale: number; // 1.0 down to ~0.82
-  offsetY: number; // px pushed back/up
-  opacity: number; // 1.0 down to ~0.25
-  blurPx: number; // 0 up to ~2.5
-} {
-  void _total;
-  const clampedIdx = Math.min(Math.max(0, index), 8);
-  const factor = clampedIdx / 8;
-
-  return {
-    scale: 1.0 - factor * 0.18,
-    offsetY: -clampedIdx * 18,
-    opacity: 1.0 - factor * 0.75,
-    blurPx: factor * 2.5,
-  };
-}
-
-export function deterministicInRange(seed: string, min: number, max: number): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  }
-  const normalized = Math.abs(hash % 10000) / 10000;
-  return min + normalized * (max - min);
-}
-
 export type BranchSpec = {
   id: string;
-  /** 0..1 — where along the parent line this branch attaches */
-  anchorT: number;
-  /** degrees; 0 = same direction as parent, positive = counter-clockwise */
-  angleDeg: number;
-  length: number;
-  /** id of another branch to attach to instead of the parent */
-  parentBranchId?: string;
+  startDate?: string | null;
 };
 
 export type ResolvedBranchPath = {
   id: string;
   from: Point;
   to: Point;
-  depth: number;
+  length: number;
+  angleDeg: number;
 };
 
-export function resolveBranchPaths(
-  parentOrigin: Point,
-  parentLength: number,
-  branches: BranchSpec[],
-  parentAngleDeg: number = TIMELINE_ANGLE_DEG
+/**
+ * Resolves Episode branch paths along the parent project line.
+ * Parent line: 981 × 408.5 at (457, 317.5) — length 1062.7, angle 22.61°, 1px stroke.
+ * Branches: 0.5px stroke, angle 12°..85.5°, length 60..466.
+ */
+export function resolveEpisodeBranchPaths(
+  parentOrigin: Point = { x: 457, y: 317.5 },
+  parentLength: number = 1062.7,
+  parentAngleDeg: number = 22.61,
+  episodes: BranchSpec[],
+  projectStartDate?: string | null,
+  projectEndDate?: string | null
 ): ResolvedBranchPath[] {
-  type ResolvedInternal = ResolvedBranchPath & { absAngle: number };
-  const resolvedMap: Record<string, ResolvedInternal> = {};
-  const remaining = [...branches];
+  if (!episodes || episodes.length === 0) return [];
 
-  // Resolve in passes until no progress or max iterations reached
-  let progress = true;
-  let iterations = 0;
-  const maxIterations = branches.length + 1;
+  const projStart = projectStartDate ? new Date(projectStartDate).getTime() : NaN;
+  const projEnd = projectEndDate ? new Date(projectEndDate).getTime() : NaN;
+  const hasSpan = !isNaN(projStart) && !isNaN(projEnd) && projEnd > projStart;
 
-  while (remaining.length > 0 && progress && iterations < maxIterations) {
-    progress = false;
-    iterations++;
-
-    for (let i = remaining.length - 1; i >= 0; i--) {
-      const branch = remaining[i];
-
-      if (!branch.parentBranchId) {
-        // Direct branch attached to parent line
-        const anchorPt = pointAlongLine(
-          parentOrigin,
-          parentLength,
-          branch.anchorT,
-          parentAngleDeg
-        );
-        const branchAbsAngle = parentAngleDeg + branch.angleDeg;
-        const endpoint = lineEndpoint(anchorPt, branch.length, branchAbsAngle);
-
-        const resolved: ResolvedInternal = {
-          id: branch.id,
-          from: anchorPt,
-          to: endpoint,
-          depth: 0,
-          absAngle: branchAbsAngle,
-        };
-
-        resolvedMap[branch.id] = resolved;
-        remaining.splice(i, 1);
-        progress = true;
-      } else if (resolvedMap[branch.parentBranchId]) {
-        // Sub-branch attached to a parent branch
-        const parentRes = resolvedMap[branch.parentBranchId];
-        const pLen = Math.hypot(
-          parentRes.to.x - parentRes.from.x,
-          parentRes.to.y - parentRes.from.y
-        );
-
-        const anchorPt = pointAlongLine(
-          parentRes.from,
-          pLen,
-          branch.anchorT,
-          parentRes.absAngle
-        );
-        const branchAbsAngle = parentRes.absAngle + branch.angleDeg;
-        const endpoint = lineEndpoint(anchorPt, branch.length, branchAbsAngle);
-
-        const resolved: ResolvedInternal = {
-          id: branch.id,
-          from: anchorPt,
-          to: endpoint,
-          depth: parentRes.depth + 1,
-          absAngle: branchAbsAngle,
-        };
-
-        resolvedMap[branch.id] = resolved;
-        remaining.splice(i, 1);
-        progress = true;
+  return episodes.map((ep, idx) => {
+    let anchorT: number;
+    if (hasSpan && ep.startDate) {
+      const epStart = new Date(ep.startDate).getTime();
+      if (!isNaN(epStart)) {
+        anchorT = (epStart - projStart) / (projEnd - projStart);
+      } else {
+        anchorT = (idx + 1) / (episodes.length + 1);
       }
+    } else {
+      anchorT = (idx + 1) / (episodes.length + 1);
     }
-  }
+    anchorT = Math.max(0.05, Math.min(0.95, anchorT));
 
-  const results = Object.values(resolvedMap).map(({ id, from, to, depth }) => ({
-    id,
-    from,
-    to,
-    depth,
-  }));
+    const relAngle = 12 + hash01(ep.id, "angle") * 73.5; // 12°..85.5°
+    const length = Math.round((60 + hash01(ep.id, "len") * 406) * 10) / 10; // 60..466
 
-  const finalResults = results.filter((path) => {
-    const isFromValid = Number.isFinite(path.from.x) && Number.isFinite(path.from.y);
-    const isToValid = Number.isFinite(path.to.x) && Number.isFinite(path.to.y);
-    const isValid = isFromValid && isToValid;
+    // Alternate sides based on index parity
+    const side = idx % 2 === 0 ? 1 : -1;
+    const finalAngle = Math.round((parentAngleDeg + side * relAngle) * 100) / 100;
 
-    if (!isValid && process.env.NODE_ENV !== "production") {
-      console.warn(
-        `resolveBranchPaths: Dropped branch '${path.id}' due to non-finite coordinates:`,
-        path
-      );
-    }
+    const from = pointAlongLine(parentOrigin, parentLength, anchorT, parentAngleDeg);
+    const to = lineEndpoint(from, length, finalAngle);
 
-    if (isValid && process.env.NODE_ENV !== "production") {
-      const isOffCanvas =
-        path.from.x < 0 || path.from.x > 1920 ||
-        path.from.y < 0 || path.from.y > 1080 ||
-        path.to.x < 0 || path.to.x > 1920 ||
-        path.to.y < 0 || path.to.y > 1080;
-
-      if (isOffCanvas) {
-        console.warn(
-          `resolveBranchPaths: Branch '${path.id}' resolved coordinates fall outside canvas bounds [0..1920, 0..1080]:`,
-          path
-        );
-      }
-    }
-
-    return isValid;
+    return {
+      id: ep.id,
+      from,
+      to,
+      length,
+      angleDeg: finalAngle,
+    };
   });
-
-  return finalResults;
 }

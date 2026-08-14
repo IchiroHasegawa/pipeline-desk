@@ -90,9 +90,9 @@ export const AssetRowTableComponent: React.FC<AssetRowTableProps> = ({
                 )}
               </div>
 
-              {/* Task Cards Stack (pitch 249) */}
-              <div className="flex-1 overflow-x-auto pl-4">
-                <div className="flex flex-row gap-[33px] min-h-[171px] items-start pb-2">
+              {/* Task Cards Container (4 per row, pitch 249px) */}
+              <div className="w-[1165px] pl-4">
+                <div className="flex flex-wrap gap-x-[33px] gap-y-4 items-start min-h-[171px] pb-2">
                   {tasks.length === 0 ? (
                     <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono italic pt-6">
                       No workflow tasks generated yet.

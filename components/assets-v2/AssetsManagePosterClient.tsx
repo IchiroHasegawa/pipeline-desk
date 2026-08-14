@@ -40,11 +40,15 @@ export const AssetsManagePosterClient: React.FC<AssetsManagePosterClientProps> =
       tools={<TransformTools actions={toolActions} />}
       toolsPosition={{ x: 105, y: 62 }}
     >
-      <div className="w-full h-full overflow-auto p-12">
-        <h1 className="text-[var(--text-heading,28px)] font-bold text-[var(--color-ink,#000000)] mb-6 font-sans">
+      <div className="relative w-full h-full overflow-auto select-none font-sans">
+        {/* Title at (78, 180) */}
+        <h1 className="absolute left-[78px] top-[180px] text-[var(--text-heading,24px)] font-bold text-[var(--color-ink,#000000)] tracking-tight">
           Asset Projects Library
         </h1>
-        <ProjectPosterGrid projects={projects} onSelectProject={handleSelectProject} />
+        {/* Poster Grid at (78, 227) */}
+        <div className="absolute left-[78px] top-[227px] pb-16">
+          <ProjectPosterGrid projects={projects} onSelectProject={handleSelectProject} />
+        </div>
       </div>
 
       <AssetFormDialog

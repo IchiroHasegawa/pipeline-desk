@@ -3,10 +3,23 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, memo } from "react";
 import TimelineLine from "@/components/timeline/TimelineLine";
 import TimelineGlow from "@/components/timeline/TimelineGlow";
-import { lineEndpoint, Point } from "@/lib/timeline/timelineGeometry";
+import {
+  lineEndpoint,
+  getProjectLineOrigin,
+  getProjectLineAngle,
+  Point,
+} from "@/lib/timeline/timelineGeometry";
+
+export type TimelineCanvasItem = {
+  id: string;
+  length: number;
+  label: string;
+  origin?: Point;
+  angleDeg?: number;
+};
 
 export type TimelineCanvasProps = {
-  items: Array<{ id: string; length: number; label: string }>;
+  items: TimelineCanvasItem[];
   selectedId: string | null;
   focusedId: string | null;
   mode: "clamped" | "absolute";
@@ -27,7 +40,7 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<SVGGElement>(null);
 
-  // Pan offset state for absolute mode (kept in ref for performance, mirrored in state for bounds)
+  // Pan offset state for absolute mode
   const panRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -37,17 +50,13 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
   const initialPanRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const hasExceededThresholdRef = useRef(false);
 
-  // Calculate layout origins for each item (staggered overlap strata)
-  // Index 0 (newest) sits lowest and frontmost
+  // Calculate layout origins and angles for each item using deterministic hash01 if not provided
   const itemLayouts = React.useMemo(() => {
     const total = items.length;
     return items.map((item, index) => {
-      // Stagger origins: index 0 is lowest Y, frontmost
-      const origin: Point = {
-        x: 180 + (total - 1 - index) * 50,
-        y: 480 - index * 42,
-      };
-      const end = lineEndpoint(origin, item.length);
+      const origin: Point = item.origin ?? getProjectLineOrigin(item.id);
+      const angleDeg = item.angleDeg ?? getProjectLineAngle(item.id);
+      const end = lineEndpoint(origin, item.length, angleDeg);
       const midpoint: Point = {
         x: (origin.x + end.x) / 2,
         y: (origin.y + end.y) / 2,
@@ -56,6 +65,7 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
         ...item,
         origin,
         end,
+        angleDeg,
         midpoint,
         depthIndex: index,
         depthTotal: total,
@@ -69,7 +79,6 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
     const focusedItem = itemLayouts.find((item) => item.id === focusedId);
     if (!focusedItem) return null;
 
-    // Viewport center target
     const targetCenterX = 640;
     const targetCenterY = 340;
 
@@ -110,7 +119,6 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (mode !== "absolute" || focusedId) return;
 
-    // Do not initiate pan capture if clicking an interactive SVG element
     const targetTag = (e.target as HTMLElement).tagName?.toLowerCase();
     if (targetTag === "line" || targetTag === "path") return;
 
@@ -137,15 +145,12 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
     }
 
     if (hasExceededThresholdRef.current) {
-      // Pan along the 22° axis (ascending right)
-      const rad = (22 * Math.PI) / 180;
+      const rad = (22.5 * Math.PI) / 180;
       const cos = Math.cos(rad);
       const sin = Math.sin(rad);
 
-      // Project drag onto 22° vector
       const projectedDist = deltaX * cos - deltaY * sin;
 
-      // Clamp pan extent
       const maxPanX = 0;
       const minPanX = -1200;
 
@@ -179,7 +184,7 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
 
     const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
     if (Math.abs(delta) > 0) {
-      const rad = (22 * Math.PI) / 180;
+      const rad = (22.5 * Math.PI) / 180;
       const maxPanX = 0;
       const minPanX = -1200;
 
@@ -223,14 +228,16 @@ export const TimelineCanvasComponent: React.FC<TimelineCanvasProps> = ({
               : `translate(${effectivePan.x}px, ${effectivePan.y}px)`,
           }}
         >
-          {/* Render background glow streak for frontmost item */}
-          {itemLayouts.length > 0 && (
+          {/* Render background glow streak per project line per Spec A3 */}
+          {itemLayouts.map((item) => (
             <TimelineGlow
-              origin={itemLayouts[0].origin}
-              length={Math.max(1200, itemLayouts[0].length)}
-              opacity={focusedId ? 0.2 : 0.8}
+              key={`glow-${item.id}`}
+              origin={item.origin}
+              lineLength={item.length}
+              angleDeg={item.angleDeg}
+              opacity={focusedId ? (item.id === focusedId ? 0.8 : 0.15) : 0.8}
             />
-          )}
+          ))}
 
           {/* Render lines from back to front (reverse order) */}
           {itemLayouts
