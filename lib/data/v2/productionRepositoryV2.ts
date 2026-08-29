@@ -11,6 +11,7 @@ import type {
   CustomTaskV2,
   AssetV2,
   AssetTaskV2,
+  ProjectBoardStats,
 } from "@/types/production-v2";
 
 // ---------------------------------------------------------------------------
@@ -553,3 +554,107 @@ export async function getActiveAssetWorkflows(): Promise<
 }
 
 
+
+// ---------------------------------------------------------------------------
+// Project Board stats (migration 037 views)
+// ---------------------------------------------------------------------------
+
+/**
+ * Formats a Date as YYYY-MM-DD in IST.
+ *
+ * project_commit_days buckets on `(completed_at at time zone 'Asia/Kolkata')`,
+ * so the cutoff must be computed in the same zone. en-CA yields YYYY-MM-DD.
+ */
+function istDateString(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/**
+ * One query per view for every project — never per project. Results are keyed
+ * by project_id, and any project present in one view but missing from another
+ * still gets a fully zeroed slice for the missing one.
+ *
+ * A project absent from all three views has no key here; callers should fall
+ * back to EMPTY_PROJECT_BOARD_STATS.
+ */
+export async function getProjectBoardStats(): Promise<Record<string, ProjectBoardStats>> {
+  const supabase = await createClient();
+
+  // 365 days inclusive of today.
+  const cutoff = istDateString(new Date(Date.now() - 364 * 24 * 60 * 60 * 1000));
+
+  const [statusRes, commitRes, assetRes] = await Promise.all([
+    supabase
+      .from("project_episode_status")
+      .select("project_id, not_started, in_progress, complete, total_episodes"),
+    supabase
+      .from("project_commit_days")
+      .select("project_id, commit_day, commit_count")
+      .gte("commit_day", cutoff)
+      .order("commit_day", { ascending: true }),
+    supabase
+      .from("project_asset_stats")
+      .select("project_id, asset_count, file_count, total_bytes"),
+  ]);
+
+  if (statusRes.error) {
+    throw formatPostgrestError("getProjectBoardStats (episode status)", statusRes.error);
+  }
+  if (commitRes.error) {
+    throw formatPostgrestError("getProjectBoardStats (commit days)", commitRes.error);
+  }
+  if (assetRes.error) {
+    throw formatPostgrestError("getProjectBoardStats (asset stats)", assetRes.error);
+  }
+
+  const byProject: Record<string, ProjectBoardStats> = {};
+
+  const ensure = (projectId: string): ProjectBoardStats => {
+    let entry = byProject[projectId];
+    if (!entry) {
+      entry = {
+        episodeStatus: { notStarted: 0, inProgress: 0, complete: 0, total: 0 },
+        commitDays: [],
+        assets: { assetCount: 0, fileCount: 0, totalBytes: 0 },
+      };
+      byProject[projectId] = entry;
+    }
+    return entry;
+  };
+
+  for (const row of statusRes.data || []) {
+    if (!row.project_id) continue;
+    const entry = ensure(row.project_id);
+    entry.episodeStatus = {
+      notStarted: row.not_started ?? 0,
+      inProgress: row.in_progress ?? 0,
+      complete: row.complete ?? 0,
+      total: row.total_episodes ?? 0,
+    };
+  }
+
+  for (const row of commitRes.data || []) {
+    if (!row.project_id || !row.commit_day) continue;
+    ensure(row.project_id).commitDays.push({
+      day: row.commit_day,
+      count: row.commit_count ?? 0,
+    });
+  }
+
+  for (const row of assetRes.data || []) {
+    if (!row.project_id) continue;
+    const entry = ensure(row.project_id);
+    entry.assets = {
+      assetCount: row.asset_count ?? 0,
+      fileCount: row.file_count ?? 0,
+      totalBytes: row.total_bytes ?? 0,
+    };
+  }
+
+  return byProject;
+}

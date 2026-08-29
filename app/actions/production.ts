@@ -11,9 +11,11 @@ import type {
   MainTaskV2,
   CustomTaskV2,
   AssetV2,
+  ProjectBoardStats,
 } from "@/types/production-v2";
 import {
   getProjectsV2 as repoGetProjectsV2,
+  getProjectBoardStats as repoGetProjectBoardStats,
   createSceneV2 as repoCreateSceneV2,
   getSceneWorkflows as repoGetSceneWorkflows,
 } from "@/lib/data/v2/productionRepositoryV2";
@@ -778,4 +780,8 @@ export async function getSceneWorkflows(): Promise<Array<{ id: string; name: str
 
 export async function getProjectsV2(): Promise<ProjectV2[]> {
   return repoGetProjectsV2();
+}
+
+export async function getProjectBoardStats(): Promise<Record<string, ProjectBoardStats>> {
+  return repoGetProjectBoardStats();
 }

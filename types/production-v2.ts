@@ -171,3 +171,16 @@ export type AssetTaskV2 = {
 
 
 
+
+export type ProjectBoardStats = {
+  episodeStatus: { notStarted: number; inProgress: number; complete: number; total: number };
+  commitDays: { day: string; count: number }[];
+  assets: { assetCount: number; fileCount: number; totalBytes: number };
+};
+
+/** Fallback for a project absent from all three board views. */
+export const EMPTY_PROJECT_BOARD_STATS: ProjectBoardStats = {
+  episodeStatus: { notStarted: 0, inProgress: 0, complete: 0, total: 0 },
+  commitDays: [],
+  assets: { assetCount: 0, fileCount: 0, totalBytes: 0 },
+};

@@ -1420,7 +1420,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      project_asset_stats: {
+        Row: {
+          asset_count: number | null
+          file_count: number | null
+          project_id: string | null
+          total_bytes: number | null
+        }
+        Relationships: []
+      }
+      project_commit_days: {
+        Row: {
+          commit_count: number | null
+          commit_day: string | null
+          project_id: string | null
+        }
+        Relationships: []
+      }
+      project_episode_status: {
+        Row: {
+          complete: number | null
+          in_progress: number | null
+          not_started: number | null
+          project_id: string | null
+          total_episodes: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_workflow_tasks: {
