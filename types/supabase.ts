@@ -43,7 +43,6 @@ export type Database = {
         Row: {
           asset_id: string
           created_at: string
-          environment_id: string | null
           episode_id: string | null
           id: string
           project_id: string | null
@@ -52,7 +51,6 @@ export type Database = {
         Insert: {
           asset_id: string
           created_at?: string
-          environment_id?: string | null
           episode_id?: string | null
           id?: string
           project_id?: string | null
@@ -61,7 +59,6 @@ export type Database = {
         Update: {
           asset_id?: string
           created_at?: string
-          environment_id?: string | null
           episode_id?: string | null
           id?: string
           project_id?: string | null
@@ -73,13 +70,6 @@ export type Database = {
             columns: ["asset_id"]
             isOneToOne: false
             referencedRelation: "assets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asset_assignments_environment_id_fkey"
-            columns: ["environment_id"]
-            isOneToOne: false
-            referencedRelation: "production_environments"
             referencedColumns: ["id"]
           },
           {
@@ -128,42 +118,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      asset_environment_links: {
-        Row: {
-          asset_id: string
-          created_at: string
-          environment_id: string
-          id: string
-        }
-        Insert: {
-          asset_id: string
-          created_at?: string
-          environment_id: string
-          id?: string
-        }
-        Update: {
-          asset_id?: string
-          created_at?: string
-          environment_id?: string
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "asset_environment_links_asset_id_fkey"
-            columns: ["asset_id"]
-            isOneToOne: false
-            referencedRelation: "assets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asset_environment_links_environment_id_fkey"
-            columns: ["environment_id"]
-            isOneToOne: false
-            referencedRelation: "production_environments"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       asset_files: {
         Row: {
@@ -805,7 +759,6 @@ export type Database = {
           created_at: string
           description: string | null
           end_date: string | null
-          environment_id: string | null
           episode_name: string
           id: string
           job_workflow: string | null
@@ -822,7 +775,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string | null
-          environment_id?: string | null
           episode_name: string
           id?: string
           job_workflow?: string | null
@@ -839,7 +791,6 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string | null
-          environment_id?: string | null
           episode_name?: string
           id?: string
           job_workflow?: string | null
@@ -853,55 +804,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "episodes_environment_id_fkey"
-            columns: ["environment_id"]
-            isOneToOne: false
-            referencedRelation: "production_environments"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "episodes_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      production_environments: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          project_id: string
-          status: string
-          thumbnail_url: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          project_id: string
-          status?: string
-          thumbnail_url?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          project_id?: string
-          status?: string
-          thumbnail_url?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "production_environments_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -920,7 +823,6 @@ export type Database = {
           duration_days: number | null
           effort_hours: number | null
           end_date: string | null
-          environment_id: string | null
           episode_id: string | null
           id: string
           name: string
@@ -947,7 +849,6 @@ export type Database = {
           duration_days?: number | null
           effort_hours?: number | null
           end_date?: string | null
-          environment_id?: string | null
           episode_id?: string | null
           id?: string
           name: string
@@ -974,7 +875,6 @@ export type Database = {
           duration_days?: number | null
           effort_hours?: number | null
           end_date?: string | null
-          environment_id?: string | null
           episode_id?: string | null
           id?: string
           name?: string
@@ -1011,13 +911,6 @@ export type Database = {
             columns: ["day_id"]
             isOneToOne: false
             referencedRelation: "days"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "production_tasks_environment_id_fkey"
-            columns: ["environment_id"]
-            isOneToOne: false
-            referencedRelation: "production_environments"
             referencedColumns: ["id"]
           },
           {
@@ -1100,6 +993,7 @@ export type Database = {
       projects: {
         Row: {
           asset_code_prefix: string | null
+          board_layout: Json
           created_at: string
           default_asset_workflow_id: string | null
           description: string | null
@@ -1115,6 +1009,7 @@ export type Database = {
         }
         Insert: {
           asset_code_prefix?: string | null
+          board_layout?: Json
           created_at?: string
           default_asset_workflow_id?: string | null
           description?: string | null
@@ -1130,6 +1025,7 @@ export type Database = {
         }
         Update: {
           asset_code_prefix?: string | null
+          board_layout?: Json
           created_at?: string
           default_asset_workflow_id?: string | null
           description?: string | null

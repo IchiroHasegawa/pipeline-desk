@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { makeFileCurrent } from "@/lib/data/productionRepository";
+import { makeFileCurrent } from "@/lib/data/assetFileRepository";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { checkDriveAccess } from "@/lib/deployment";
 

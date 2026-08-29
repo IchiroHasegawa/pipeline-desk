@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { renameFileLabel } from "@/lib/data/productionRepository";
+import { renameFileLabel } from "@/lib/data/assetFileRepository";
 import { checkDriveAccess } from "@/lib/deployment";
 
 export async function POST(

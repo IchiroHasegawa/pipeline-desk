@@ -27,14 +27,12 @@ export async function POST(req: Request) {
       for (const assetId of assetIds) {
         const { count: projCount } = await adminClient.from("asset_project_links")
           .delete({ count: "exact" }).eq("asset_id", assetId);
-        const { count: envCount } = await adminClient.from("asset_environment_links")
-          .delete({ count: "exact" }).eq("asset_id", assetId);
         const { count: jobCount } = await adminClient.from("asset_job_links")
           .delete({ count: "exact" }).eq("asset_id", assetId);
         const { count: sceneCount } = await adminClient.from("asset_scene_links")
           .delete({ count: "exact" }).eq("asset_id", assetId);
 
-        console.log(`[move] Cleared ALL links for asset ${assetId}: proj=${projCount}, env=${envCount}, job=${jobCount}, scene=${sceneCount}`);
+        console.log(`[move] Cleared ALL links for asset ${assetId}: proj=${projCount}, job=${jobCount}, scene=${sceneCount}`);
       }
     }
 

@@ -37,30 +37,12 @@ export async function GET(req: NextRequest) {
 
   try {
     if (entityType === "Project") {
-      // Get Environments
-      const { data: envs } = await supabase.from("production_environments").select("id, name").eq("project_id", id);
-      if (envs && envs.length > 0) {
-        messages.push(formatImpact(envs, "Environment")!);
-        
-        // Get Episodes
-        const envIds = envs.map(e => e.id);
-        const { data: episodes } = await supabase.from("episodes").select("id, episode_name, code").in("environment_id", envIds);
-        if (episodes && episodes.length > 0) {
-          messages.push(formatImpact(episodes.map(e => ({ name: e.episode_name, code: e.code })), "Job")!);
-          
-          // Get Scenes
-          const epIds = episodes.map(e => e.id);
-          const { data: scenes } = await supabase.from("scenes").select("id, scene_name").in("episode_id", epIds);
-          if (scenes && scenes.length > 0) {
-            messages.push(formatImpact(scenes.map(s => ({ name: s.scene_name })), "Scene")!);
-          }
-        }
-      }
-    } else if (entityType === "Environment") {
-      const { data: episodes } = await supabase.from("episodes").select("id, episode_name, code").eq("environment_id", id);
+      // Episodes carry project_id directly since the hierarchy was flattened.
+      const { data: episodes } = await supabase.from("episodes").select("id, episode_name, code").eq("project_id", id);
       if (episodes && episodes.length > 0) {
         messages.push(formatImpact(episodes.map(e => ({ name: e.episode_name, code: e.code })), "Job")!);
-        
+
+        // Get Scenes
         const epIds = episodes.map(e => e.id);
         const { data: scenes } = await supabase.from("scenes").select("id, scene_name").in("episode_id", epIds);
         if (scenes && scenes.length > 0) {

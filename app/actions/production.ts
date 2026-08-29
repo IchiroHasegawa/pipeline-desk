@@ -13,6 +13,7 @@ import type {
   AssetV2,
 } from "@/types/production-v2";
 import {
+  getProjectsV2 as repoGetProjectsV2,
   createSceneV2 as repoCreateSceneV2,
   getSceneWorkflows as repoGetSceneWorkflows,
 } from "@/lib/data/v2/productionRepositoryV2";
@@ -137,6 +138,8 @@ export async function createProjectV2(input: {
   startDate: string;
   endDate?: string;
   thumbnailUrl?: string;
+  assetCodePrefix?: string | null;
+  defaultAssetWorkflowId?: string | null;
 }): Promise<ProjectV2> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -148,6 +151,8 @@ export async function createProjectV2(input: {
       start_date: input.startDate,
       end_date: input.endDate ?? null,
       thumbnail_url: input.thumbnailUrl ?? null,
+      asset_code_prefix: input.assetCodePrefix ?? null,
+      default_asset_workflow_id: input.defaultAssetWorkflowId ?? null,
       status: "Active",
     })
     .select("*")
@@ -176,6 +181,65 @@ export async function deleteProjectV2(id: string): Promise<void> {
 
   revalidatePath("/projects");
   revalidatePath("/assets/manage");
+}
+
+export async function updateProjectV2(
+  id: string,
+  updates: {
+    title?: string;
+    projectCode?: string;
+    description?: string;
+    thumbnailUrl?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: "Active" | "Retired";
+    assetCodePrefix?: string | null;
+    defaultAssetWorkflowId?: string | null;
+  }
+): Promise<ProjectV2> {
+  const supabase = await createClient();
+
+  // Only keys the caller actually supplied are written, so a partial update
+  // never nulls an untouched column.
+  const payload: TablesUpdate<"projects"> = {};
+  if (updates.title !== undefined) payload.title = updates.title;
+  if (updates.projectCode !== undefined) payload.project_code = updates.projectCode;
+  if (updates.description !== undefined) payload.description = updates.description;
+  if (updates.thumbnailUrl !== undefined) payload.thumbnail_url = updates.thumbnailUrl;
+  if (updates.startDate !== undefined) payload.start_date = updates.startDate;
+  if (updates.endDate !== undefined) payload.end_date = updates.endDate;
+  if (updates.status !== undefined) payload.status = updates.status;
+  if (updates.assetCodePrefix !== undefined) payload.asset_code_prefix = updates.assetCodePrefix;
+  if (updates.defaultAssetWorkflowId !== undefined) {
+    payload.default_asset_workflow_id = updates.defaultAssetWorkflowId;
+  }
+
+  const { data, error } = await supabase
+    .from("projects")
+    .update(payload)
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw formatPostgrestError("updateProjectV2", error);
+  }
+
+  if (!data) {
+    throw new Error("updateProjectV2 failed: No data returned from project update.");
+  }
+
+  revalidatePath("/projects");
+  revalidatePath("/assets/manage");
+  return mapProjectV2(data);
+}
+
+export async function retireProjectV2(id: string): Promise<ProjectV2> {
+  return updateProjectV2(id, { status: "Retired" });
+}
+
+export async function restoreProjectV2(id: string): Promise<ProjectV2> {
+  return updateProjectV2(id, { status: "Active" });
 }
 
 export async function createEpisodeV2(input: {
@@ -711,3 +775,7 @@ export async function getSceneWorkflows(): Promise<Array<{ id: string; name: str
   return repoGetSceneWorkflows();
 }
 
+
+export async function getProjectsV2(): Promise<ProjectV2[]> {
+  return repoGetProjectsV2();
+}

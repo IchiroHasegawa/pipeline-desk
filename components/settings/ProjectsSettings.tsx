@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Project } from "@/types/production";
-import { getProjects, deleteProject, retireProject, restoreProject } from "@/lib/data/productionRepository";
+import type { ProjectV2 } from "@/types/production-v2";
+import { getProjectsV2, deleteProjectV2, retireProjectV2, restoreProjectV2 } from "@/app/actions/production";
 import ProjectForm from "./ProjectForm";
 import { Search, Plus, Edit2, Archive, RotateCcw, Trash2, AlertTriangle } from "lucide-react";
 
 export default function ProjectsSettings() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectV2[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editingProject, setEditingProject] = useState<ProjectV2 | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +24,7 @@ export default function ProjectsSettings() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getProjects();
+      const data = await getProjectsV2();
       setProjects(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load projects.");
@@ -48,14 +48,14 @@ export default function ProjectsSettings() {
     setIsFormOpen(true);
   };
 
-  const handleEdit = (project: Project) => {
+  const handleEdit = (project: ProjectV2) => {
     setEditingProject(project);
     setIsFormOpen(true);
   };
 
   const handleRetire = async (id: string) => {
     try {
-      await retireProject(id);
+      await retireProjectV2(id);
       loadProjects();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : String(err));
@@ -64,13 +64,13 @@ export default function ProjectsSettings() {
 
   const handleRestore = async (id: string) => {
     try {
-      await restoreProject(id);
+      await restoreProjectV2(id);
       loadProjects();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : String(err));
     }
   };
-  const handleInitiateDelete = async (project: Project) => {
+  const handleInitiateDelete = async (project: ProjectV2) => {
     setConfirmDeleteId(project.id);
     setIsFetchingImpact(true);
     setImpactMessages([]);
@@ -89,11 +89,11 @@ export default function ProjectsSettings() {
   const handleDelete = async (id: string) => {
     setIsProcessing(true);
     try {
-      await deleteProject(id);
+      await deleteProjectV2(id);
       setConfirmDeleteId(null);
       loadProjects();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to delete project. Check if there are attached environments.");
+      alert(err instanceof Error ? err.message : "Failed to delete project. Check if there are attached episodes.");
     } finally {
       setIsProcessing(false);
     }

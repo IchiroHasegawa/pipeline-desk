@@ -86,33 +86,25 @@ export async function getProjectIdForAsset(assetId: string): Promise<string | nu
     return projLink.project_id;
   }
   
-  // 2. Environment link
-  const { data: envLink } = await adminClient.from("asset_environment_links").select("environment_id").eq("asset_id", assetId).limit(1).maybeSingle();
-  if (envLink?.environment_id) {
-    console.log(`[getProjectIdForAsset] Found environment link for asset ${assetId}: env_id=${envLink.environment_id}`);
-    const { data: env } = await adminClient.from("production_environments").select("project_id").eq("id", envLink.environment_id).single();
-    if (env?.project_id) return env.project_id;
-  }
-  
-  // 3. Job (Episode) link
+  // 2. Job (Episode) link -> episodes.project_id
   const { data: jobLink } = await adminClient.from("asset_job_links").select("episode_id").eq("asset_id", assetId).limit(1).maybeSingle();
   if (jobLink?.episode_id) {
-    const { data: episode } = await adminClient.from("episodes").select("environment_id").eq("id", jobLink.episode_id).single();
-    if (episode?.environment_id) {
-       const { data: env } = await adminClient.from("production_environments").select("project_id").eq("id", episode.environment_id).single();
-       if (env?.project_id) return env.project_id;
+    const { data: episode } = await adminClient.from("episodes").select("project_id").eq("id", jobLink.episode_id).single();
+    if (episode?.project_id) {
+      console.log(`[getProjectIdForAsset] Found episode link for asset ${assetId}: episode_id=${jobLink.episode_id}, project_id=${episode.project_id}`);
+      return episode.project_id;
     }
   }
 
-  // 4. Scene link
+  // 3. Scene link -> scenes.episode_id -> episodes.project_id
   const { data: sceneLink } = await adminClient.from("asset_scene_links").select("scene_id").eq("asset_id", assetId).limit(1).maybeSingle();
   if (sceneLink?.scene_id) {
     const { data: scene } = await adminClient.from("scenes").select("episode_id").eq("id", sceneLink.scene_id).single();
     if (scene?.episode_id) {
-      const { data: episode } = await adminClient.from("episodes").select("environment_id").eq("id", scene.episode_id).single();
-      if (episode?.environment_id) {
-         const { data: env } = await adminClient.from("production_environments").select("project_id").eq("id", episode.environment_id).single();
-         if (env?.project_id) return env.project_id;
+      const { data: episode } = await adminClient.from("episodes").select("project_id").eq("id", scene.episode_id).single();
+      if (episode?.project_id) {
+        console.log(`[getProjectIdForAsset] Found scene link for asset ${assetId}: scene_id=${sceneLink.scene_id}, episode_id=${scene.episode_id}, project_id=${episode.project_id}`);
+        return episode.project_id;
       }
     }
   }

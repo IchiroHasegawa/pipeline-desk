@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Project } from "@/types/production";
-import { createProject, updateProject } from "@/lib/data/productionRepository";
+import type { ProjectV2 } from "@/types/production-v2";
+import { createProjectV2, updateProjectV2 } from "@/app/actions/production";
 import { createClient } from "@/lib/supabase/client";
 import ThumbnailUploader from "@/components/shared/ThumbnailUploader";
 
 type ProjectFormProps = {
-  project: Project | null;
+  project: ProjectV2 | null;
   onClose: (createdId?: string) => void;
 };
 
@@ -62,7 +62,7 @@ export default function ProjectForm({ project, onClose }: ProjectFormProps) {
       const finalAssetCodePrefix = assetCodePrefix.trim() || projectCode;
 
       if (project) {
-        await updateProject(project.id, {
+        await updateProjectV2(project.id, {
           title,
           projectCode,
           assetCodePrefix: finalAssetCodePrefix,
@@ -72,14 +72,15 @@ export default function ProjectForm({ project, onClose }: ProjectFormProps) {
         });
         onClose(project.id);
       } else {
-        const newProject = await createProject({
+        const newProject = await createProjectV2({
           title,
           projectCode,
           assetCodePrefix: finalAssetCodePrefix,
           defaultAssetWorkflowId: defaultAssetWorkflowId || null,
           description,
           thumbnailUrl,
-          status: "Active",
+          // This form collects no dates; mirror ProjectFormDialog default.
+          startDate: new Date().toISOString().split("T")[0],
         });
         onClose(newProject.id);
       }
