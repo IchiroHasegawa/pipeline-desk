@@ -126,7 +126,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
         tools={<TransformTools actions={toolActions} />}
       >
         <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-          <div className="border border-dashed border-[var(--color-line-soft,#a9a9a9)] rounded-[var(--radius-card,7px)] p-10 max-w-md bg-white/50">
+          <div className="border border-dashed border-[var(--color-line-soft,#a9a9a9)] rounded-[var(--radius-card,7px)] p-10 max-w-md bg-[var(--color-canvas)]/50">
             <p className="text-[var(--text-section,18px)] text-[var(--color-ink,#000000)] font-medium mb-2">
               No Projects Found
             </p>

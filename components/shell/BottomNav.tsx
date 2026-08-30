@@ -126,7 +126,7 @@ export const BottomNav: React.FC = () => {
           type="button"
           onClick={() => setIsOpen((v) => !v)}
           aria-expanded={isOpen}
-          className="shrink-0 px-4 py-2 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-black"
+          className="shrink-0 px-4 py-2 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
           style={{
             fontSize: "var(--text-nav, 9px)",
             fontWeight: 500,
@@ -152,7 +152,7 @@ export const BottomNav: React.FC = () => {
                 key={item.id}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className="shrink-0 whitespace-nowrap px-3 py-2 transition-opacity hover:opacity-70 outline-none focus-visible:ring-1 focus-visible:ring-black"
+                className="shrink-0 whitespace-nowrap px-3 py-2 transition-opacity hover:opacity-70 outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
                 style={{
                   fontSize: "var(--text-nav, 9px)",
                   fontWeight: active ? 600 : 400,

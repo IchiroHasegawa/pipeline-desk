@@ -130,7 +130,7 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-black cursor-pointer font-mono"
+            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-[var(--color-ink)] cursor-pointer font-mono"
           >
             [ESC]
           </button>
@@ -154,7 +154,7 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Project Alpha"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </div>
 
@@ -171,7 +171,7 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
                 setCodeError(null);
               }}
               placeholder="e.g. PROJ_ALPHA"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono uppercase"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono uppercase"
             />
             {codeError && (
               <p className="mt-1 text-[var(--text-caption,11px)] text-red-600">
@@ -189,7 +189,7 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
               required
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
             />
           </div>
 
@@ -201,7 +201,7 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
             />
           </div>
 
@@ -214,7 +214,7 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief project description..."
-              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black resize-none"
+              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
             />
           </div>
 
@@ -222,14 +222,14 @@ export const ProjectFormDialog: React.FC<ProjectFormDialogProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-100 cursor-pointer font-medium"
+              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-[var(--color-panel)] cursor-pointer font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-800 cursor-pointer font-medium disabled:opacity-50"
+              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:opacity-90 cursor-pointer font-medium disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Project"}
             </button>

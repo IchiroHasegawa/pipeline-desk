@@ -79,7 +79,7 @@ const EpisodeRow: React.FC<EpisodeRowProps> = ({
   onOpenManage,
 }) => (
   <div
-    className="flex flex-row items-start outline-none focus-visible:ring-1 focus-visible:ring-black"
+    className="flex flex-row items-start outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
     tabIndex={0}
     onDoubleClick={() => onOpenScenes(episode.id)}
     onKeyDown={(e) => {

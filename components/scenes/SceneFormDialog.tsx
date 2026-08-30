@@ -188,7 +188,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-black cursor-pointer font-mono"
+            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-[var(--color-ink)] cursor-pointer font-mono"
           >
             [ESC]
           </button>
@@ -216,7 +216,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
               value={sceneName}
               onChange={(e) => setSceneName(e.target.value)}
               placeholder="e.g. Scene 01"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </div>
 
@@ -241,7 +241,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
                 required
                 value={workflowId}
                 onChange={(e) => setWorkflowId(e.target.value)}
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               >
                 {workflows.map((wf) => (
                   <option key={wf.id} value={wf.id}>
@@ -267,7 +267,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
                 value={numberOfFrames}
                 onChange={(e) => setNumberOfFrames(e.target.value)}
                 placeholder="e.g. 120"
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono"
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
               />
             </div>
 
@@ -285,7 +285,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 placeholder="1"
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono"
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
               />
             </div>
           </div>
@@ -303,7 +303,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief scene description..."
-              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black resize-none"
+              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
             />
           </div>
 
@@ -311,14 +311,14 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-100 cursor-pointer font-medium"
+              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-[var(--color-panel)] cursor-pointer font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitDisabled}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-800 cursor-pointer font-medium disabled:opacity-50"
+              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:opacity-90 cursor-pointer font-medium disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Scene"}
             </button>

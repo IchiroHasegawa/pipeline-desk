@@ -18,11 +18,11 @@ const AVATAR_SIZE = 34;
 
 /** Shared with BottomNav so the two pieces of chrome read as one material. */
 export const GLASS_STYLE: React.CSSProperties = {
-  backgroundColor: "rgba(255, 255, 255, 0.72)",
+  backgroundColor: "var(--color-glass, rgba(255, 255, 255, 0.72))",
   backdropFilter: "blur(12px)",
   WebkitBackdropFilter: "blur(12px)",
   border: HAIRLINE + " solid var(--color-line-soft, #a9a9a9)",
-  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.10)",
+  boxShadow: "var(--shadow-glass, 0 8px 24px rgba(0, 0, 0, 0.10))",
 };
 
 const Rule: React.FC = () => (
@@ -70,7 +70,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
   }, [isMenuOpen]);
 
   const buttonClass =
-    "shrink-0 whitespace-nowrap px-3 py-1.5 cursor-pointer transition-opacity hover:opacity-70 outline-none focus-visible:ring-1 focus-visible:ring-black";
+    "shrink-0 whitespace-nowrap px-3 py-1.5 cursor-pointer transition-opacity hover:opacity-70 outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]";
 
   const handleToggleMenu = useCallback(() => setIsMenuOpen((v) => !v), []);
 
@@ -110,7 +110,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder={searchPlaceholder}
         aria-label={searchPlaceholder}
-        className="shrink-0 w-[200px] px-3 py-1.5 outline-none focus-visible:ring-1 focus-visible:ring-black"
+        className="shrink-0 w-[200px] px-3 py-1.5 outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
         style={{
           fontSize: "var(--text-caption, 11px)",
           color: "var(--color-ink, #000000)",
@@ -136,7 +136,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           aria-haspopup="menu"
           aria-expanded={isMenuOpen}
           aria-label="Account menu"
-          className="block rounded-full cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-black"
+          className="block rounded-full cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--color-ink)]"
           style={{
             width: AVATAR_SIZE + "px",
             height: AVATAR_SIZE + "px",

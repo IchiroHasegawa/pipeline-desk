@@ -187,7 +187,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-black cursor-pointer font-mono"
+            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-[var(--color-ink)] cursor-pointer font-mono"
           >
             [ESC]
           </button>
@@ -211,7 +211,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
               value={episodeName}
               onChange={(e) => setEpisodeName(e.target.value)}
               placeholder="e.g. Episode 01"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
             />
           </div>
 
@@ -224,7 +224,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="e.g. EP01"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono uppercase"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono uppercase"
             />
           </div>
 
@@ -237,7 +237,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
               required
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
             />
           </div>
 
@@ -249,7 +249,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black font-mono"
+              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
             />
           </div>
 
@@ -274,7 +274,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
                 id="episode-job-workflow-select"
                 value={jobWorkflowId}
                 onChange={(e) => setJobWorkflowId(e.target.value)}
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               >
                 <option value="">None</option>
                 {jobWorkflows.map((wf) => (
@@ -308,7 +308,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
                 required
                 value={sceneWorkflowId}
                 onChange={(e) => setSceneWorkflowId(e.target.value)}
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
               >
                 {sceneWorkflows.map((wf) => (
                   <option key={wf.id} value={wf.id}>
@@ -328,7 +328,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief episode description..."
-              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black resize-none"
+              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
             />
           </div>
 
@@ -336,14 +336,14 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-100 cursor-pointer font-medium"
+              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-[var(--color-panel)] cursor-pointer font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitDisabled}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-800 cursor-pointer font-medium disabled:opacity-50"
+              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:opacity-90 cursor-pointer font-medium disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Episode"}
             </button>
