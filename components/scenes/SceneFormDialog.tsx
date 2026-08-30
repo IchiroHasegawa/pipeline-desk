@@ -12,6 +12,13 @@ const getServerSnapshot = () => false;
 export type SceneFormDialogProps = {
   isOpen: boolean;
   episodeId: string;
+  /**
+   * The parent episode's scene_workflow, preselected when set. Null on every
+   * episode created before episodes carried one, in which case the picker
+   * behaves exactly as it did before — first active workflow auto-selected.
+   * The user can always override; the field is never locked.
+   */
+  defaultSceneWorkflowId?: string | null;
   onClose: () => void;
   onSuccess: (newScene: SceneV2) => void;
 };
@@ -19,6 +26,7 @@ export type SceneFormDialogProps = {
 export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
   isOpen,
   episodeId,
+  defaultSceneWorkflowId = null,
   onClose,
   onSuccess,
 }) => {
@@ -53,7 +61,17 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
         const data = await getSceneWorkflows();
         if (!cancelled) {
           setWorkflows(data);
-          if (data.length > 0) {
+          // Inherit the episode's default when it is set AND still active;
+          // otherwise fall back to the previous first-active behaviour.
+          const inherited =
+            defaultSceneWorkflowId &&
+            data.some((wf) => wf.id === defaultSceneWorkflowId)
+              ? defaultSceneWorkflowId
+              : null;
+
+          if (inherited) {
+            setWorkflowId(inherited);
+          } else if (data.length > 0) {
             setWorkflowId(data[0].id);
           } else {
             setWorkflowId("");
@@ -75,7 +93,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, defaultSceneWorkflowId]);
 
   // Focus trap & Escape listener
   useEffect(() => {

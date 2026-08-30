@@ -266,6 +266,8 @@ export const EpisodesView: React.FC<EpisodesViewProps> = ({
     description?: string;
     startDate?: string;
     endDate?: string;
+    jobWorkflowId?: string;
+    sceneWorkflowId?: string;
   }) => {
     const newEp = await createEpisodeV2(data);
     setEpisodes((prev) => [...prev, newEp]);

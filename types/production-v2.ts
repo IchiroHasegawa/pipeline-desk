@@ -72,6 +72,8 @@ export type EpisodeV2 = {
   startDate: string | null;
   endDate: string | null;
   sortOrder: number | null;
+  jobWorkflow: string | null;
+  sceneWorkflow: string | null;
   status: "Active" | "Retired";
   createdAt: string;
 };

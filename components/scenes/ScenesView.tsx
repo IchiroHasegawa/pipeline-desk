@@ -421,6 +421,7 @@ export const ScenesView: React.FC<ScenesViewProps> = ({
         <SceneFormDialog
           isOpen={isSceneFormOpen}
           episodeId={episode.id}
+          defaultSceneWorkflowId={episode.sceneWorkflow}
           onClose={() => setIsSceneFormOpen(false)}
           onSuccess={handleSceneCreated}
         />

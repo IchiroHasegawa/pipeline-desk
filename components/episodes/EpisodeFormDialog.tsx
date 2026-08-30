@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { getJobWorkflows, getSceneWorkflows } from "@/app/actions/production";
 
 const emptySubscribe = () => () => {};
 const getClientSnapshot = () => true;
@@ -18,8 +19,12 @@ export type EpisodeFormDialogProps = {
     description?: string;
     startDate?: string;
     endDate?: string;
+    jobWorkflowId?: string;
+    sceneWorkflowId?: string;
   }) => Promise<void>;
 };
+
+type WorkflowOption = { id: string; name: string };
 
 export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
   isOpen,
@@ -39,11 +44,55 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
   const [startDate, setStartDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState("");
 
+  const [jobWorkflowId, setJobWorkflowId] = useState("");
+  const [sceneWorkflowId, setSceneWorkflowId] = useState("");
+
+  const [jobWorkflows, setJobWorkflows] = useState<WorkflowOption[]>([]);
+  const [sceneWorkflows, setSceneWorkflows] = useState<WorkflowOption[]>([]);
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(true);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
+
+  // Load both workflow lists when the dialog opens.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+    async function loadWorkflows() {
+      try {
+        setIsLoadingWorkflows(true);
+        const [jobs, scenes] = await Promise.all([
+          getJobWorkflows(),
+          getSceneWorkflows(),
+        ]);
+        if (!cancelled) {
+          setJobWorkflows(jobs);
+          setSceneWorkflows(scenes);
+          // The episode workflow is optional, so it stays blank ("None") until
+          // chosen. The scene workflow is required, so it auto-selects.
+          setSceneWorkflowId(scenes.length > 0 ? scenes[0].id : "");
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setFormError(`Failed to load workflows: ${msg}`);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingWorkflows(false);
+        }
+      }
+    }
+
+    loadWorkflows();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -78,6 +127,11 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
       return;
     }
 
+    if (!sceneWorkflowId) {
+      setFormError("A scene workflow selection is required.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await onSubmit({
@@ -87,12 +141,15 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
         description: description.trim() || undefined,
         startDate,
         endDate: endDate || undefined,
+        jobWorkflowId: jobWorkflowId || undefined,
+        sceneWorkflowId,
       });
 
       // Reset form
       setEpisodeName("");
       setCode("");
       setDescription("");
+      setJobWorkflowId("");
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -101,6 +158,15 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
       setIsSubmitting(false);
     }
   };
+
+  // The scene workflow is what makes the process-card denominator well-defined,
+  // so an episode cannot be created without one.
+  const isSubmitDisabled =
+    isSubmitting ||
+    isLoadingWorkflows ||
+    sceneWorkflows.length === 0 ||
+    !episodeName.trim() ||
+    !sceneWorkflowId;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
@@ -188,6 +254,72 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
           </div>
 
           <div>
+            <label
+              htmlFor="episode-job-workflow-select"
+              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
+            >
+              Episode Workflow
+            </label>
+            {isLoadingWorkflows ? (
+              <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono py-1.5">
+                Loading episode workflows...
+              </div>
+            ) : jobWorkflows.length === 0 ? (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
+                No episode workflow exists yet. The episode will be created
+                without episode-level Main Tasks.
+              </div>
+            ) : (
+              <select
+                id="episode-job-workflow-select"
+                value={jobWorkflowId}
+                onChange={(e) => setJobWorkflowId(e.target.value)}
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+              >
+                <option value="">None</option>
+                {jobWorkflows.map((wf) => (
+                  <option key={wf.id} value={wf.id}>
+                    {wf.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="episode-scene-workflow-select"
+              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
+            >
+              Scene Workflow <span className="text-red-500">*</span>
+            </label>
+            {isLoadingWorkflows ? (
+              <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono py-1.5">
+                Loading scene workflows...
+              </div>
+            ) : sceneWorkflows.length === 0 ? (
+              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
+                A scene workflow must be created in Settings first before
+                creating an episode.
+              </div>
+            ) : (
+              <select
+                id="episode-scene-workflow-select"
+                required
+                value={sceneWorkflowId}
+                onChange={(e) => setSceneWorkflowId(e.target.value)}
+                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-black"
+              >
+                {sceneWorkflows.map((wf) => (
+                  <option key={wf.id} value={wf.id}>
+                    {wf.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div>
             <label className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1">
               Description
             </label>
@@ -210,7 +342,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitDisabled}
               className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:bg-neutral-800 cursor-pointer font-medium disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create Episode"}

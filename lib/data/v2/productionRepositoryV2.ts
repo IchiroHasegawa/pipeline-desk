@@ -71,6 +71,8 @@ function mapEpisodeV2(row: Tables<"episodes">): EpisodeV2 {
     startDate: row.start_date ?? null,
     endDate: row.end_date ?? null,
     sortOrder: row.sort_order ?? null,
+    jobWorkflow: row.job_workflow ?? null,
+    sceneWorkflow: row.scene_workflow ?? null,
     status: (row.status === "Retired" ? "Retired" : "Active") as "Active" | "Retired",
     createdAt: row.created_at,
   };
@@ -527,6 +529,28 @@ export async function getSceneWorkflows(): Promise<Array<{ id: string; name: str
 
   if (error) {
     throw formatPostgrestError("getSceneWorkflows", error);
+  }
+
+  return (data || []).map((row) => ({ id: row.id, name: row.name }));
+}
+
+/**
+ * Workflows an Episode can be built from. generate_workflow_tasks enforces
+ * workflow_type = p_entity_type, so only 'job' workflows are valid for the
+ * "job" entity type it uses for episodes.
+ */
+export async function getJobWorkflows(): Promise<Array<{ id: string; name: string }>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("workflows")
+    .select("id, name")
+    .eq("workflow_type", "job")
+    .eq("status", "active")
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw formatPostgrestError("getJobWorkflows", error);
   }
 
   return (data || []).map((row) => ({ id: row.id, name: row.name }));

@@ -54,6 +54,8 @@ export default async function ScenesPage({ params }: ScenesPageProps) {
           startDate: null,
           endDate: null,
           sortOrder: null,
+          jobWorkflow: null,
+          sceneWorkflow: null,
           status: "Active",
           createdAt: new Date().toISOString(),
         }

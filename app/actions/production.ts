@@ -20,6 +20,7 @@ import {
   getProjectBoardStats as repoGetProjectBoardStats,
   createSceneV2 as repoCreateSceneV2,
   getSceneWorkflows as repoGetSceneWorkflows,
+  getJobWorkflows as repoGetJobWorkflows,
 } from "@/lib/data/v2/productionRepositoryV2";
 
 function formatPostgrestError(
@@ -60,6 +61,8 @@ function mapEpisodeV2(row: Tables<"episodes">): EpisodeV2 {
     startDate: row.start_date ?? null,
     endDate: row.end_date ?? null,
     sortOrder: row.sort_order ?? null,
+    jobWorkflow: row.job_workflow ?? null,
+    sceneWorkflow: row.scene_workflow ?? null,
     status: (row.status === "Retired" ? "Retired" : "Active") as "Active" | "Retired",
     createdAt: row.created_at,
   };
@@ -296,6 +299,10 @@ export async function createEpisodeV2(input: {
   startDate?: string;
   endDate?: string;
   sortOrder?: number;
+  /** Generates the episode's own Main Tasks. Optional — none if omitted. */
+  jobWorkflowId?: string;
+  /** Stored only. The default each scene inherits at scene creation. */
+  sceneWorkflowId?: string;
 }): Promise<EpisodeV2> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -308,6 +315,8 @@ export async function createEpisodeV2(input: {
       start_date: input.startDate ?? null,
       end_date: input.endDate ?? null,
       sort_order: input.sortOrder ?? null,
+      job_workflow: input.jobWorkflowId ?? null,
+      scene_workflow: input.sceneWorkflowId ?? null,
     })
     .select("*")
     .single();
@@ -318,6 +327,24 @@ export async function createEpisodeV2(input: {
 
   if (!data) {
     throw new Error("createEpisodeV2 failed: No data returned from episode creation.");
+  }
+
+  // sceneWorkflowId is deliberately NOT generated here — it is the default that
+  // scenes inherit, applied per scene by createSceneV2.
+  if (input.jobWorkflowId) {
+    const { error: rpcError } = await supabase.rpc("generate_workflow_tasks", {
+      p_entity_type: "job",
+      p_entity_id: data.id,
+      p_workflow_id: input.jobWorkflowId,
+    });
+
+    if (rpcError) {
+      // Compensating delete, following createAssetWithDefaults. An episode that
+      // exists with no Main Tasks would read as 0% forever and look created;
+      // createSceneV2 omits this and leaves orphaned workflow-less scenes.
+      await supabase.from("episodes").delete().eq("id", data.id);
+      throw formatPostgrestError("createEpisodeV2 (generate_workflow_tasks RPC)", rpcError);
+    }
   }
 
   revalidatePath(`/projects/${input.projectId}/episodes`);
@@ -828,4 +855,8 @@ export async function getProjectsV2(): Promise<ProjectV2[]> {
 
 export async function getProjectBoardStats(): Promise<Record<string, ProjectBoardStats>> {
   return repoGetProjectBoardStats();
+}
+
+export async function getJobWorkflows(): Promise<Array<{ id: string; name: string }>> {
+  return repoGetJobWorkflows();
 }

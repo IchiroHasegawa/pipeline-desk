@@ -62,6 +62,8 @@ export const ProjectListPanelComponent: React.FC<ProjectListPanelProps> = ({
                 startDate: row.start_date ?? null,
                 endDate: row.end_date ?? null,
                 sortOrder: row.sort_order ?? null,
+                jobWorkflow: row.job_workflow ?? null,
+                sceneWorkflow: row.scene_workflow ?? null,
                 status: (row.status === "Retired" ? "Retired" : "Active") as "Active" | "Retired",
                 createdAt: row.created_at,
               }))
