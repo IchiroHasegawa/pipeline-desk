@@ -4,7 +4,7 @@ import React from "react";
 import {
   IDENTITY_TRANSFORM,
   type CanvasTransform,
-} from "@/lib/timeline/timelineGeometry";
+} from "@/lib/design/canvasTransform";
 
 export type CanvasShellProps = {
   nav: React.ReactNode;
