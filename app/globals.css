@@ -39,16 +39,33 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: var(--color-panel, #f0f0f0);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: var(--color-line-soft, #a9a9a9);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: var(--color-ink-muted, #707070);
+}
+
+html[data-theme="dark"] {
+  --background: #121212;
+  --foreground: #f0f0f0;
+  --color-canvas: #121212;
+  --color-ink: #f0f0f0;
+  --color-ink-muted: #a0a0a0;
+  --color-ink-inverse: #121212;
+  --color-grid-dot: #333333;
+  --color-line: #3f3f46;
+  --color-line-soft: #27272a;
+  --color-selection: #3f3f46;
+  --color-nav-idle: #1e1e24;
+  --color-nav-active: #2e2e38;
+  --color-placeholder: #27272a;
+  --color-panel: #18181b;
 }
 
 @theme {

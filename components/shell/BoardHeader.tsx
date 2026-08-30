@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { HAIRLINE } from "@/lib/design/boardTokens";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 export type BoardHeaderProps = {
   createLabel: string;
@@ -46,6 +47,7 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -152,25 +154,32 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
               borderRadius: "var(--radius-card, 7px)",
             }}
           >
-            {/*
-              Placeholders. Profile lands with the user page, and Theme with
-              the theme mechanism — neither exists yet, so these are inert on
-              purpose rather than wired to a no-op handler.
-            */}
-            {["Profile", "Theme"].map((label) => (
-              <div
-                key={label}
-                role="menuitem"
-                aria-disabled="true"
-                className="px-3 py-2 rounded-[var(--radius-sm,3px)] cursor-default"
-                style={{
-                  fontSize: "var(--text-caption, 11px)",
-                  color: "var(--color-ink-muted, #707070)",
-                }}
-              >
-                {label}
-              </div>
-            ))}
+            <div
+              role="menuitem"
+              aria-disabled="true"
+              className="px-3 py-2 rounded-[var(--radius-sm,3px)] cursor-default"
+              style={{
+                fontSize: "var(--text-caption, 11px)",
+                color: "var(--color-ink-muted, #707070)",
+              }}
+            >
+              Profile
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                toggleTheme();
+                setIsMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 rounded-[var(--radius-sm,3px)] cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/10 outline-none"
+              style={{
+                fontSize: "var(--text-caption, 11px)",
+                color: "var(--color-ink, #000000)",
+              }}
+            >
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
           </div>
         )}
       </div>
