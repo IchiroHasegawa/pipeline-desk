@@ -48,6 +48,7 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
           isSystem: false,
           startDate: null,
           endDate: null,
+          boardLayout: {},
           createdAt: new Date().toISOString(),
         }
       }

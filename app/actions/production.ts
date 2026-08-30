@@ -12,7 +12,9 @@ import type {
   CustomTaskV2,
   AssetV2,
   ProjectBoardStats,
+  BoardLayout,
 } from "@/types/production-v2";
+import { parseBoardLayout, GRAPH_IDS } from "@/types/production-v2";
 import {
   getProjectsV2 as repoGetProjectsV2,
   getProjectBoardStats as repoGetProjectBoardStats,
@@ -42,6 +44,7 @@ function mapProjectV2(row: Tables<"projects">): ProjectV2 {
     isSystem: Boolean(row.is_system),
     startDate: row.start_date ?? null,
     endDate: row.end_date ?? null,
+    boardLayout: parseBoardLayout(row.board_layout),
     createdAt: row.created_at,
   };
 }
@@ -234,6 +237,47 @@ export async function updateProjectV2(
   revalidatePath("/projects");
   revalidatePath("/assets/manage");
   return mapProjectV2(data);
+}
+
+/**
+ * Writes the whole layout object — the client holds the full state, so this is
+ * a replace, not a merge.
+ *
+ * Deliberately does NOT call revalidatePath. This fires on every card drop, and
+ * a revalidate would refetch the entire board and push server state back over
+ * the local positions mid-interaction, making cards jump. The client already
+ * has the authoritative layout; the write is fire-and-forget persistence.
+ */
+export async function updateProjectBoardLayout(
+  projectId: string,
+  layout: BoardLayout
+): Promise<void> {
+  const supabase = await createClient();
+
+  // Never trust the client payload: drop unknown keys, and require finite
+  // numbers for every coordinate.
+  const safe: Record<string, { x: number; y: number; z: number }> = {};
+  for (const key of GRAPH_IDS) {
+    const spot = layout[key];
+    if (!spot) continue;
+
+    const x = Number(spot.x);
+    const y = Number(spot.y);
+    const z = Number(spot.z);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+      continue;
+    }
+    safe[key] = { x, y, z };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ board_layout: safe })
+    .eq("id", projectId);
+
+  if (error) {
+    throw formatPostgrestError("updateProjectBoardLayout", error);
+  }
 }
 
 export async function retireProjectV2(id: string): Promise<ProjectV2> {

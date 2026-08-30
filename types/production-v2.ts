@@ -1,3 +1,10 @@
+import { GRAPH_SIZES, DEFAULT_GRAPH_LAYOUT, type GraphId } from "@/lib/design/boardTokens";
+
+export type GraphPosition = { x: number; y: number; z: number };
+
+/** Per-project card positions. Missing keys fall back to DEFAULT_GRAPH_LAYOUT. */
+export type BoardLayout = Partial<Record<GraphId, GraphPosition>>;
+
 export type ProjectV2 = {
   id: string;
   title: string;
@@ -10,8 +17,46 @@ export type ProjectV2 = {
   isSystem: boolean;
   startDate: string | null;
   endDate: string | null;
+  boardLayout: BoardLayout;
   createdAt: string;
 };
+
+/**
+ * board_layout is jsonb, so the value can be anything: {}, unknown keys, or
+ * non-numeric coordinates. Anything that is not a complete {x,y,z} of finite
+ * numbers under a known GraphId is dropped, and that graph falls back to
+ * DEFAULT_GRAPH_LAYOUT at render time.
+ *
+ * Shared by both mapProjectV2 implementations — the repository's and the server
+ * action's — which have diverged before.
+ */
+export function parseBoardLayout(raw: unknown): BoardLayout {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+
+  const source = raw as Record<string, unknown>;
+  const out: BoardLayout = {};
+
+  for (const key of Object.keys(DEFAULT_GRAPH_LAYOUT) as GraphId[]) {
+    const candidate = source[key];
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      continue;
+    }
+
+    const { x, y, z } = candidate as Record<string, unknown>;
+    if (
+      typeof x === "number" && Number.isFinite(x) &&
+      typeof y === "number" && Number.isFinite(y) &&
+      typeof z === "number" && Number.isFinite(z)
+    ) {
+      out[key] = { x, y, z };
+    }
+  }
+
+  return out;
+}
+
+/** Known graph ids, for server-side validation of a client payload. */
+export const GRAPH_IDS = Object.keys(GRAPH_SIZES) as GraphId[];
 
 export type BoardScope =
   | { type: "scene"; sceneId: string }

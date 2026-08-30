@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
-import VerticalNav from "@/components/shell/VerticalNav";
+import BoardHeader from "@/components/shell/BoardHeader";
+import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import ProjectFormDialog from "@/components/projects/ProjectFormDialog";
 import ProjectBoardRow from "@/components/projects/ProjectBoardRow";
@@ -26,9 +27,20 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   const [projects, setProjects] = useState<ProjectV2[]>(initialProjects);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(initialError);
 
-  // Panels render in the order getProjectsV2 returned them — no re-sorting.
+  // Client-side filter. Panels keep the order getProjectsV2 returned them in.
+  const visibleProjects = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return projects;
+    return projects.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.projectCode.toLowerCase().includes(q)
+    );
+  }, [projects, searchQuery]);
+
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
   }, []);
@@ -80,7 +92,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   if (errorMsg) {
     return (
       <CanvasShell
-        nav={<VerticalNav active="project" />}
+        nav={<BottomNav />}
         tools={<TransformTools actions={toolActions} />}
       >
         <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
@@ -110,7 +122,7 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   if (projects.length === 0) {
     return (
       <CanvasShell
-        nav={<VerticalNav active="project" />}
+        nav={<BottomNav />}
         tools={<TransformTools actions={toolActions} />}
       >
         <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
@@ -141,27 +153,51 @@ export const ProjectBoardView: React.FC<ProjectBoardViewProps> = ({
   }
 
   return (
-    <CanvasShell
-      nav={<VerticalNav active="project" />}
-      tools={<TransformTools actions={toolActions} />}
-      toolsPosition={{ x: 101.5, y: 87 }}
-    >
-      <div className="w-full h-full relative overflow-hidden">
-        <ProjectBoardRow
-          projects={projects}
-          onOpen={handleOpen}
-          stats={stats}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-        />
+    <>
+      <CanvasShell
+        // BottomNav is fixed to the viewport's bottom-left, but CanvasShell's
+        // nav slot is hard-positioned top-right at (1632.5, 38). Rather than
+        // change that slot — every other page still depends on it — the slot is
+        // left empty and BottomNav renders as a sibling. `nav` stays a required
+        // prop; React.ReactNode already admits null, so no signature change.
+        nav={null}
+        tools={<TransformTools actions={toolActions} />}
+        toolsPosition={{ x: 101.5, y: 87 }}
+      >
+        <div className="w-full h-full relative overflow-hidden flex flex-col">
+          <div className="shrink-0 pt-[38px] px-[101.5px] pb-4">
+            <BoardHeader
+              createLabel="Create Project"
+              manageLabel="Manage Project"
+              onCreate={() => setIsCreateOpen(true)}
+              // TODO: the Manage Project page is not in scope for this phase.
+              onManage={() => {}}
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
+          </div>
 
-        <ProjectFormDialog
-          isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
-          onSubmit={handleCreateProject}
-        />
-      </div>
-    </CanvasShell>
+          <div className="flex-1 min-h-0 relative">
+            <ProjectBoardRow
+              projects={visibleProjects}
+              onOpen={handleOpen}
+              stats={stats}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              onError={setErrorMsg}
+            />
+          </div>
+
+          <ProjectFormDialog
+            isOpen={isCreateOpen}
+            onClose={() => setIsCreateOpen(false)}
+            onSubmit={handleCreateProject}
+          />
+        </div>
+      </CanvasShell>
+
+      <BottomNav />
+    </>
   );
 };
 

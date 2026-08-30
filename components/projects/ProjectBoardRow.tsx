@@ -17,29 +17,21 @@ import EpisodeStatusGraph from "@/components/projects/graphs/EpisodeStatusGraph"
 import CommitGraph from "@/components/projects/graphs/CommitGraph";
 import AssetStatsGraph from "@/components/projects/graphs/AssetStatsGraph";
 import ReviewsGraph from "@/components/projects/graphs/ReviewsGraph";
-import { GRAPH_SIZES } from "@/lib/design/boardTokens";
-import type { ProjectV2, ProjectBoardStats } from "@/types/production-v2";
-import { EMPTY_PROJECT_BOARD_STATS } from "@/types/production-v2";
+import { GRAPH_SIZES, DEFAULT_GRAPH_LAYOUT, type GraphId } from "@/lib/design/boardTokens";
+import type {
+  ProjectV2,
+  ProjectBoardStats,
+  GraphPosition,
+  BoardLayout,
+} from "@/types/production-v2";
+import { EMPTY_PROJECT_BOARD_STATS, GRAPH_IDS } from "@/types/production-v2";
+import { updateProjectBoardLayout } from "@/app/actions/production";
 
-/**
- * Fixed graph placement inside the panel body. Cards overlap at corners by
- * 20-70px rather than face-on, so no card occludes another's content. Total
- * extent is 430px wide by 640px tall, which fits inside PANEL_HEIGHT.
- *
- *   episodeStatus 200x260 -> 20-220,  24-284
- *   commits       280x170 -> 150-430, 210-380
- *   assets        190x240 -> 34-224,  320-560
- *   reviews       170x210 -> 246-416, 430-640
- *
- * Phase 3 replaces these defaults with persisted positions from
- * projects.board_layout.
- */
-const GRAPH_PLACEMENT = {
-  episodeStatus: { x: 20, y: 24, z: 1 },
-  commits: { x: 150, y: 210, z: 3 },
-  assets: { x: 34, y: 320, z: 2 },
-  reviews: { x: 246, y: 430, z: 1 },
-} as const;
+/** Card positions now live in DEFAULT_GRAPH_LAYOUT and projects.board_layout. */
+type PanelLayout = Record<GraphId, GraphPosition>;
+
+/** Milliseconds a drop waits before persisting, so rapid nudges collapse. */
+const LAYOUT_WRITE_DEBOUNCE_MS = 500;
 
 /**
  * Handed to useTimelineScale, which uses it only to build lengthById — a value
@@ -66,6 +58,9 @@ const WIDTH_SCALE = 30; // px per sqrt(day)
 /** Movement past this many px is a pan, not a click. */
 const DRAG_THRESHOLD_PX = 4;
 
+/** Both hairline borders of the panel, subtracted to get the body's width. */
+const PANEL_BORDER_TOTAL = 1;
+
 /** Inset either end of the row so the first and last panel are not flush. */
 const ROW_PADDING_X = BOARD_GUTTER;
 
@@ -91,41 +86,142 @@ function formatDuration(durationDays: number, hasStartDate: boolean): string {
 /**
  * The panel body, and the four graph cards inside it.
  *
- * Its own dimensions are measured with a ResizeObserver rather than derived
- * from the panel's outer width: the outer width includes the border, and the
- * body's height depends on the header, which wraps with the project title.
- * Clamping against anything else lets cards escape the box.
+ * Dimensions are measured with a ResizeObserver, seeded from the deterministic
+ * panel geometry so clamping holds from the very first paint. The same bounds
+ * clamp both the resting positions and every drag frame — there is exactly one
+ * clamp in this component.
  */
-const PanelBody: React.FC<{ stats: ProjectBoardStats }> = ({ stats }) => {
+const PanelBody: React.FC<{
+  stats: ProjectBoardStats;
+  panelWidth: number;
+  layout: PanelLayout;
+  /** Fired continuously while dragging. */
+  onLayoutChange: (next: PanelLayout) => void;
+  /** Fired once on drop, after z has been normalised. */
+  onCommit: (layout: PanelLayout) => void;
+}> = ({ stats, panelWidth, layout, onLayoutChange, onCommit }) => {
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [box, setBox] = useState<{ width: number; height: number } | null>(null);
+
+  // Deterministic bounds, known before layout. The body carries no padding, so
+  // its width is the panel width less the two hairline borders; its height is
+  // the fixed panel height less those borders and the top bar. The header sits
+  // inside that height, so this seed is a slight over-estimate that the
+  // observer tightens — never an under-estimate that would let a card escape.
+  const seed = useMemo(
+    () => ({
+      width: Math.max(0, panelWidth - PANEL_BORDER_TOTAL),
+      height: Math.max(0, PANEL_HEIGHT - PANEL_BORDER_TOTAL - PANEL_TOP_BAR_HEIGHT),
+    }),
+    [panelWidth]
+  );
+
+  const [measured, setMeasured] = useState<{ width: number; height: number } | null>(
+    null
+  );
 
   useEffect(() => {
     const el = bodyRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
+      // A zero reading means the element is not laid out yet. Ignore it and
+      // keep the seed: ResizeObserver only fires again when the size CHANGES,
+      // so accepting-or-discarding must never leave the bounds unset.
       if (rect && rect.width > 0 && rect.height > 0) {
-        setBox({ width: rect.width, height: rect.height });
+        setMeasured({ width: rect.width, height: rect.height });
       }
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
 
-  // Unconditional and two-dimensional: a card can never leave the body on
-  // either axis, at any panel width. Before the first measurement the raw
-  // position is used — overflow:hidden covers that single frame.
-  const place = (
-    spot: { x: number; y: number; z: number },
-    graphWidth: number,
-    graphHeight: number
-  ): React.CSSProperties => ({
-    position: "absolute",
-    left: box ? clamp(spot.x, 0, Math.max(0, box.width - graphWidth)) : spot.x,
-    top: box ? clamp(spot.y, 0, Math.max(0, box.height - graphHeight)) : spot.y,
-    zIndex: spot.z,
+  // Take the tighter of the two on each axis, so the clamp is never looser
+  // than the deterministic bound even if a measurement is stale or wrong.
+  const box = {
+    width: measured ? Math.min(seed.width, measured.width) : seed.width,
+    height: measured ? Math.min(seed.height, measured.height) : seed.height,
+  };
+
+  /** The single source of clamp bounds, shared by resting and dragging. */
+  const boundsFor = (id: GraphId) => ({
+    maxX: Math.max(0, box.width - GRAPH_SIZES[id].width),
+    maxY: Math.max(0, box.height - GRAPH_SIZES[id].height),
   });
+
+  const dragRef = useRef<{
+    id: GraphId;
+    pointerX: number;
+    pointerY: number;
+    originX: number;
+    originY: number;
+  } | null>(null);
+  const [draggingId, setDraggingId] = useState<GraphId | null>(null);
+
+  const handlePointerDown =
+    (id: GraphId) => (e: React.PointerEvent<HTMLDivElement>) => {
+      // The row's pan handler must never see this, or dragging a card would
+      // slide the whole row underneath it.
+      e.stopPropagation();
+
+      const spot = layout[id];
+      dragRef.current = {
+        id,
+        pointerX: e.clientX,
+        pointerY: e.clientY,
+        originX: spot.x,
+        originY: spot.y,
+      };
+      setDraggingId(id);
+      e.currentTarget.setPointerCapture(e.pointerId);
+
+      // Raise above every other card in this panel.
+      const maxZ = GRAPH_IDS.reduce((m, k) => Math.max(m, layout[k].z), 0);
+      onLayoutChange({ ...layout, [id]: { ...spot, z: maxZ + 1 } });
+    };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    const { maxX, maxY } = boundsFor(drag.id);
+    onLayoutChange({
+      ...layout,
+      [drag.id]: {
+        ...layout[drag.id],
+        x: clamp(drag.originX + (e.clientX - drag.pointerX), 0, maxX),
+        y: clamp(drag.originY + (e.clientY - drag.pointerY), 0, maxY),
+      },
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    dragRef.current = null;
+    setDraggingId(null);
+
+    // Renumber 1..4 in the current stacking order so z never grows unbounded.
+    const ordered = [...GRAPH_IDS].sort((a, b) => layout[a].z - layout[b].z);
+    const normalised: PanelLayout = { ...layout };
+    ordered.forEach((k, i) => {
+      normalised[k] = { ...layout[k], z: i + 1 };
+    });
+
+    onLayoutChange(normalised);
+    onCommit(normalised);
+  };
+
+  const cards: { id: GraphId; node: React.ReactNode }[] = [
+    {
+      id: "episodeStatus",
+      node: <EpisodeStatusGraph episodeStatus={stats.episodeStatus} />,
+    },
+    { id: "assets", node: <AssetStatsGraph assets={stats.assets} /> },
+    { id: "reviews", node: <ReviewsGraph /> },
+    { id: "commits", node: <CommitGraph commitDays={stats.commitDays} /> },
+  ];
 
   return (
     <div
@@ -133,45 +229,32 @@ const PanelBody: React.FC<{ stats: ProjectBoardStats }> = ({ stats }) => {
       data-panel-body
       className="relative flex-1 min-h-0 overflow-hidden"
     >
-      <div
-        style={place(
-          GRAPH_PLACEMENT.episodeStatus,
-          GRAPH_SIZES.episodeStatus.width,
-          GRAPH_SIZES.episodeStatus.height
-        )}
-      >
-        <EpisodeStatusGraph episodeStatus={stats.episodeStatus} />
-      </div>
+      {cards.map(({ id, node }) => {
+        const spot = layout[id];
+        const { maxX, maxY } = boundsFor(id);
 
-      <div
-        style={place(
-          GRAPH_PLACEMENT.assets,
-          GRAPH_SIZES.assets.width,
-          GRAPH_SIZES.assets.height
-        )}
-      >
-        <AssetStatsGraph assets={stats.assets} />
-      </div>
-
-      <div
-        style={place(
-          GRAPH_PLACEMENT.reviews,
-          GRAPH_SIZES.reviews.width,
-          GRAPH_SIZES.reviews.height
-        )}
-      >
-        <ReviewsGraph />
-      </div>
-
-      <div
-        style={place(
-          GRAPH_PLACEMENT.commits,
-          GRAPH_SIZES.commits.width,
-          GRAPH_SIZES.commits.height
-        )}
-      >
-        <CommitGraph commitDays={stats.commitDays} />
-      </div>
+        return (
+          <div
+            key={id}
+            onPointerDown={handlePointerDown(id)}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            // Double-clicking a card must not open the episodes page.
+            onDoubleClick={(e) => e.stopPropagation()}
+            className={draggingId === id ? "cursor-grabbing" : "cursor-grab"}
+            style={{
+              position: "absolute",
+              left: clamp(spot.x, 0, maxX),
+              top: clamp(spot.y, 0, maxY),
+              zIndex: spot.z,
+              touchAction: "none",
+            }}
+          >
+            {node}
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -184,6 +267,8 @@ export type ProjectBoardRowProps = {
   /** Selection lives in the parent because the SUB tool acts on it. */
   selectedId?: string | null;
   onSelect?: (id: string) => void;
+  /** Surfaced when a layout write fails. The card keeps its new position. */
+  onError?: (message: string) => void;
 };
 
 export const ProjectBoardRow: React.FC<ProjectBoardRowProps> = ({
@@ -192,10 +277,78 @@ export const ProjectBoardRow: React.FC<ProjectBoardRowProps> = ({
   stats,
   selectedId = null,
   onSelect,
+  onError,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [translateX, setTranslateX] = useState(0);
+
+  // Layout state, keyed by project id. Only projects the user has actually
+  // moved get an entry; everything else derives from the project's persisted
+  // boardLayout over DEFAULT_GRAPH_LAYOUT, so newly created projects need no
+  // seeding pass.
+  const [layoutOverrides, setLayoutOverrides] = useState<
+    Record<string, PanelLayout>
+  >({});
+
+  const layoutFor = useCallback(
+    (project: ProjectV2): PanelLayout =>
+      layoutOverrides[project.id] ?? {
+        ...DEFAULT_GRAPH_LAYOUT,
+        ...project.boardLayout,
+      },
+    [layoutOverrides]
+  );
+
+  // Debounced persistence. Timers and payloads live in refs so a re-render
+  // mid-drag cannot drop a pending write.
+  const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingRef = useRef<Record<string, PanelLayout>>({});
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
+  const flushWrite = useCallback((projectId: string) => {
+    const layout = pendingRef.current[projectId];
+    if (!layout) return;
+
+    delete pendingRef.current[projectId];
+    delete timersRef.current[projectId];
+
+    // On failure the local position is kept deliberately — snapping a card
+    // back to where it was would read as the drag itself having failed.
+    void updateProjectBoardLayout(projectId, layout as BoardLayout).catch(
+      (err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        onErrorRef.current?.("Failed to save board layout: " + msg);
+      }
+    );
+  }, []);
+
+  const scheduleWrite = useCallback(
+    (projectId: string, layout: PanelLayout) => {
+      pendingRef.current[projectId] = layout;
+      const existing = timersRef.current[projectId];
+      if (existing) clearTimeout(existing);
+      timersRef.current[projectId] = setTimeout(() => {
+        flushWrite(projectId);
+      }, LAYOUT_WRITE_DEBOUNCE_MS);
+    },
+    [flushWrite]
+  );
+
+  // Any drop still inside the debounce window when the board unmounts must
+  // still reach the database.
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      for (const projectId of Object.keys(timers)) {
+        clearTimeout(timers[projectId]);
+      }
+      for (const projectId of Object.keys(pendingRef.current)) {
+        flushWrite(projectId);
+      }
+    };
+  }, [flushWrite]);
 
   // Pan gesture state lives in refs, not state: it changes on every
   // pointermove and must not drive a re-render of its own.
@@ -464,6 +617,15 @@ export const ProjectBoardRow: React.FC<ProjectBoardRowProps> = ({
 
                 <PanelBody
                   stats={stats[project.id] ?? EMPTY_PROJECT_BOARD_STATS}
+                  panelWidth={width}
+                  layout={layoutFor(project)}
+                  onLayoutChange={(next) =>
+                    setLayoutOverrides((prev) => ({
+                      ...prev,
+                      [project.id]: next,
+                    }))
+                  }
+                  onCommit={(next) => scheduleWrite(project.id, next)}
                 />
               </div>
             </div>

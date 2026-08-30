@@ -33,3 +33,28 @@ export const GRAPH_SIZES = {
 } as const;
 
 export type GraphId = keyof typeof GRAPH_SIZES;
+
+/**
+ * Where each card sits inside a panel body before the user moves it.
+ *
+ * Cards overlap at corners by 20-70px rather than face-on, so no card occludes
+ * another's content. Total extent is 430px wide by 640px tall, inside
+ * PANEL_HEIGHT:
+ *
+ *   episodeStatus 200x260 -> 20-220,  24-284
+ *   commits       280x170 -> 150-430, 210-380
+ *   assets        190x240 -> 34-224,  320-560
+ *   reviews       170x210 -> 246-416, 430-640
+ *
+ * The shape is written inline rather than imported as GraphPosition so this
+ * module stays dependency-free; it is structurally identical.
+ */
+export const DEFAULT_GRAPH_LAYOUT: Record<
+  GraphId,
+  { x: number; y: number; z: number }
+> = {
+  episodeStatus: { x: 20, y: 24, z: 1 },
+  commits: { x: 150, y: 210, z: 3 },
+  assets: { x: 34, y: 320, z: 2 },
+  reviews: { x: 246, y: 430, z: 1 },
+};

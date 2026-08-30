@@ -13,6 +13,7 @@ import type {
   AssetTaskV2,
   ProjectBoardStats,
 } from "@/types/production-v2";
+import { parseBoardLayout } from "@/types/production-v2";
 
 // ---------------------------------------------------------------------------
 // Error Formatting Helpers
@@ -54,6 +55,7 @@ function mapProjectV2(row: Tables<"projects">): ProjectV2 {
     isSystem: Boolean(row.is_system),
     startDate: row.start_date ?? null,
     endDate: row.end_date ?? null,
+    boardLayout: parseBoardLayout(row.board_layout),
     createdAt: row.created_at,
   };
 }
