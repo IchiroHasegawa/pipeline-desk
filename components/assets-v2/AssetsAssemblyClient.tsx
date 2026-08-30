@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
-import VerticalNav from "@/components/shell/VerticalNav";
+import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import BoardSpace from "@/components/board/BoardSpace";
 import BoardToolbar, { BoardTool } from "@/components/board/BoardToolbar";
@@ -195,61 +195,65 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
   ];
 
   return (
-    <CanvasShell
-      nav={<VerticalNav active="assets" activeAssetsSubsection="assembly" />}
-      tools={<TransformTools actions={toolActions} />}
-      toolsPosition={isPanelCollapsed ? { x: 53, y: 55 } : { x: 360, y: 56 }}
-    >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFileChange}
-        className="hidden"
-      />
-
-      <div className="relative w-full h-full flex flex-row overflow-hidden select-none">
-        {/* Left Project List Panel (Collapsible via width animation, no remount) */}
-        <ProjectListPanel
-          projects={projects}
-          currentProjectId={currentProjectId}
-          isCollapsed={isPanelCollapsed}
-          onSelectProject={handleSelectProject}
-          hoveredDropTarget={hoveredDropTarget}
+    <>
+      <CanvasShell
+        nav={null}
+        tools={<TransformTools actions={toolActions} />}
+        toolsPosition={isPanelCollapsed ? { x: 53, y: 55 } : { x: 360, y: 56 }}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileChange}
+          className="hidden"
         />
 
-        {/* Board Space Area */}
-        <main className="flex-1 h-full relative">
-          <BoardSpace
-            boardId={boardId}
-            elements={elements}
-            activeTool={activeTool}
-            scope={{ type: "project", projectId: currentProjectId }}
-            onToolSelect={setActiveTool}
-            onElementsChange={setElements}
-            onElementCreate={handleCreateElement}
-            onUploadAssets={handleUploadAssets}
-            onAssignToProject={handleAssignToProject}
-            onAssignToEpisode={handleAssignToEpisode}
-            onHoverDropTarget={setHoveredDropTarget}
-            onElementDelete={handleDeleteElement}
-            onElementMove={handleMoveElements}
+        <div className="relative w-full h-full flex flex-row overflow-hidden select-none">
+          {/* Left Project List Panel (Collapsible via width animation, no remount) */}
+          <ProjectListPanel
+            projects={projects}
+            currentProjectId={currentProjectId}
+            isCollapsed={isPanelCollapsed}
+            onSelectProject={handleSelectProject}
+            hoveredDropTarget={hoveredDropTarget}
           />
-        </main>
 
-        {/*
-          Tools bar (842, 981) 235 × 59 — DESIGN_SPEC §13.
-          Positioned against the viewport frame, not the board column, so the
-          coordinates hold whether or not the 330px panel is collapsed.
-        */}
-        <BoardToolbar
-          activeTool={activeTool}
-          onToolSelect={setActiveTool}
-          position={{ x: 842, y: 981 }}
-        />
-      </div>
-    </CanvasShell>
+          {/* Board Space Area */}
+          <main className="flex-1 h-full relative">
+            <BoardSpace
+              boardId={boardId}
+              elements={elements}
+              activeTool={activeTool}
+              scope={{ type: "project", projectId: currentProjectId }}
+              onToolSelect={setActiveTool}
+              onElementsChange={setElements}
+              onElementCreate={handleCreateElement}
+              onUploadAssets={handleUploadAssets}
+              onAssignToProject={handleAssignToProject}
+              onAssignToEpisode={handleAssignToEpisode}
+              onHoverDropTarget={setHoveredDropTarget}
+              onElementDelete={handleDeleteElement}
+              onElementMove={handleMoveElements}
+            />
+          </main>
+
+          {/*
+            Tools bar (842, 981) 235 × 59 — DESIGN_SPEC §13.
+            Positioned against the viewport frame, not the board column, so the
+            coordinates hold whether or not the 330px panel is collapsed.
+          */}
+          <BoardToolbar
+            activeTool={activeTool}
+            onToolSelect={setActiveTool}
+            position={{ x: 842, y: 981 }}
+          />
+        </div>
+      </CanvasShell>
+
+      <BottomNav />
+    </>
   );
 };
 

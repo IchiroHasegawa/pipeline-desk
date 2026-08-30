@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
-import VerticalNav from "@/components/shell/VerticalNav";
+import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import ProjectPosterGrid from "@/components/assets-v2/ProjectPosterGrid";
 import AssetFormDialog from "@/components/assets-v2/AssetFormDialog";
@@ -35,29 +35,33 @@ export const AssetsManagePosterClient: React.FC<AssetsManagePosterClientProps> =
   ];
 
   return (
-    <CanvasShell
-      nav={<VerticalNav active="assets" activeAssetsSubsection="manage" />}
-      tools={<TransformTools actions={toolActions} />}
-      toolsPosition={{ x: 105, y: 62 }}
-    >
-      <div className="relative w-full h-full overflow-auto select-none font-sans">
-        {/* Title at (78, 180) */}
-        <h1 className="absolute left-[78px] top-[180px] text-[var(--text-heading,24px)] font-bold text-[var(--color-ink,#000000)] tracking-tight">
-          Asset Projects Library
-        </h1>
-        {/* Poster Grid at (78, 227) */}
-        <div className="absolute left-[78px] top-[227px] pb-16">
-          <ProjectPosterGrid projects={projects} onSelectProject={handleSelectProject} />
+    <>
+      <CanvasShell
+        nav={null}
+        tools={<TransformTools actions={toolActions} />}
+        toolsPosition={{ x: 105, y: 62 }}
+      >
+        <div className="relative w-full h-full overflow-auto select-none font-sans">
+          {/* Title at (78, 180) */}
+          <h1 className="absolute left-[78px] top-[180px] text-[var(--text-heading,24px)] font-bold text-[var(--color-ink,#000000)] tracking-tight">
+            Asset Projects Library
+          </h1>
+          {/* Poster Grid at (78, 227) */}
+          <div className="absolute left-[78px] top-[227px] pb-16">
+            <ProjectPosterGrid projects={projects} onSelectProject={handleSelectProject} />
+          </div>
         </div>
-      </div>
 
-      <AssetFormDialog
-        isOpen={isAddOpen}
-        projects={projects}
-        onClose={() => setIsAddOpen(false)}
-        onSuccess={handleAssetCreated}
-      />
-    </CanvasShell>
+        <AssetFormDialog
+          isOpen={isAddOpen}
+          projects={projects}
+          onClose={() => setIsAddOpen(false)}
+          onSuccess={handleAssetCreated}
+        />
+      </CanvasShell>
+
+      <BottomNav />
+    </>
   );
 };
 

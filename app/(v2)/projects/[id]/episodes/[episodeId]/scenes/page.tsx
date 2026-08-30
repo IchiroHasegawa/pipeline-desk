@@ -1,13 +1,22 @@
 import React from "react";
 import { notFound } from "next/navigation";
 import {
+  getProjectV2,
   getEpisodesByProject,
   getScenesByEpisode,
-  getDaysWithTasks,
+  getSceneBoardTasks,
+  getTaskStatusOptionsByWorkflow,
+  getAssignableUsers,
 } from "@/lib/data/v2/productionRepositoryV2";
-import ScenesView from "@/components/scenes/ScenesView";
-import type { DayWithTasks } from "@/components/scenes/DayBranchTree";
-import type { EpisodeV2, SceneV2 } from "@/types/production-v2";
+import SceneBoardView from "@/components/scenes/SceneBoardView";
+import type {
+  ProjectV2,
+  EpisodeV2,
+  SceneV2,
+  SceneBoardTask,
+  TaskStatusOption,
+  AssignableUser,
+} from "@/types/production-v2";
 
 export const dynamic = "force-dynamic";
 
@@ -18,21 +27,43 @@ type ScenesPageProps = {
 export default async function ScenesPage({ params }: ScenesPageProps) {
   const { id, episodeId } = await params;
 
+  let project: ProjectV2 | null = null;
   let episode: EpisodeV2 | null = null;
   let scenes: SceneV2[] = [];
-  let daysWithTasks: DayWithTasks[] = [];
+  let tasksByScene: Record<string, SceneBoardTask[]> = {};
+  let statusOptionsByWorkflow: Record<string, TaskStatusOption[]> = {};
+  let users: AssignableUser[] = [];
   let initialError: string | null = null;
 
   try {
-    const [episodesList, scenesRes, daysRes] = await Promise.all([
+    // The existing scenes route resolves the episode out of the project's
+    // episode list; there is no getEpisodeV2, so this does the same rather
+    // than adding one.
+    const [projectRes, episodesRes, scenesRes, usersRes] = await Promise.all([
+      getProjectV2(id),
       getEpisodesByProject(id),
       getScenesByEpisode(episodeId),
-      getDaysWithTasks(episodeId),
+      getAssignableUsers(),
     ]);
 
-    episode = episodesList.find((e) => e.id === episodeId) || null;
+    project = projectRes;
+    episode = episodesRes.find((e) => e.id === episodeId) || null;
     scenes = scenesRes;
-    daysWithTasks = daysRes;
+    users = usersRes;
+
+    // Sequential, not part of the Promise.all above: tasks are keyed by scene
+    // id and the statuses are scoped by the status workflows those tasks turn
+    // out to use. Each step is still one query for the whole page.
+    tasksByScene = await getSceneBoardTasks(scenes.map((s) => s.id));
+
+    const statusWorkflowIds = Object.values(tasksByScene)
+      .flat()
+      .map((task) => task.taskStatusWorkflowId)
+      .filter((workflowId): workflowId is string => workflowId !== null);
+
+    statusOptionsByWorkflow = await getTaskStatusOptionsByWorkflow(
+      statusWorkflowIds
+    );
   } catch (err: unknown) {
     initialError = err instanceof Error ? err.message : String(err);
   }
@@ -42,7 +73,22 @@ export default async function ScenesPage({ params }: ScenesPageProps) {
   }
 
   return (
-    <ScenesView
+    <SceneBoardView
+      project={
+        project || {
+          id,
+          title: "Project",
+          projectCode: "PROJ",
+          description: "",
+          thumbnailUrl: "",
+          status: "Active",
+          isSystem: false,
+          startDate: null,
+          endDate: null,
+          boardLayout: {},
+          createdAt: new Date().toISOString(),
+        }
+      }
       episode={
         episode || {
           id: episodeId,
@@ -60,8 +106,10 @@ export default async function ScenesPage({ params }: ScenesPageProps) {
           createdAt: new Date().toISOString(),
         }
       }
-      scenes={scenes}
-      initialDaysWithTasks={daysWithTasks}
+      initialScenes={scenes}
+      tasksByScene={tasksByScene}
+      statusOptionsByWorkflow={statusOptionsByWorkflow}
+      users={users}
       initialError={initialError}
     />
   );

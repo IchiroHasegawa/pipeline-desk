@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import VerticalNav from "@/components/shell/VerticalNav";
+import BottomNav from "@/components/shell/BottomNav";
 
 export type ManageLayoutProps = {
   parentThumbnailUrl?: string;
@@ -47,7 +47,7 @@ export const ManageLayout: React.FC<ManageLayoutProps> = ({
   entityList,
   tools,
   toolsPosition = { x: 677, y: 116 },
-  nav = <VerticalNav active="project" />,
+  nav = <BottomNav />,
 }) => {
   const [activeTab, setActiveTab] = React.useState<"detail" | "todo">("todo");
 

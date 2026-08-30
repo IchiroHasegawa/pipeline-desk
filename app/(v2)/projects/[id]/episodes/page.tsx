@@ -3,9 +3,14 @@ import { notFound } from "next/navigation";
 import {
   getProjectV2,
   getEpisodesByProject,
+  getEpisodeProcessProgress,
 } from "@/lib/data/v2/productionRepositoryV2";
-import EpisodesView from "@/components/episodes/EpisodesView";
-import type { ProjectV2, EpisodeV2 } from "@/types/production-v2";
+import EpisodeBoardView from "@/components/episodes/EpisodeBoardView";
+import type {
+  ProjectV2,
+  EpisodeV2,
+  ProcessProgress,
+} from "@/types/production-v2";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +23,7 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
 
   let project: ProjectV2 | null = null;
   let episodes: EpisodeV2[] = [];
+  let processProgress: Record<string, ProcessProgress[]> = {};
   let initialError: string | null = null;
 
   try {
@@ -27,6 +33,11 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
     ]);
     project = projRes;
     episodes = epRes;
+
+    // Not part of the Promise.all above: the rollup is keyed by episode id, so
+    // it cannot be issued until the episode list has come back. It is still one
+    // round of queries for every episode at once, never one per episode.
+    processProgress = await getEpisodeProcessProgress(episodes.map((e) => e.id));
   } catch (err: unknown) {
     initialError = err instanceof Error ? err.message : String(err);
   }
@@ -36,7 +47,7 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
   }
 
   return (
-    <EpisodesView
+    <EpisodeBoardView
       project={
         project || {
           id,
@@ -53,6 +64,7 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
         }
       }
       initialEpisodes={episodes}
+      processProgress={processProgress}
       initialError={initialError}
     />
   );

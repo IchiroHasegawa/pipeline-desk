@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
-import VerticalNav from "@/components/shell/VerticalNav";
+import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import EpsAstsTabs from "@/components/assets-v2/EpsAstsTabs";
 import EpisodeThumbGrid from "@/components/assets-v2/EpisodeThumbGrid";
@@ -78,53 +78,57 @@ export const AssetsManageEpisodeClient: React.FC<AssetsManageEpisodeClientProps>
   ];
 
   return (
-    <CanvasShell
-      nav={<VerticalNav active="assets" activeAssetsSubsection="manage" />}
-      tools={<TransformTools actions={toolActions} />}
-      toolsPosition={{ x: 79, y: 62 }}
-    >
-      <div className="relative w-full h-full overflow-auto font-sans select-none">
-        {/* Header block (99, 100) */}
-        <div className="absolute left-[99px] top-[100px] flex flex-col gap-1">
-          <span className="text-[var(--text-caption,11px)] font-mono text-[var(--color-ink-muted,#707070)] font-medium">
-            {project.isSystem ? "★ System Project" : project.projectCode || "PROJECT"}
-          </span>
-          <h1 className="text-[var(--text-heading,28px)] font-bold text-[var(--color-ink,#000000)] tracking-tight">
-            {project.title}
-          </h1>
+    <>
+      <CanvasShell
+        nav={null}
+        tools={<TransformTools actions={toolActions} />}
+        toolsPosition={{ x: 79, y: 62 }}
+      >
+        <div className="relative w-full h-full overflow-auto font-sans select-none">
+          {/* Header block (99, 100) */}
+          <div className="absolute left-[99px] top-[100px] flex flex-col gap-1">
+            <span className="text-[var(--text-caption,11px)] font-mono text-[var(--color-ink-muted,#707070)] font-medium">
+              {project.isSystem ? "★ System Project" : project.projectCode || "PROJECT"}
+            </span>
+            <h1 className="text-[var(--text-heading,28px)] font-bold text-[var(--color-ink,#000000)] tracking-tight">
+              {project.title}
+            </h1>
+          </div>
+
+          {/* Tabs & rule — EpsAstsTabs positions itself per DESIGN_SPEC §11 */}
+          <EpsAstsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {/* Content section (96, 258) */}
+          <div className="absolute left-[96px] top-[258px] pb-16">
+            {activeTab === "eps" ? (
+              <EpisodeThumbGrid
+                episodes={episodes}
+                assets={assets}
+                activeTab={activeTab}
+                onSelectEpisode={handleSelectEpisode}
+              />
+            ) : (
+              <AssetRowTable
+                assets={assets}
+                assetTasksMap={tasksMap}
+                statuses={statuses}
+                onTaskChange={handleTaskChange}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Tabs & rule — EpsAstsTabs positions itself per DESIGN_SPEC §11 */}
-        <EpsAstsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <AssetFormDialog
+          isOpen={isAddOpen}
+          projects={allProjects}
+          defaultProjectId={project.id}
+          onClose={() => setIsAddOpen(false)}
+          onSuccess={handleAssetCreated}
+        />
+      </CanvasShell>
 
-        {/* Content section (96, 258) */}
-        <div className="absolute left-[96px] top-[258px] pb-16">
-          {activeTab === "eps" ? (
-            <EpisodeThumbGrid
-              episodes={episodes}
-              assets={assets}
-              activeTab={activeTab}
-              onSelectEpisode={handleSelectEpisode}
-            />
-          ) : (
-            <AssetRowTable
-              assets={assets}
-              assetTasksMap={tasksMap}
-              statuses={statuses}
-              onTaskChange={handleTaskChange}
-            />
-          )}
-        </div>
-      </div>
-
-      <AssetFormDialog
-        isOpen={isAddOpen}
-        projects={allProjects}
-        defaultProjectId={project.id}
-        onClose={() => setIsAddOpen(false)}
-        onSuccess={handleAssetCreated}
-      />
-    </CanvasShell>
+      <BottomNav />
+    </>
   );
 };
 
