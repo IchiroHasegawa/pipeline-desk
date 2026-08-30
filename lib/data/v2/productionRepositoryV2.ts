@@ -12,6 +12,10 @@ import type {
   AssetV2,
   AssetTaskV2,
   ProjectBoardStats,
+  ProcessProgress,
+  TaskStatusOption,
+  SceneBoardTask,
+  AssignableUser,
 } from "@/types/production-v2";
 import { parseBoardLayout } from "@/types/production-v2";
 
@@ -116,6 +120,8 @@ function mapMainTaskV2(row: Tables<"production_tasks">): MainTaskV2 {
     assignee: row.assignee ?? null,
     sortOrder: row.sort_order ?? null,
     sourceWorkflowProcessId: row.source_workflow_process_id ?? null,
+    taskStatusDefinitionId: row.task_status_definition_id ?? null,
+    taskStatusWorkflowId: row.task_status_workflow_id ?? null,
     createdAt: row.created_at,
   };
 }
@@ -683,4 +689,310 @@ export async function getProjectBoardStats(): Promise<Record<string, ProjectBoar
   }
 
   return byProject;
+}
+
+// ---------------------------------------------------------------------------
+// Episode process rollup
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-process scene completion for every episode passed in.
+ *
+ * Two queries in total however many episodes are asked for — never one per
+ * episode. Scenes are fetched separately because the denominator is ALL scenes
+ * in the episode, including scenes carrying no task for the process at all;
+ * those scenes never appear in the task query but must still count against the
+ * percentage. That is the point of the measure.
+ *
+ * Completion is read from workflow_task_statuses.completion_percentage = 100,
+ * matching migration 037's views. production_tasks.status lost its CHECK in 023
+ * and production_tasks.progress is not authoritative, so neither is consulted.
+ *
+ * day_id IS NULL restricts this to Main Tasks, excluding Custom Tasks (029).
+ *
+ * Every requested episode gets a key. An episode with no scenes — or with
+ * scenes but no tasks — gets an empty array, so callers never need a fallback.
+ */
+export async function getEpisodeProcessProgress(
+  episodeIds: string[]
+): Promise<Record<string, ProcessProgress[]>> {
+  if (episodeIds.length === 0) return {};
+
+  const supabase = await createClient();
+
+  const [sceneRes, taskRes] = await Promise.all([
+    supabase.from("scenes").select("id, episode_id").in("episode_id", episodeIds),
+    supabase
+      .from("production_tasks")
+      // One string literal, deliberately long: supabase-js infers the row shape
+      // from the literal type of this argument, and concatenating it collapses
+      // the inference to GenericStringError.
+      .select(
+        "scene_id, scenes!inner(episode_id), workflow_processes!inner(id, name, colour, position), workflow_task_statuses(completion_percentage)"
+      )
+      .in("scenes.episode_id", episodeIds)
+      .is("day_id", null),
+  ]);
+
+  if (sceneRes.error) {
+    throw formatPostgrestError("getEpisodeProcessProgress (scenes)", sceneRes.error);
+  }
+  if (taskRes.error) {
+    throw formatPostgrestError("getEpisodeProcessProgress (tasks)", taskRes.error);
+  }
+
+  const totalScenesByEpisode: Record<string, number> = {};
+  for (const row of sceneRes.data || []) {
+    totalScenesByEpisode[row.episode_id] =
+      (totalScenesByEpisode[row.episode_id] ?? 0) + 1;
+  }
+
+  /**
+   * Completed scenes are collected as a Set rather than a counter: a scene
+   * carrying two tasks for the same process would otherwise be counted twice
+   * and could push the percentage past 100.
+   */
+  type ProcessAccumulator = {
+    processId: string;
+    processName: string;
+    colour: string | null;
+    position: number;
+    completeSceneIds: Set<string>;
+  };
+
+  const byEpisode = new Map<string, Map<string, ProcessAccumulator>>();
+
+  for (const row of taskRes.data || []) {
+    const sceneId = row.scene_id;
+    const episodeId = row.scenes?.episode_id;
+    const process = row.workflow_processes;
+    if (!sceneId || !episodeId || !process) continue;
+
+    let processes = byEpisode.get(episodeId);
+    if (!processes) {
+      processes = new Map<string, ProcessAccumulator>();
+      byEpisode.set(episodeId, processes);
+    }
+
+    let entry = processes.get(process.id);
+    if (!entry) {
+      entry = {
+        processId: process.id,
+        processName: process.name,
+        colour: process.colour ?? null,
+        position: process.position,
+        completeSceneIds: new Set<string>(),
+      };
+      processes.set(process.id, entry);
+    }
+
+    if (row.workflow_task_statuses?.completion_percentage === 100) {
+      entry.completeSceneIds.add(sceneId);
+    }
+  }
+
+  const result: Record<string, ProcessProgress[]> = {};
+  for (const episodeId of episodeIds) {
+    result[episodeId] = [];
+  }
+
+  for (const [episodeId, processes] of byEpisode) {
+    const totalScenes = totalScenesByEpisode[episodeId] ?? 0;
+
+    result[episodeId] = Array.from(processes.values())
+      // Two workflows both number their processes from 1, so position
+      // alone leaves ties, and the task query has no ORDER BY to fall back
+      // on. Name breaks the tie so card order is stable across requests.
+      .sort((a, b) =>
+        a.position !== b.position
+          ? a.position - b.position
+          : a.processName.localeCompare(b.processName)
+      )
+      .map((entry) => {
+        const completeScenes = entry.completeSceneIds.size;
+        return {
+          processId: entry.processId,
+          processName: entry.processName,
+          colour: entry.colour,
+          position: entry.position,
+          completeScenes,
+          totalScenes,
+          percent:
+            totalScenes === 0
+              ? 0
+              : Math.round((completeScenes / totalScenes) * 100),
+        };
+      });
+  }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Scene board: tasks, status options, assignable users
+// ---------------------------------------------------------------------------
+
+/**
+ * Main Tasks for every scene passed in, each carrying the workflow process it
+ * was generated from so the board card can draw its colour strip and badge.
+ *
+ * One query for all scenes, never one per scene. Keyed by scene id, with an
+ * entry for every scene asked for so callers need no fallback.
+ */
+export async function getSceneBoardTasks(
+  sceneIds: string[]
+): Promise<Record<string, SceneBoardTask[]>> {
+  if (sceneIds.length === 0) return {};
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("production_tasks")
+    // One unbroken string literal: supabase-js infers the embedded row shape
+    // from this argument's literal type, and concatenating it collapses the
+    // inference to GenericStringError.
+    .select(
+      "id, episode_id, scene_id, name, progress, status, assignee, sort_order, source_workflow_process_id, task_status_definition_id, task_status_workflow_id, created_at, workflow_processes(name, colour, position)"
+    )
+    .in("scene_id", sceneIds)
+    .is("day_id", null);
+
+  if (error) {
+    throw formatPostgrestError("getSceneBoardTasks", error);
+  }
+
+  const result: Record<string, SceneBoardTask[]> = {};
+  for (const sceneId of sceneIds) {
+    result[sceneId] = [];
+  }
+
+  for (const row of data || []) {
+    const sceneId = row.scene_id;
+    if (!sceneId || !result[sceneId]) continue;
+
+    const process = row.workflow_processes;
+
+    result[sceneId].push({
+      id: row.id,
+      episodeId: row.episode_id ?? null,
+      sceneId,
+      name: row.name,
+      progress: row.progress,
+      status: row.status,
+      assignee: row.assignee ?? null,
+      sortOrder: row.sort_order ?? null,
+      sourceWorkflowProcessId: row.source_workflow_process_id ?? null,
+      taskStatusDefinitionId: row.task_status_definition_id ?? null,
+      taskStatusWorkflowId: row.task_status_workflow_id ?? null,
+      createdAt: row.created_at,
+      processName: process?.name ?? null,
+      processColour: process?.colour ?? null,
+      processPosition: process?.position ?? null,
+    });
+  }
+
+  /*
+    Ordered by the process position the card's badge shows, so the cards read
+    in workflow order. Tasks with no process sort last, then by name, because
+    the query itself has no ORDER BY to fall back on.
+  */
+  for (const sceneId of Object.keys(result)) {
+    result[sceneId].sort((a, b) => {
+      const ap = a.processPosition;
+      const bp = b.processPosition;
+      if (ap === null && bp === null) return a.name.localeCompare(b.name);
+      if (ap === null) return 1;
+      if (bp === null) return -1;
+      if (ap !== bp) return ap - bp;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  return result;
+}
+
+/**
+ * The statuses each of these workflows defines, keyed by workflow id.
+ *
+ * Batched deliberately: a scene's tasks can come from more than one status
+ * workflow, and the board must not issue a query per task.
+ */
+export async function getTaskStatusOptionsByWorkflow(
+  workflowIds: string[]
+): Promise<Record<string, TaskStatusOption[]>> {
+  const unique = Array.from(new Set(workflowIds));
+  if (unique.length === 0) return {};
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("workflow_task_statuses")
+    .select("id, workflow_id, name, colour, completion_percentage")
+    .in("workflow_id", unique)
+    .eq("status", "active")
+    .order("position", { ascending: true });
+
+  if (error) {
+    throw formatPostgrestError("getTaskStatusOptionsByWorkflow", error);
+  }
+
+  const result: Record<string, TaskStatusOption[]> = {};
+  for (const workflowId of unique) {
+    result[workflowId] = [];
+  }
+
+  for (const row of data || []) {
+    const bucket = result[row.workflow_id];
+    if (!bucket) continue;
+    bucket.push({
+      id: row.id,
+      name: row.name,
+      colour: row.colour,
+      completionPercentage: row.completion_percentage,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * The statuses one workflow defines, in position order.
+ *
+ * Unlike getWorkflowTaskStatuses — which returns bare names across every
+ * workflow and is kept for its existing asset-page callers — this is scoped to
+ * a single workflow and carries the ids a status write needs.
+ */
+export async function getTaskStatusOptions(
+  taskStatusWorkflowId: string
+): Promise<TaskStatusOption[]> {
+  const byWorkflow = await getTaskStatusOptionsByWorkflow([taskStatusWorkflowId]);
+  return byWorkflow[taskStatusWorkflowId] ?? [];
+}
+
+/**
+ * Profiles that may be put in production_tasks.assignee.
+ *
+ * account_status is lowercase: migration 013 created it as 'Active' with a
+ * CHECK, and migration 021 lowercased both the data and the constraint to
+ * ('active','suspended','disabled'). Every other caller in the app compares
+ * against "active", so this does too.
+ */
+export async function getAssignableUsers(): Promise<AssignableUser[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, username")
+    .eq("account_status", "active")
+    .order("display_name", { ascending: true, nullsFirst: false })
+    .order("username", { ascending: true });
+
+  if (error) {
+    throw formatPostgrestError("getAssignableUsers", error);
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    displayName: row.display_name ?? row.username,
+  }));
 }

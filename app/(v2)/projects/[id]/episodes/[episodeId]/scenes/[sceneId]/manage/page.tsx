@@ -5,6 +5,7 @@ import {
   getScenesByEpisode,
   getSceneV2,
   getMainTasksForScene,
+  getAssignableUsers,
 } from "@/lib/data/v2/productionRepositoryV2";
 import {
   getOpenTodos,
@@ -23,16 +24,25 @@ type SceneManagePageProps = {
 export default async function SceneManagePage({ params }: SceneManagePageProps) {
   const { id, episodeId, sceneId } = await params;
 
-  const [episodesList, siblingScenes, scene, tasks, openTodos, commits, keyframeElements] =
-    await Promise.all([
-      getEpisodesByProject(id),
-      getScenesByEpisode(episodeId),
-      getSceneV2(sceneId),
-      getMainTasksForScene(sceneId),
-      getOpenTodos({ kind: "scene", sceneId }),
-      getCommits({ kind: "scene", sceneId }),
-      getKeyframesForSceneBoard(sceneId),
-    ]);
+  const [
+    episodesList,
+    siblingScenes,
+    scene,
+    tasks,
+    openTodos,
+    commits,
+    keyframeElements,
+    assignableUsers,
+  ] = await Promise.all([
+    getEpisodesByProject(id),
+    getScenesByEpisode(episodeId),
+    getSceneV2(sceneId),
+    getMainTasksForScene(sceneId),
+    getOpenTodos({ kind: "scene", sceneId }),
+    getCommits({ kind: "scene", sceneId }),
+    getKeyframesForSceneBoard(sceneId),
+    getAssignableUsers(),
+  ]);
 
   const episode = episodesList.find((e) => e.id === episodeId) || null;
 
@@ -59,6 +69,7 @@ export default async function SceneManagePage({ params }: SceneManagePageProps) 
       initialOpenTodos={openTodos}
       initialCommits={commits}
       initialLatestCommitsByTask={latestCommitsByTask}
+      assignableUsers={assignableUsers}
     />
   );
 }

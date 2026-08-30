@@ -1,7 +1,7 @@
 "use client";
 
 import React, { memo } from "react";
-import type { MainTaskV2, CustomTaskV2, TodoV2 } from "@/types/production-v2";
+import type { MainTaskV2, CustomTaskV2, TodoV2, AssignableUser } from "@/types/production-v2";
 import { computeMainTaskProgress } from "@/lib/timeline/taskRollup";
 import { formatCommitLabel } from "@/lib/timeline/commitFormat";
 
@@ -9,6 +9,7 @@ export type MainTaskGridProps = {
   tasks: MainTaskV2[];
   customTasks?: CustomTaskV2[];
   latestCommitsByTask?: Record<string, TodoV2>;
+  assignableUsers?: AssignableUser[];
 };
 
 /**
@@ -24,6 +25,7 @@ export const MainTaskGridComponent: React.FC<MainTaskGridProps> = ({
   tasks,
   customTasks = [],
   latestCommitsByTask = {},
+  assignableUsers = [],
 }) => {
   if (tasks.length === 0) {
     return (
@@ -44,6 +46,16 @@ export const MainTaskGridComponent: React.FC<MainTaskGridProps> = ({
         const pct = Math.min(100, Math.max(0, computeMainTaskProgress(task, customTasks)));
         const latestCommit = latestCommitsByTask[task.id];
 
+        let assigneeText: string | null = null;
+        if (task.assignee) {
+          const user = assignableUsers.find((u) => u.id === task.assignee);
+          if (user) {
+            assigneeText = `Assignee: ${user.displayName}`;
+          } else {
+            assigneeText = `Assignee: ${task.assignee} (unknown)`;
+          }
+        }
+
         return (
           <div
             key={task.id}
@@ -60,7 +72,7 @@ export const MainTaskGridComponent: React.FC<MainTaskGridProps> = ({
                 </span>
               </div>
               <span className="text-[10px] text-[var(--color-ink-muted,#707070)] truncate">
-                {task.assignee ? `Assignee: ${task.assignee}` : task.status}
+                {assigneeText ? assigneeText : task.status}
               </span>
             </div>
 

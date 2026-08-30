@@ -5,6 +5,7 @@ import {
   getEpisodesByProject,
   getScenesByEpisode,
   getMainTasksForEpisode,
+  getAssignableUsers,
 } from "@/lib/data/v2/productionRepositoryV2";
 import {
   getOpenTodos,
@@ -22,14 +23,16 @@ type EpisodeManagePageProps = {
 export default async function EpisodeManagePage({ params }: EpisodeManagePageProps) {
   const { id, episodeId } = await params;
 
-  const [project, siblingEpisodes, scenes, tasks, openTodos, commits] = await Promise.all([
-    getProjectV2(id),
-    getEpisodesByProject(id),
-    getScenesByEpisode(episodeId),
-    getMainTasksForEpisode(episodeId),
-    getOpenTodos({ kind: "episode", episodeId }),
-    getCommits({ kind: "episode", episodeId }),
-  ]);
+  const [project, siblingEpisodes, scenes, tasks, openTodos, commits, assignableUsers] =
+    await Promise.all([
+      getProjectV2(id),
+      getEpisodesByProject(id),
+      getScenesByEpisode(episodeId),
+      getMainTasksForEpisode(episodeId),
+      getOpenTodos({ kind: "episode", episodeId }),
+      getCommits({ kind: "episode", episodeId }),
+      getAssignableUsers(),
+    ]);
 
   const episode = siblingEpisodes.find((e) => e.id === episodeId) || null;
 
@@ -50,6 +53,7 @@ export default async function EpisodeManagePage({ params }: EpisodeManagePagePro
       initialOpenTodos={openTodos}
       initialCommits={commits}
       initialLatestCommitsByTask={latestCommitsByTask}
+      assignableUsers={assignableUsers}
     />
   );
 }

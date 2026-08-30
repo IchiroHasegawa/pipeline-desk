@@ -12,6 +12,7 @@ import type {
   CustomTaskV2,
   AssetV2,
   ProjectBoardStats,
+  ProcessProgress,
   BoardLayout,
 } from "@/types/production-v2";
 import { parseBoardLayout, GRAPH_IDS } from "@/types/production-v2";
@@ -21,6 +22,7 @@ import {
   createSceneV2 as repoCreateSceneV2,
   getSceneWorkflows as repoGetSceneWorkflows,
   getJobWorkflows as repoGetJobWorkflows,
+  getEpisodeProcessProgress as repoGetEpisodeProcessProgress,
 } from "@/lib/data/v2/productionRepositoryV2";
 
 function formatPostgrestError(
@@ -91,6 +93,8 @@ function mapMainTaskV2(row: Tables<"production_tasks">): MainTaskV2 {
     assignee: row.assignee ?? null,
     sortOrder: row.sort_order ?? null,
     sourceWorkflowProcessId: row.source_workflow_process_id ?? null,
+    taskStatusDefinitionId: row.task_status_definition_id ?? null,
+    taskStatusWorkflowId: row.task_status_workflow_id ?? null,
     createdAt: row.created_at,
   };
 }
@@ -859,4 +863,130 @@ export async function getProjectBoardStats(): Promise<Record<string, ProjectBoar
 
 export async function getJobWorkflows(): Promise<Array<{ id: string; name: string }>> {
   return repoGetJobWorkflows();
+}
+
+export async function getEpisodeProcessProgress(
+  episodeIds: string[]
+): Promise<Record<string, ProcessProgress[]>> {
+  return repoGetEpisodeProcessProgress(episodeIds);
+}
+
+/**
+ * Move a task to one of the statuses its own status workflow defines.
+ *
+ * task_status_definition_id is the authoritative value — migration 037's views
+ * and the Episode board's process rings both read completion through it. The
+ * free-text status column is written to the same status's name so the two do
+ * not drift, but nothing reads it for completion. progress is deliberately not
+ * touched: migration 037 records that it is not authoritative.
+ */
+export async function updateTaskStatus(
+  taskId: string,
+  statusDefinitionId: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: task, error: taskError } = await supabase
+    .from("production_tasks")
+    .select("id, task_status_workflow_id")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (taskError) {
+    throw formatPostgrestError("updateTaskStatus (task lookup)", taskError);
+  }
+  if (!task) {
+    throw new Error(`updateTaskStatus failed: task ${taskId} not found.`);
+  }
+  if (!task.task_status_workflow_id) {
+    throw new Error(
+      `updateTaskStatus failed: task ${taskId} has no task_status_workflow_id, ` +
+        "so no status can be validated against it."
+    );
+  }
+
+  const { data: status, error: statusError } = await supabase
+    .from("workflow_task_statuses")
+    .select("id, name, workflow_id")
+    .eq("id", statusDefinitionId)
+    .maybeSingle();
+
+  if (statusError) {
+    throw formatPostgrestError("updateTaskStatus (status lookup)", statusError);
+  }
+  if (!status) {
+    throw new Error(
+      `updateTaskStatus failed: status ${statusDefinitionId} not found.`
+    );
+  }
+
+  // Rejected rather than silently written: a status from another workflow would
+  // pass the FK but means nothing for this task.
+  if (status.workflow_id !== task.task_status_workflow_id) {
+    throw new Error(
+      `updateTaskStatus failed: status ${statusDefinitionId} belongs to workflow ` +
+        `${status.workflow_id}, but task ${taskId} is scoped to workflow ` +
+        `${task.task_status_workflow_id}.`
+    );
+  }
+
+  const { error } = await supabase
+    .from("production_tasks")
+    .update({
+      task_status_definition_id: status.id,
+      status: status.name,
+    })
+    .eq("id", taskId);
+
+  if (error) {
+    throw formatPostgrestError("updateTaskStatus", error);
+  }
+
+  revalidatePath("/projects", "layout");
+}
+
+/**
+ * Set or clear a task's assignee.
+ *
+ * production_tasks.assignee is a text column with no FK, and this stores the
+ * profile UUID in it, resolved to a display name at render time.
+ *
+ * asset_tasks.assignee remains free text holding a display name, written by
+ * updateAssetTask above; that is deliberately left alone rather than migrated
+ * in this pass.
+ */
+export async function updateTaskAssignee(
+  taskId: string,
+  profileId: string | null
+): Promise<void> {
+  const supabase = await createClient();
+
+  if (profileId) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", profileId)
+      .eq("account_status", "active")
+      .maybeSingle();
+
+    if (profileError) {
+      throw formatPostgrestError("updateTaskAssignee (profile lookup)", profileError);
+    }
+    if (!profile) {
+      throw new Error(
+        `updateTaskAssignee failed: no active profile ${profileId}.`
+      );
+    }
+  }
+
+  const { error } = await supabase
+    .from("production_tasks")
+    .update({ assignee: profileId })
+    .eq("id", taskId);
+
+  if (error) {
+    throw formatPostgrestError("updateTaskAssignee", error);
+  }
+
+  revalidatePath("/projects", "layout");
 }

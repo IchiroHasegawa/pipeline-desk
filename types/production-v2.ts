@@ -112,6 +112,14 @@ export type MainTaskV2 = {
   assignee: string | null;
   sortOrder: number | null;
   sourceWorkflowProcessId: string | null;
+  /**
+   * The authoritative status. production_tasks.status is free text that lost
+   * its CHECK in migration 023; migration 037 reads completion from
+   * workflow_task_statuses.completion_percentage via this id instead.
+   */
+  taskStatusDefinitionId: string | null;
+  /** Which workflow scopes the statuses this task may be moved to. */
+  taskStatusWorkflowId: string | null;
   createdAt: string;
 };
 
@@ -230,4 +238,52 @@ export const EMPTY_PROJECT_BOARD_STATS: ProjectBoardStats = {
   episodeStatus: { notStarted: 0, inProgress: 0, complete: 0, total: 0 },
   commitDays: [],
   assets: { assetCount: 0, fileCount: 0, totalBytes: 0 },
+};
+
+/**
+ * One process of an episode's scene workflow, rolled up across every scene.
+ *
+ * total is ALL scenes in the episode, not only those carrying a task for this
+ * process — a scene missing the process counts against the percentage, which is
+ * the point of the measure.
+ */
+export type ProcessProgress = {
+  processId: string;
+  processName: string;
+  colour: string | null;
+  position: number;
+  completeScenes: number;
+  totalScenes: number;
+  percent: number;
+};
+
+/**
+ * One status a task may be moved to. Scoped to a single workflow — statuses
+ * live under workflow_task_statuses.workflow_id, so a global list would offer
+ * options that do not belong to the task.
+ */
+export type TaskStatusOption = {
+  id: string;
+  name: string;
+  colour: string;
+  completionPercentage: number;
+};
+
+/**
+ * A scene's Main Task with the workflow process it came from, which is what
+ * gives the board card its colour strip and its number badge.
+ *
+ * The process fields are null when source_workflow_process_id is null — a task
+ * created outside generate_workflow_tasks, which nothing currently does.
+ */
+export type SceneBoardTask = MainTaskV2 & {
+  processName: string | null;
+  processColour: string | null;
+  processPosition: number | null;
+};
+
+/** A profile that can be put in production_tasks.assignee. */
+export type AssignableUser = {
+  id: string;
+  displayName: string;
 };

@@ -20,6 +20,7 @@ import type {
   SceneV2,
   MainTaskV2,
   TodoV2,
+  AssignableUser,
 } from "@/types/production-v2";
 
 export type SceneManageViewProps = {
@@ -31,6 +32,7 @@ export type SceneManageViewProps = {
   initialOpenTodos: TodoV2[];
   initialCommits: TodoV2[];
   initialLatestCommitsByTask?: Record<string, TodoV2>;
+  assignableUsers?: AssignableUser[];
 };
 
 export const SceneManageView: React.FC<SceneManageViewProps> = ({
@@ -42,6 +44,7 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
   initialOpenTodos,
   initialCommits,
   initialLatestCommitsByTask = {},
+  assignableUsers = [],
 }) => {
   const router = useRouter();
 
@@ -219,6 +222,7 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
         <MainTaskGrid
           tasks={initialTasks}
           latestCommitsByTask={latestCommitsMap}
+          assignableUsers={assignableUsers}
         />
       }
       todoRail={
