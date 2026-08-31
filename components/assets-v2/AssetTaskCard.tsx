@@ -1,16 +1,15 @@
 "use client";
 
 import React, { memo } from "react";
-import type { AssetTaskV2 } from "@/types/production-v2";
+import type { AssetTaskV2, AssignableUser } from "@/types/production-v2";
 
 export type AssetTaskCardProps = {
   task: AssetTaskV2;
   index: number;
   statuses: string[];
+  users?: AssignableUser[];
   onTaskChange?: (taskId: string, updates: { assignee?: string | null; status?: string }) => void;
 };
-
-const ASSIGNEES = ["Artist A", "Artist B", "Lead C"];
 
 const Caret: React.FC = () => (
   <svg
@@ -38,8 +37,14 @@ export const AssetTaskCardComponent: React.FC<AssetTaskCardProps> = ({
   task,
   index,
   statuses,
+  users = [],
   onTaskChange,
 }) => {
+  const assigneeUnknown =
+    task.assignee !== null &&
+    task.assignee !== "" &&
+    !users.some((u) => u.id === task.assignee);
+
   return (
     <div className="relative w-[216px] h-[171px] select-none font-sans">
       {/* 1. Back plate (0, 7) 216 × 152, radius 4 */}
@@ -81,7 +86,7 @@ export const AssetTaskCardComponent: React.FC<AssetTaskCardProps> = ({
         </div>
         <select
           aria-label={`Assignee for ${task.taskName}`}
-          value={task.assignee || ""}
+          value={task.assignee ?? ""}
           onChange={(e) =>
             onTaskChange && onTaskChange(task.id, { assignee: e.target.value || null })
           }
@@ -90,9 +95,14 @@ export const AssetTaskCardComponent: React.FC<AssetTaskCardProps> = ({
           <option value="" className="text-black">
             Unassigned
           </option>
-          {ASSIGNEES.map((name) => (
-            <option key={name} value={name} className="text-black">
-              {name}
+          {assigneeUnknown && (
+            <option value={task.assignee ?? ""} className="text-black">
+              {task.assignee} (unknown)
+            </option>
+          )}
+          {users.map((user) => (
+            <option key={user.id} value={user.id} className="text-black">
+              {user.displayName}
             </option>
           ))}
         </select>

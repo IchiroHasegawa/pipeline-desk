@@ -94,7 +94,7 @@ function OwnerLoginContent() {
       }
       
       // Verification successful, redirect
-      router.push("/production");
+      router.push("/projects");
       router.refresh(); // Refresh to clear any cached states
       
     } catch (err) {

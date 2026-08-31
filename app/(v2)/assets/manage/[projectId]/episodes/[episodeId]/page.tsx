@@ -7,6 +7,7 @@ import {
   getAssetTasks,
   getWorkflowTaskStatuses,
   getProjectsV2,
+  getAssignableUsers,
 } from "@/lib/data/v2/productionRepositoryV2";
 import AssetsManageRowClient from "@/components/assets-v2/AssetsManageRowClient";
 
@@ -21,12 +22,13 @@ export default async function AssetManageRowPage({
 }: AssetManageRowPageProps) {
   const { projectId, episodeId } = await params;
 
-  const [project, episodesList, assets, statuses, allProjects] = await Promise.all([
+  const [project, episodesList, assets, statuses, allProjects, users] = await Promise.all([
     getProjectV2(projectId),
     getEpisodesByProject(projectId),
     getAssetsByEpisode(episodeId),
     getWorkflowTaskStatuses(),
     getProjectsV2(),
+    getAssignableUsers(),
   ]);
 
   const episode = episodesList.find((e) => e.id === episodeId) || null;
@@ -46,6 +48,7 @@ export default async function AssetManageRowPage({
       assetTasksMap={assetTasksMap}
       statuses={statuses}
       allProjects={allProjects}
+      users={users}
     />
   );
 }

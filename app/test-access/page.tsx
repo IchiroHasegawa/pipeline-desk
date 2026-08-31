@@ -31,7 +31,7 @@ export default function TestAccessPage() {
         throw new Error(data.error || "Invalid access code");
       }
 
-      router.push("/production");
+      router.push("/projects");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to verify access code");
     } finally {

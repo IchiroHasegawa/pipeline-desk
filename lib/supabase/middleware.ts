@@ -38,7 +38,6 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const protectedRoutes = [
-    "/production",
     "/projects",
     "/assets/manage",
     "/assets/assembly",
@@ -124,14 +123,14 @@ export async function updateSession(request: NextRequest) {
       
     if (profile?.account_status === 'active') {
       const url = request.nextUrl.clone();
-      url.pathname = "/production";
+      url.pathname = "/projects";
       return NextResponse.redirect(url);
     }
   }
 
   if (request.nextUrl.pathname === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = user ? "/production" : "/login";
+    url.pathname = user ? "/projects" : "/login";
     return NextResponse.redirect(url);
   }
 

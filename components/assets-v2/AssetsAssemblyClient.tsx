@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
+import BoardHeader from "@/components/shell/BoardHeader";
 import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import BoardSpace from "@/components/board/BoardSpace";
@@ -40,6 +41,7 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
   const [activeTool, setActiveTool] = useState<BoardTool>("select");
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [hoveredDropTarget, setHoveredDropTarget] = useState<DropTarget>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,6 +49,15 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setElements(initialElements);
   }, [boardId, initialElements]);
+
+  const visibleElements = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return elements;
+    return elements.filter((el) => {
+      const textStr = ((el.title || "") + " " + (el.body || "") + " " + el.elementType).toLowerCase();
+      return textStr.includes(q);
+    });
+  }, [elements, searchQuery]);
 
   const handleSelectProject = (projectId: string) => {
     if (projectId === currentProjectId) return;
@@ -210,45 +221,58 @@ export const AssetsAssemblyClient: React.FC<AssetsAssemblyClientProps> = ({
           className="hidden"
         />
 
-        <div className="relative w-full h-full flex flex-row overflow-hidden select-none">
-          {/* Left Project List Panel (Collapsible via width animation, no remount) */}
-          <ProjectListPanel
-            projects={projects}
-            currentProjectId={currentProjectId}
-            isCollapsed={isPanelCollapsed}
-            onSelectProject={handleSelectProject}
-            hoveredDropTarget={hoveredDropTarget}
-          />
-
-          {/* Board Space Area */}
-          <main className="flex-1 h-full relative">
-            <BoardSpace
-              boardId={boardId}
-              elements={elements}
-              activeTool={activeTool}
-              scope={{ type: "project", projectId: currentProjectId }}
-              onToolSelect={setActiveTool}
-              onElementsChange={setElements}
-              onElementCreate={handleCreateElement}
-              onUploadAssets={handleUploadAssets}
-              onAssignToProject={handleAssignToProject}
-              onAssignToEpisode={handleAssignToEpisode}
-              onHoverDropTarget={setHoveredDropTarget}
-              onElementDelete={handleDeleteElement}
-              onElementMove={handleMoveElements}
+        <div className="relative w-full h-full flex flex-col overflow-hidden select-none">
+          <div className="shrink-0 pt-[38px] px-[330px] pb-4 z-30">
+            <BoardHeader
+              createLabel="Create Assets"
+              manageLabel="Manage Assets"
+              onCreate={() => fileInputRef.current?.click()}
+              onManage={() => router.push(`/assets/manage/${currentProjectId}`)}
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
             />
-          </main>
+          </div>
 
-          {/*
-            Tools bar (842, 981) 235 × 59 — DESIGN_SPEC §13.
-            Positioned against the viewport frame, not the board column, so the
-            coordinates hold whether or not the 330px panel is collapsed.
-          */}
-          <BoardToolbar
-            activeTool={activeTool}
-            onToolSelect={setActiveTool}
-            position={{ x: 842, y: 981 }}
-          />
+          <div className="relative flex-1 min-h-0 flex flex-row overflow-hidden">
+            {/* Left Project List Panel (Collapsible via width animation, no remount) */}
+            <ProjectListPanel
+              projects={projects}
+              currentProjectId={currentProjectId}
+              isCollapsed={isPanelCollapsed}
+              onSelectProject={handleSelectProject}
+              hoveredDropTarget={hoveredDropTarget}
+            />
+
+            {/* Board Space Area */}
+            <main className="flex-1 h-full relative">
+              <BoardSpace
+                boardId={boardId}
+                elements={visibleElements}
+                activeTool={activeTool}
+                scope={{ type: "project", projectId: currentProjectId }}
+                onToolSelect={setActiveTool}
+                onElementsChange={setElements}
+                onElementCreate={handleCreateElement}
+                onUploadAssets={handleUploadAssets}
+                onAssignToProject={handleAssignToProject}
+                onAssignToEpisode={handleAssignToEpisode}
+                onHoverDropTarget={setHoveredDropTarget}
+                onElementDelete={handleDeleteElement}
+                onElementMove={handleMoveElements}
+              />
+            </main>
+
+            {/*
+              Tools bar (842, 981) 235 × 59 — DESIGN_SPEC §13.
+              Positioned against the viewport frame, not the board column, so the
+              coordinates hold whether or not the 330px panel is collapsed.
+            */}
+            <BoardToolbar
+              activeTool={activeTool}
+              onToolSelect={setActiveTool}
+              position={{ x: 842, y: 981 }}
+            />
+          </div>
         </div>
       </CanvasShell>
 

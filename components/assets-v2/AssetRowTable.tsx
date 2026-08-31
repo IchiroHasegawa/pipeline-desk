@@ -2,13 +2,14 @@
 "use client";
 
 import React, { memo, useMemo } from "react";
-import type { AssetV2, AssetTaskV2 } from "@/types/production-v2";
+import type { AssetV2, AssetTaskV2, AssignableUser } from "@/types/production-v2";
 import AssetTaskCard from "@/components/assets-v2/AssetTaskCard";
 
 export type AssetRowTableProps = {
   assets: AssetV2[];
   assetTasksMap: Record<string, AssetTaskV2[]>;
   statuses: string[];
+  users?: AssignableUser[];
   onTaskChange?: (taskId: string, updates: { assignee?: string | null; status?: string }) => void;
 };
 
@@ -42,6 +43,7 @@ export const AssetRowTableComponent: React.FC<AssetRowTableProps> = ({
   assets,
   assetTasksMap,
   statuses,
+  users = [],
   onTaskChange,
 }) => {
   // Resolve each row's y offset from the wrapped card lines above it.
@@ -187,6 +189,7 @@ export const AssetRowTableComponent: React.FC<AssetRowTableProps> = ({
                         task={task}
                         index={idx}
                         statuses={statuses}
+                        users={users}
                         onTaskChange={onTaskChange}
                       />
                     </div>

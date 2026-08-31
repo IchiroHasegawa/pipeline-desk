@@ -9,7 +9,7 @@ import { logoutAction } from "@/app/actions/auth";
 
 const navItems = [
   { name: "Overview", href: "#" },
-  { name: "Production", href: "/production" },
+  { name: "Projects", href: "/projects" },
   { name: "Open Tasks", href: "#" },
   { name: "Review", href: "#" },
   { name: "Reports", href: "#" },

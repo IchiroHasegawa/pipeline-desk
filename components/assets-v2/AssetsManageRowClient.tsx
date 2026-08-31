@@ -1,9 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
+import BoardHeader from "@/components/shell/BoardHeader";
 import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import AssetRowTable from "@/components/assets-v2/AssetRowTable";
@@ -14,6 +15,7 @@ import type {
   EpisodeV2,
   AssetV2,
   AssetTaskV2,
+  AssignableUser,
 } from "@/types/production-v2";
 
 export type AssetsManageRowClientProps = {
@@ -23,6 +25,7 @@ export type AssetsManageRowClientProps = {
   assetTasksMap: Record<string, AssetTaskV2[]>;
   statuses: string[];
   allProjects: ProjectV2[];
+  users?: AssignableUser[];
 };
 
 export const AssetsManageRowClient: React.FC<AssetsManageRowClientProps> = ({
@@ -32,10 +35,22 @@ export const AssetsManageRowClient: React.FC<AssetsManageRowClientProps> = ({
   assetTasksMap,
   statuses,
   allProjects,
+  users = [],
 }) => {
   const router = useRouter();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [tasksMap, setTasksMap] = useState<Record<string, AssetTaskV2[]>>(assetTasksMap);
+
+  const visibleAssets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return assets;
+    return assets.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) ||
+        (a.assetCode && a.assetCode.toLowerCase().includes(q))
+    );
+  }, [assets, searchQuery]);
 
   const handleTaskChange = async (
     taskId: string,
@@ -70,39 +85,53 @@ export const AssetsManageRowClient: React.FC<AssetsManageRowClientProps> = ({
         tools={<TransformTools actions={toolActions} />}
         toolsPosition={{ x: 505, y: 28 }}
       >
-        <div className="relative w-full h-full overflow-auto font-sans">
-          {/* Project thumbnail (31, 29) 131 × 200 — DESIGN_SPEC §12 */}
-          <div className="absolute left-[31px] top-[29px] w-[131px] h-[200px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] overflow-hidden">
-            {project.thumbnailUrl ? (
-              <img
-                src={project.thumbnailUrl}
-                alt={project.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-[var(--color-ink-muted,#707070)] text-[10px] text-center p-2">
-                <span>[PROJECT]</span>
-                <span className="opacity-75">{project.projectCode}</span>
-              </div>
-            )}
+        <div className="relative w-full h-full overflow-auto font-sans flex flex-col">
+          <div className="shrink-0 pt-[38px] px-[31px] pb-4">
+            <BoardHeader
+              createLabel="Create Assets"
+              manageLabel="Manage Assets"
+              onCreate={() => setIsAddOpen(true)}
+              onManage={() => router.push(`/assets/manage/${project.id}`)}
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+            />
           </div>
 
-          {/* Project Title (191, 129) 184 × 38 */}
-          <h1 className="absolute left-[191px] top-[129px] w-[184px] h-[38px] flex items-center text-[var(--text-heading,24px)] leading-none font-bold text-[var(--color-ink,#000000)] truncate">
-            {project.title}
-          </h1>
+          <div className="relative flex-1 min-h-0">
+            {/* Project thumbnail (31, 29) 131 × 200 — DESIGN_SPEC §12 -> preserving existing title block below header */}
+            <div className="absolute left-[31px] top-[10px] w-[131px] h-[200px] bg-[var(--color-placeholder,#d9d9d9)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] overflow-hidden">
+              {project.thumbnailUrl ? (
+                <img
+                  src={project.thumbnailUrl}
+                  alt={project.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-[var(--color-ink-muted,#707070)] text-[10px] text-center p-2">
+                  <span>[PROJECT]</span>
+                  <span className="opacity-75">{project.projectCode}</span>
+                </div>
+              )}
+            </div>
 
-          {/* Episode Title (191, 212) 184 × 38 */}
-          <h2 className="absolute left-[191px] top-[212px] w-[184px] h-[38px] flex items-center text-[var(--text-section,18px)] leading-none font-medium text-[var(--color-ink-muted,#707070)] truncate">
-            {episode.code || episode.episodeName}
-          </h2>
+            {/* Project Title (191, 129) 184 × 38 */}
+            <h1 className="absolute left-[191px] top-[110px] w-[184px] h-[38px] flex items-center text-[var(--text-heading,24px)] leading-none font-bold text-[var(--color-ink,#000000)] truncate">
+              {project.title}
+            </h1>
 
-          <AssetRowTable
-            assets={assets}
-            assetTasksMap={tasksMap}
-            statuses={statuses}
-            onTaskChange={handleTaskChange}
-          />
+            {/* Episode Title (191, 212) 184 × 38 */}
+            <h2 className="absolute left-[191px] top-[160px] w-[184px] h-[38px] flex items-center text-[var(--text-section,18px)] leading-none font-medium text-[var(--color-ink-muted,#707070)] truncate">
+              {episode.code || episode.episodeName}
+            </h2>
+
+            <AssetRowTable
+              assets={visibleAssets}
+              assetTasksMap={tasksMap}
+              statuses={statuses}
+              users={users}
+              onTaskChange={handleTaskChange}
+            />
+          </div>
         </div>
 
         <AssetFormDialog

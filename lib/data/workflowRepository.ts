@@ -17,11 +17,6 @@ export async function getWorkflows(supabase: SupabaseClient<Database>, type?: st
   return data;
 }
 
-export async function getWorkflow(supabase: SupabaseClient<Database>, id: string) {
-  const { data, error } = await supabase.from("workflows").select("*").eq("id", id).single();
-  if (error) throw error;
-  return data;
-}
 
 export async function createWorkflow(supabase: SupabaseClient<Database>, workflow: Database["public"]["Tables"]["workflows"]["Insert"]) {
   const { data, error } = await supabase
@@ -117,19 +112,4 @@ export async function createTaskStatus(supabase: SupabaseClient<Database>, statu
   return data;
 }
 
-export async function updateTaskStatus(supabase: SupabaseClient<Database>, id: string, updates: Database["public"]["Tables"]["workflow_task_statuses"]["Update"]) {
-  const { data, error } = await supabase
-    .from("workflow_task_statuses")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteTaskStatus(supabase: SupabaseClient<Database>, id: string) {
-  const { error } = await supabase.from("workflow_task_statuses").delete().eq("id", id);
-  if (error) throw error;
-}
 

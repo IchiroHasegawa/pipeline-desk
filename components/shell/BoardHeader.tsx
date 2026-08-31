@@ -6,9 +6,9 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 
 export type BoardHeaderProps = {
   createLabel: string;
-  manageLabel: string;
+  manageLabel?: string;
   onCreate: () => void;
-  onManage: () => void;
+  onManage?: () => void;
   searchValue: string;
   onSearchChange: (v: string) => void;
   searchPlaceholder?: string;
@@ -88,19 +88,22 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
         {createLabel}
       </button>
 
-      <Rule />
-
-      <button
-        type="button"
-        onClick={onManage}
-        className={buttonClass}
-        style={{
-          fontSize: "var(--text-caption, 11px)",
-          color: "var(--color-ink, #000000)",
-        }}
-      >
-        {manageLabel}
-      </button>
+      {manageLabel && (
+        <>
+          <Rule />
+          <button
+            type="button"
+            onClick={onManage}
+            className={buttonClass}
+            style={{
+              fontSize: "var(--text-caption, 11px)",
+              color: "var(--color-ink, #000000)",
+            }}
+          >
+            {manageLabel}
+          </button>
+        </>
+      )}
 
       <Rule />
 

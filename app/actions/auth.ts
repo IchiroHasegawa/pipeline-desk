@@ -85,7 +85,7 @@ export async function loginAction(prevState: AuthState | null, formData: FormDat
     return { message: "An unexpected error occurred.", step: 2, username };
   }
 
-  redirect("/production");
+  redirect("/projects");
 }
 
 export async function signupAction(prevState: AuthState | null, formData: FormData): Promise<AuthState> {
@@ -152,7 +152,7 @@ export async function signupAction(prevState: AuthState | null, formData: FormDa
     return { message: "An unexpected error occurred during signup." };
   }
 
-  redirect("/production");
+  redirect("/projects");
 }
 
 export async function logoutAction() {
