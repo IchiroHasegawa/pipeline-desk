@@ -2,6 +2,8 @@
  * Shared formatting utilities for Production OS.
  */
 
+import type { TaskStatusOption } from "@/types/production-v2";
+
 const MON = [
   "Jan",
   "Feb",
@@ -164,5 +166,36 @@ export function deriveSceneStatus(
 export function formatPriority(priority: number | null | undefined): string {
   return "P" + (priority ?? 4);
 }
+
+/**
+ * Resolves a task's TaskStatusOption from its workflow options.
+ *
+ * Returns the option matching taskStatusDefinitionId; if that option's name differs from
+ * task.status (because the old page wrote only the name), it returns the option in the
+ * same workflow whose name equals task.status instead; otherwise null.
+ */
+export function resolveTaskStatus(
+  task: { taskStatusDefinitionId?: string | null; status?: string | null },
+  options: readonly TaskStatusOption[]
+): TaskStatusOption | null {
+  if (task.taskStatusDefinitionId) {
+    const opt = options.find((o) => o.id === task.taskStatusDefinitionId);
+    if (opt) {
+      if (task.status && opt.name !== task.status) {
+        const byName = options.find((o) => o.name === task.status);
+        if (byName) return byName;
+      }
+      return opt;
+    }
+  }
+
+  if (task.status) {
+    const byName = options.find((o) => o.name === task.status);
+    if (byName) return byName;
+  }
+
+  return null;
+}
+
 
 

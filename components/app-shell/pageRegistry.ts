@@ -30,7 +30,7 @@ export const PAGE_REGISTRY: readonly PageRegistryItem[] = [
   {
     key: "assets",
     label: "Assets",
-    href: "/assets/manage",
+    href: "/assets/manage-next",
     icon: Boxes,
     enabled: true,
     isActive: (pathname: string) => pathname.startsWith("/assets/manage"),
@@ -38,7 +38,7 @@ export const PAGE_REGISTRY: readonly PageRegistryItem[] = [
   {
     key: "assetAssembly",
     label: "Asset Assembly",
-    href: "/assets/assembly",
+    href: "/assets/assembly-next",
     icon: Layers,
     enabled: true,
     isActive: (pathname: string) => pathname.startsWith("/assets/assembly"),

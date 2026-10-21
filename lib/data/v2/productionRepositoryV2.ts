@@ -15,6 +15,7 @@ import type {
   ProcessProgress,
   TaskStatusOption,
   SceneBoardTask,
+  AssetBoardTask,
   AssignableUser,
 } from "@/types/production-v2";
 import { parseBoardLayout } from "@/types/production-v2";
@@ -1177,4 +1178,107 @@ export async function getEpisodeTaskRollup(episodeIds: string[]): Promise<{
 
   return { byEpisode, byScene };
 }
+
+/**
+ * Tasks for assets carrying workflow process information (name, colour, position).
+ * Sorted by processPosition ascending (nulls last), then sortOrder ascending (nulls last).
+ */
+export async function getAssetBoardTasks(
+  assetIds: string[]
+): Promise<Record<string, AssetBoardTask[]>> {
+  if (assetIds.length === 0) return {};
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("asset_tasks")
+    .select(
+      "id, asset_id, name, status, assignee, sort_order, task_status_workflow_id, task_status_definition_id, workflow_processes(name, colour, position)"
+    )
+    .in("asset_id", assetIds);
+
+  if (error) {
+    throw formatPostgrestError("getAssetBoardTasks", error);
+  }
+
+  const result: Record<string, AssetBoardTask[]> = {};
+  for (const assetId of assetIds) {
+    result[assetId] = [];
+  }
+
+  for (const row of data || []) {
+    const process = row.workflow_processes;
+    const task: AssetBoardTask = {
+      id: row.id,
+      assetId: row.asset_id,
+      taskName: row.name,
+      status: row.status,
+      assignee: row.assignee ?? null,
+      sortOrder: row.sort_order ?? null,
+      taskStatusWorkflowId: row.task_status_workflow_id ?? null,
+      taskStatusDefinitionId: row.task_status_definition_id ?? null,
+      processName: process?.name ?? null,
+      processColour: process?.colour ?? null,
+      processPosition: process?.position ?? null,
+    };
+    if (result[row.asset_id]) {
+      result[row.asset_id].push(task);
+    }
+  }
+
+  for (const assetId of Object.keys(result)) {
+    result[assetId].sort((a, b) => {
+      const ap = a.processPosition;
+      const bp = b.processPosition;
+      if (ap !== bp) {
+        if (ap === null) return 1;
+        if (bp === null) return -1;
+        return ap - bp;
+      }
+      const aso = a.sortOrder;
+      const bso = b.sortOrder;
+      if (aso !== bso) {
+        if (aso === null) return 1;
+        if (bso === null) return -1;
+        return aso - bso;
+      }
+      return a.taskName.localeCompare(b.taskName);
+    });
+  }
+
+  return result;
+}
+
+/**
+ * File count and total byte size for a list of assets from asset_files.
+ * Every input assetId is guaranteed to exist in the returned map.
+ */
+export async function getAssetFileStats(
+  assetIds: string[]
+): Promise<Record<string, { fileCount: number; totalBytes: number }>> {
+  const result: Record<string, { fileCount: number; totalBytes: number }> = {};
+  for (const id of assetIds) {
+    result[id] = { fileCount: 0, totalBytes: 0 };
+  }
+  if (assetIds.length === 0) return result;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("asset_files")
+    .select("asset_id, file_size_bytes")
+    .in("asset_id", assetIds);
+
+  if (error) {
+    throw formatPostgrestError("getAssetFileStats", error);
+  }
+
+  for (const row of data || []) {
+    if (result[row.asset_id]) {
+      result[row.asset_id].fileCount += 1;
+      result[row.asset_id].totalBytes += Number(row.file_size_bytes || 0);
+    }
+  }
+
+  return result;
+}
+
 

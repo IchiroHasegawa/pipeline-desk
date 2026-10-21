@@ -37,3 +37,30 @@ export function sceneAssemblyHref(
   const base = `/projects-next/${encodeURIComponent(projectId)}/episodes/${encodeURIComponent(episodeId)}/scenes/${encodeURIComponent(sceneId)}/assembly`;
   return keyframeId ? `${base}?keyframeId=${encodeURIComponent(keyframeId)}` : base;
 }
+
+export function assetsHref(): string {
+  return "/assets/manage-next";
+}
+
+export function projectAssetsHref(
+  projectId: string,
+  tab?: "episodes" | "assets"
+): string {
+  const base = `/assets/manage-next/${encodeURIComponent(projectId)}`;
+  return tab === "assets" ? `${base}?tab=assets` : base;
+}
+
+export function episodeAssetsHref(
+  projectId: string,
+  episodeId: string
+): string {
+  return `/assets/manage-next/${encodeURIComponent(projectId)}/episodes/${encodeURIComponent(episodeId)}`;
+}
+
+export function assetAssemblyHref(projectId?: string): string {
+  return projectId
+    ? `/assets/assembly-next?projectId=${encodeURIComponent(projectId)}`
+    : "/assets/assembly-next";
+}
+
+

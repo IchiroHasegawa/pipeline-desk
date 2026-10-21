@@ -543,6 +543,7 @@ export async function updateAssetTask(
   }
 
   revalidatePath("/assets/manage", "layout");
+  revalidatePath("/assets/manage-next", "layout");
 }
 
 export async function createAssetWithDefaults(input: {
@@ -805,11 +806,23 @@ export async function createAssetV2(input: {
     }
   }
 
-  if (input.workflowId) {
+  let effectiveWorkflowId = input.workflowId;
+  if (!effectiveWorkflowId && targetProjectId) {
+    const { data: proj } = await supabase
+      .from("projects")
+      .select("default_asset_workflow_id")
+      .eq("id", targetProjectId)
+      .maybeSingle();
+    if (proj?.default_asset_workflow_id) {
+      effectiveWorkflowId = proj.default_asset_workflow_id;
+    }
+  }
+
+  if (effectiveWorkflowId) {
     const { error: rpcError } = await supabase.rpc("generate_workflow_tasks", {
       p_entity_type: "asset",
       p_entity_id: data.id,
-      p_workflow_id: input.workflowId,
+      p_workflow_id: effectiveWorkflowId,
     });
     if (rpcError) {
       throw formatPostgrestError("createAssetV2 (workflow task RPC)", rpcError);
@@ -1001,4 +1014,84 @@ export async function deleteSceneV2(id: string): Promise<void> {
 
   revalidatePath("/projects", "layout");
 }
+
+export async function updateAssetTaskStatus(
+  taskId: string,
+  statusDefinitionId: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: task, error: taskError } = await supabase
+    .from("asset_tasks")
+    .select("id, task_status_workflow_id")
+    .eq("id", taskId)
+    .maybeSingle();
+
+  if (taskError) {
+    throw formatPostgrestError("updateAssetTaskStatus (task lookup)", taskError);
+  }
+  if (!task) {
+    throw new Error(
+      `updateAssetTaskStatus failed: task ${taskId} not found.`
+    );
+  }
+  if (!task.task_status_workflow_id) {
+    throw new Error(
+      `updateAssetTaskStatus failed: task ${taskId} has no task_status_workflow_id, ` +
+        "so no status can be validated against it."
+    );
+  }
+
+  const { data: status, error: statusError } = await supabase
+    .from("workflow_task_statuses")
+    .select("id, name, workflow_id")
+    .eq("id", statusDefinitionId)
+    .maybeSingle();
+
+  if (statusError) {
+    throw formatPostgrestError("updateAssetTaskStatus (status lookup)", statusError);
+  }
+  if (!status) {
+    throw new Error(
+      `updateAssetTaskStatus failed: status ${statusDefinitionId} not found.`
+    );
+  }
+
+  if (status.workflow_id !== task.task_status_workflow_id) {
+    throw new Error(
+      `updateAssetTaskStatus failed: status ${statusDefinitionId} belongs to workflow ` +
+        `${status.workflow_id}, but task ${taskId} is scoped to workflow ` +
+        `${task.task_status_workflow_id}.`
+    );
+  }
+
+  const { error } = await supabase
+    .from("asset_tasks")
+    .update({
+      task_status_definition_id: status.id,
+      status: status.name,
+    })
+    .eq("id", taskId);
+
+  if (error) {
+    throw formatPostgrestError("updateAssetTaskStatus", error);
+  }
+
+  revalidatePath("/assets/manage", "layout");
+  revalidatePath("/assets/manage-next", "layout");
+}
+
+export async function deleteAssetV2(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("assets").delete().eq("id", id);
+
+  if (error) {
+    throw formatPostgrestError("deleteAssetV2", error);
+  }
+
+  revalidatePath("/assets/manage", "layout");
+  revalidatePath("/assets/manage-next", "layout");
+  revalidatePath("/projects", "layout");
+}
+
 

@@ -287,3 +287,21 @@ export type AssignableUser = {
   id: string;
   displayName: string;
 };
+
+/**
+ * An asset's task carrying workflow process metadata, used by AssetTable and AssetDetailPanel.
+ */
+export type AssetBoardTask = {
+  id: string;
+  assetId: string;
+  taskName: string;
+  status: string;
+  assignee: string | null;
+  sortOrder: number | null;
+  taskStatusWorkflowId: string | null;
+  taskStatusDefinitionId: string | null;
+  processName: string | null;
+  processColour: string | null;
+  processPosition: number | null;
+};
+

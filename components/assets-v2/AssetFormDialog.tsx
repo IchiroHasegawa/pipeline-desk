@@ -12,6 +12,7 @@ const getServerSnapshot = () => false;
 export type AssetFormDialogProps = {
   isOpen: boolean;
   projects?: ProjectV2[];
+  assetWorkflows?: Array<{ id: string; name: string }>;
   defaultProjectId?: string | null;
   defaultEpisodeId?: string | null;
   onClose: () => void;
@@ -21,6 +22,7 @@ export type AssetFormDialogProps = {
 export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
   isOpen,
   projects = [],
+  assetWorkflows = [],
   defaultProjectId = null,
   defaultEpisodeId = null,
   onClose,
@@ -37,6 +39,7 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
   const [category, setCategory] = useState("General");
   const [priority, setPriority] = useState("Medium");
   const [projectId, setProjectId] = useState<string>(defaultProjectId || "");
+  const [workflowId, setWorkflowId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +67,7 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
         episodeId: defaultEpisodeId || null,
         description: description.trim() || undefined,
         previewUrl: previewUrl.trim() || undefined,
+        workflowId: workflowId || undefined,
       });
 
       onSuccess(newAsset);
@@ -179,6 +183,23 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="asset-workflow-select" className="font-medium">Workflow</label>
+            <select
+              id="asset-workflow-select"
+              value={workflowId}
+              onChange={(e) => setWorkflowId(e.target.value)}
+              className="px-3 py-1.5 border border-[var(--color-line-soft,#a9a9a9)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:border-black"
+            >
+              <option value="">(None / Default)</option>
+              {assetWorkflows.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-1">
