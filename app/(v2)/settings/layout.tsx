@@ -1,4 +1,3 @@
-// TEMPORARY route — becomes /settings at cutover
 "use client";
 
 import React, { useMemo } from "react";

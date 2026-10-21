@@ -30,6 +30,12 @@ import {
   deleteElement,
   moveElements,
 } from "@/app/actions/board";
+import {
+  projectsHref,
+  projectEpisodesHref,
+  episodeScenesHref,
+  sceneManageHref,
+} from "@/lib/routes/app";
 import type {
   ProjectV2,
   EpisodeV2,
@@ -196,18 +202,18 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
 
   // Breadcrumbs
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: "Projects", href: "/projects-next" },
+    { label: "Projects", href: projectsHref() },
     {
       label: project.title,
-      href: `/projects-next/${project.id}/episodes`,
+      href: projectEpisodesHref(project.id),
     },
     {
       label: episode.episodeName,
-      href: `/projects-next/${project.id}/episodes/${episode.id}/scenes`,
+      href: episodeScenesHref(project.id, episode.id),
     },
     {
       label: scene.sceneName,
-      href: `/projects-next/${project.id}/episodes/${episode.id}/scenes/${scene.id}/manage`,
+      href: sceneManageHref(project.id, episode.id, scene.id),
     },
     { label: "Scene Assembly" },
   ];

@@ -30,7 +30,7 @@ export const PAGE_REGISTRY: readonly PageRegistryItem[] = [
   {
     key: "assets",
     label: "Assets",
-    href: "/assets/manage-next",
+    href: "/assets/manage",
     icon: Boxes,
     enabled: true,
     isActive: (pathname: string) => pathname.startsWith("/assets/manage"),
@@ -38,7 +38,7 @@ export const PAGE_REGISTRY: readonly PageRegistryItem[] = [
   {
     key: "assetAssembly",
     label: "Asset Assembly",
-    href: "/assets/assembly-next",
+    href: "/assets/assembly",
     icon: Layers,
     enabled: true,
     isActive: (pathname: string) => pathname.startsWith("/assets/assembly"),
@@ -46,16 +46,16 @@ export const PAGE_REGISTRY: readonly PageRegistryItem[] = [
   {
     key: "reports",
     label: "Reports",
-    href: "/reports",
     icon: ChartColumn,
     enabled: false,
+    href: "/reports",
     tooltip: "Coming soon",
     isActive: (pathname: string) => pathname.startsWith("/reports"),
   },
   {
     key: "settings",
     label: "Settings",
-    href: "/settings-next",
+    href: "/settings",
     icon: Settings,
     enabled: true,
     isActive: (pathname: string) => pathname.startsWith("/settings"),

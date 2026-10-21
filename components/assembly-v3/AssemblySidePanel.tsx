@@ -12,6 +12,7 @@ import {
   Film,
   Sparkles,
 } from "lucide-react";
+import { sceneAssemblyHref } from "@/lib/routes/app";
 import type { SceneV2, AssetV2 } from "@/types/production-v2";
 
 export interface AssemblySidePanelProps {
@@ -214,7 +215,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                   {filteredSiblings.map((s) => (
                     <NextLink
                       key={s.id}
-                      href={`/projects-next/${projectId}/episodes/${episodeId}/scenes/${s.id}/assembly`}
+                      href={sceneAssemblyHref(projectId, episodeId, s.id)}
                       className="group flex items-center gap-3 rounded-[12px] border border-[var(--po-line)] bg-[var(--po-card)] p-2 transition-all hover:border-[var(--po-accent)] hover:bg-[var(--po-chip)]"
                     >
                       <div className="relative h-[48px] w-[72px] flex-none overflow-hidden rounded-[8px] bg-[var(--po-chip)]">

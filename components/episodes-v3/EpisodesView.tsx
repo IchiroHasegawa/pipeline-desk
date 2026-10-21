@@ -13,7 +13,7 @@ import { AppShell } from "@/components/app-shell/AppShell";
 import type { RailAction } from "@/components/app-shell/ActionRail";
 import { EmptyState } from "@/components/app-shell/EmptyState";
 import { ErrorState } from "@/components/app-shell/ErrorState";
-import { EpisodeFormDialog } from "@/components/episodes/EpisodeFormDialog";
+import { EpisodeFormDialog } from "@/components/forms/EpisodeFormDialog";
 import { createEpisodeV2 } from "@/app/actions/production";
 import {
   durationDays,

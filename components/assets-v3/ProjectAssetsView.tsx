@@ -11,7 +11,7 @@ import {
 import { AssetTable } from "./AssetTable";
 import { AssetDetailPanel } from "./AssetDetailPanel";
 import { DeleteAssetDialog } from "./DeleteAssetDialog";
-import { AssetFormDialog } from "@/components/assets-v2/AssetFormDialog";
+import { AssetFormDialog } from "@/components/forms/AssetFormDialog";
 import {
   assetsHref,
   projectAssetsHref,

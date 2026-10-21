@@ -1,34 +1,37 @@
+
 import React from "react";
 import { notFound } from "next/navigation";
 import {
   getProjectV2,
   getEpisodesByProject,
   getAssetsByEpisode,
-  getAssetTasks,
-  getWorkflowTaskStatuses,
   getProjectsV2,
+  getAssetBoardTasks,
+  getAssetFileStats,
+  getTaskStatusOptionsByWorkflow,
   getAssignableUsers,
+  getActiveAssetWorkflows,
 } from "@/lib/data/v2/productionRepositoryV2";
-import AssetsManageRowClient from "@/components/assets-v2/AssetsManageRowClient";
+import { EpisodeAssetsView } from "@/components/assets-v3";
 
 export const dynamic = "force-dynamic";
 
-type AssetManageRowPageProps = {
+type EpisodeAssetsManageNextPageProps = {
   params: Promise<{ projectId: string; episodeId: string }>;
 };
 
-export default async function AssetManageRowPage({
+export default async function EpisodeAssetsManageNextPage({
   params,
-}: AssetManageRowPageProps) {
+}: EpisodeAssetsManageNextPageProps) {
   const { projectId, episodeId } = await params;
 
-  const [project, episodesList, assets, statuses, allProjects, users] = await Promise.all([
+  const [project, episodesList, assets, allProjects, users, assetWorkflows] = await Promise.all([
     getProjectV2(projectId),
     getEpisodesByProject(projectId),
     getAssetsByEpisode(episodeId),
-    getWorkflowTaskStatuses(),
     getProjectsV2(),
     getAssignableUsers(),
+    getActiveAssetWorkflows(),
   ]);
 
   const episode = episodesList.find((e) => e.id === episodeId) || null;
@@ -38,17 +41,34 @@ export default async function AssetManageRowPage({
   }
 
   const assetIds = assets.map((a) => a.id);
-  const assetTasksMap = await getAssetTasks(assetIds);
+  const [tasksMap, fileStatsMap] = await Promise.all([
+    getAssetBoardTasks(assetIds),
+    getAssetFileStats(assetIds),
+  ]);
+
+  // Collect distinct task status workflows
+  const workflowIds = Array.from(
+    new Set(
+      Object.values(tasksMap)
+        .flat()
+        .map((t) => t.taskStatusWorkflowId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const workflowOptions = await getTaskStatusOptionsByWorkflow(workflowIds);
 
   return (
-    <AssetsManageRowClient
+    <EpisodeAssetsView
       project={project}
       episode={episode}
       assets={assets}
-      assetTasksMap={assetTasksMap}
-      statuses={statuses}
+      tasksByAssetId={tasksMap}
+      fileStatsByAssetId={fileStatsMap}
+      workflowOptions={workflowOptions}
+      assignableUsers={users}
       allProjects={allProjects}
-      users={users}
+      assetWorkflows={assetWorkflows}
     />
   );
 }

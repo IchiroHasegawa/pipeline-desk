@@ -16,7 +16,7 @@ import { AppShell } from "@/components/app-shell/AppShell";
 import type { RailAction } from "@/components/app-shell/ActionRail";
 import { EmptyState } from "@/components/app-shell/EmptyState";
 import { ErrorState } from "@/components/app-shell/ErrorState";
-import { SceneFormDialog } from "@/components/scenes/SceneFormDialog";
+import { SceneFormDialog } from "@/components/forms/SceneFormDialog";
 import { useTaskEditing } from "@/lib/hooks/useTaskEditing";
 import { formatDateRange } from "@/lib/format/production";
 import {

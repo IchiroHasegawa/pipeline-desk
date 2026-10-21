@@ -17,7 +17,7 @@ import type {
   CreateElementInput,
   BoardScope,
 } from "@/types/production-v2";
-import type { DropTarget } from "@/components/assets-v2/ProjectListPanel";
+import type { DropTarget } from "@/components/board-v3/types";
 import type { BoardTool } from "@/components/board-v3/BoardToolbar";
 import ImageElement from "@/components/board-v3/elements/ImageElement";
 import FolderElement from "@/components/board-v3/elements/FolderElement";

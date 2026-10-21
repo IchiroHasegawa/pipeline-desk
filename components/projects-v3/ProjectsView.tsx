@@ -12,7 +12,7 @@ import { AppShell } from "@/components/app-shell/AppShell";
 import type { RailAction } from "@/components/app-shell/ActionRail";
 import { EmptyState } from "@/components/app-shell/EmptyState";
 import { ErrorState } from "@/components/app-shell/ErrorState";
-import { ProjectFormDialog } from "@/components/projects/ProjectFormDialog";
+import { ProjectFormDialog } from "@/components/forms/ProjectFormDialog";
 import { createProjectV2 } from "@/app/actions/production";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectDetailsPanel } from "./ProjectDetailsPanel";

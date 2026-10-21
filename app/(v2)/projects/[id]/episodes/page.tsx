@@ -1,43 +1,61 @@
+
 import React from "react";
 import { notFound } from "next/navigation";
 import {
   getProjectV2,
   getEpisodesByProject,
+  getSceneWorkflows,
   getEpisodeProcessProgress,
+  getScenesForEpisodes,
+  getEpisodeTaskRollup,
 } from "@/lib/data/v2/productionRepositoryV2";
-import EpisodeBoardView from "@/components/episodes/EpisodeBoardView";
+import { EpisodesView } from "@/components/episodes-v3/EpisodesView";
 import type {
   ProjectV2,
   EpisodeV2,
+  SceneV2,
   ProcessProgress,
 } from "@/types/production-v2";
 
 export const dynamic = "force-dynamic";
 
-type EpisodesPageProps = {
+interface EpisodesNextPageProps {
   params: Promise<{ id: string }>;
-};
+}
 
-export default async function EpisodesPage({ params }: EpisodesPageProps) {
+export default async function EpisodesNextPage({ params }: EpisodesNextPageProps) {
   const { id } = await params;
 
   let project: ProjectV2 | null = null;
   let episodes: EpisodeV2[] = [];
+  let workflows: Array<{ id: string; name: string }> = [];
   let processProgress: Record<string, ProcessProgress[]> = {};
+  let scenesByEpisode: Record<string, SceneV2[]> = {};
+  let taskRollup: {
+    byEpisode: Record<string, { total: number; complete: number }>;
+    byScene: Record<string, { total: number; complete: number }>;
+  } = { byEpisode: {}, byScene: {} };
   let initialError: string | null = null;
 
   try {
-    const [projRes, epRes] = await Promise.all([
+    const [projectRes, episodesRes, workflowsRes] = await Promise.all([
       getProjectV2(id),
       getEpisodesByProject(id),
+      getSceneWorkflows(),
     ]);
-    project = projRes;
-    episodes = epRes;
+    project = projectRes;
+    episodes = episodesRes;
+    workflows = workflowsRes;
 
-    // Not part of the Promise.all above: the rollup is keyed by episode id, so
-    // it cannot be issued until the episode list has come back. It is still one
-    // round of queries for every episode at once, never one per episode.
-    processProgress = await getEpisodeProcessProgress(episodes.map((e) => e.id));
+    const episodeIds = episodes.map((e) => e.id);
+    const [progressRes, scenesRes, rollupRes] = await Promise.all([
+      getEpisodeProcessProgress(episodeIds),
+      getScenesForEpisodes(episodeIds),
+      getEpisodeTaskRollup(episodeIds),
+    ]);
+    processProgress = progressRes;
+    scenesByEpisode = scenesRes;
+    taskRollup = rollupRes;
   } catch (err: unknown) {
     initialError = err instanceof Error ? err.message : String(err);
   }
@@ -46,8 +64,12 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
     notFound();
   }
 
+  const workflowNameById: Record<string, string> = Object.fromEntries(
+    workflows.map((w) => [w.id, w.name])
+  );
+
   return (
-    <EpisodeBoardView
+    <EpisodesView
       project={
         project || {
           id,
@@ -65,6 +87,9 @@ export default async function EpisodesPage({ params }: EpisodesPageProps) {
       }
       initialEpisodes={episodes}
       processProgress={processProgress}
+      scenesByEpisode={scenesByEpisode}
+      taskRollup={taskRollup}
+      workflowNameById={workflowNameById}
       initialError={initialError}
     />
   );

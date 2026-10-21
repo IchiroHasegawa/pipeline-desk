@@ -8,7 +8,7 @@ import {
   type RailAction,
   type BreadcrumbItem,
 } from "@/components/app-shell";
-import { AssetFormDialog } from "@/components/assets-v2/AssetFormDialog";
+import { AssetFormDialog } from "@/components/forms/AssetFormDialog";
 import { projectAssetsHref } from "@/lib/routes/app";
 import { formatBytes } from "@/lib/format/production";
 import type { ProjectV2, AssetV2 } from "@/types/production-v2";

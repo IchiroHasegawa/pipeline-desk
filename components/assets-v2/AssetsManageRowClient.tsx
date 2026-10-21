@@ -8,7 +8,7 @@ import BoardHeader from "@/components/shell/BoardHeader";
 import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
 import AssetRowTable from "@/components/assets-v2/AssetRowTable";
-import AssetFormDialog from "@/components/assets-v2/AssetFormDialog";
+import AssetFormDialog from "@/components/forms/AssetFormDialog";
 import { updateAssetTask } from "@/app/actions/production";
 import type {
   ProjectV2,

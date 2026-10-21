@@ -6,7 +6,7 @@ import CanvasShell from "@/components/shell/CanvasShell";
 import BoardHeader from "@/components/shell/BoardHeader";
 import BottomNav from "@/components/shell/BottomNav";
 import TransformTools, { ToolAction } from "@/components/shell/TransformTools";
-import ProjectFormDialog from "@/components/projects/ProjectFormDialog";
+import ProjectFormDialog from "@/components/forms/ProjectFormDialog";
 import ProjectBoardRow from "@/components/projects/ProjectBoardRow";
 import { createProjectV2, deleteProjectV2 } from "@/app/actions/production";
 import type { ProjectV2, ProjectBoardStats } from "@/types/production-v2";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
 import BoardHeader from "@/components/shell/BoardHeader";
 import BottomNav from "@/components/shell/BottomNav";
-import EpisodeFormDialog from "@/components/episodes/EpisodeFormDialog";
+import EpisodeFormDialog from "@/components/forms/EpisodeFormDialog";
 import ProcessCard from "@/components/episodes/ProcessCard";
 import { BOARD_ACCENT, HAIRLINE } from "@/lib/design/boardTokens";
 import { createEpisodeV2 } from "@/app/actions/production";

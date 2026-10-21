@@ -1,4 +1,3 @@
-// TEMPORARY route — becomes /settings/workflows at cutover
 import { WorkflowEditor } from "@/components/settings-v3";
 
 export default function WorkflowsSettingsNextPage() {

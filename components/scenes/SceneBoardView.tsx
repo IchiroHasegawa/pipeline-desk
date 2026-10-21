@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import CanvasShell from "@/components/shell/CanvasShell";
 import BoardHeader from "@/components/shell/BoardHeader";
 import BottomNav from "@/components/shell/BottomNav";
-import SceneFormDialog from "@/components/scenes/SceneFormDialog";
+import SceneFormDialog from "@/components/forms/SceneFormDialog";
 import SceneTaskCard from "@/components/scenes/SceneTaskCard";
 import { BOARD_ACCENT, HAIRLINE } from "@/lib/design/boardTokens";
 import { updateTaskStatus, updateTaskAssignee } from "@/app/actions/production";

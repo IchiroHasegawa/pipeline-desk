@@ -543,7 +543,6 @@ export async function updateAssetTask(
   }
 
   revalidatePath("/assets/manage", "layout");
-  revalidatePath("/assets/manage-next", "layout");
 }
 
 export async function createAssetWithDefaults(input: {
@@ -1078,7 +1077,6 @@ export async function updateAssetTaskStatus(
   }
 
   revalidatePath("/assets/manage", "layout");
-  revalidatePath("/assets/manage-next", "layout");
 }
 
 export async function deleteAssetV2(id: string): Promise<void> {
@@ -1090,7 +1088,6 @@ export async function deleteAssetV2(id: string): Promise<void> {
   }
 
   revalidatePath("/assets/manage", "layout");
-  revalidatePath("/assets/manage-next", "layout");
   revalidatePath("/projects", "layout");
 }
 

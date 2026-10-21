@@ -1,21 +1,22 @@
+// Production OS Phase 7b: Asset Assembly Redesign
 import React from "react";
 import { getProjectsV2 } from "@/lib/data/v2/productionRepositoryV2";
 import {
   getOrCreateBoard,
   getBoardElements,
 } from "@/lib/data/v2/boardRepository";
-import AssetsAssemblyClient from "@/components/assets-v2/AssetsAssemblyClient";
+import { AssetAssemblyView } from "@/components/assembly-v3/AssetAssemblyView";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type AssetsAssemblyPageProps = {
+type AssetsAssemblyNextPageProps = {
   searchParams: Promise<{ projectId?: string }>;
 };
 
-export default async function AssetsAssemblyPage({
+export default async function AssetsAssemblyNextPage({
   searchParams,
-}: AssetsAssemblyPageProps) {
+}: AssetsAssemblyNextPageProps) {
   const { projectId: rawProjectId } = await searchParams;
   const supabase = await createClient();
   const projects = await getProjectsV2();
@@ -42,10 +43,12 @@ export default async function AssetsAssemblyPage({
   // 5. If the system project is missing and no project can be resolved, render clear error state
   if (!resolvedProjectId) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[var(--color-canvas,#ffffff)] font-sans text-sm text-red-600 p-6">
-        <div className="flex flex-col gap-2 max-w-md border border-red-300 rounded p-6 bg-red-50">
-          <h2 className="font-bold text-base">Assembly Board Unavailable</h2>
-          <p>
+      <div className="flex h-screen w-screen items-center justify-center bg-[var(--po-bg)] font-sans text-sm text-[var(--po-ink)] p-6">
+        <div className="flex flex-col gap-2 max-w-md border border-[var(--po-line)] rounded-[20px] p-6 bg-[var(--po-card)] shadow-[var(--po-shadow-sm)]">
+          <h2 className="font-bold text-base text-[var(--po-ink)]">
+            Assembly Board Unavailable
+          </h2>
+          <p className="text-[13px] text-[var(--po-ink-2)]">
             No active or system project could be found to load the inbox board.
             Please ensure at least one project exists in the system.
           </p>
@@ -54,14 +57,14 @@ export default async function AssetsAssemblyPage({
     );
   }
 
-  // 3. Call getOrCreateBoard({ projectId: resolvedId })
+  // 3. Call getOrCreateBoard({ projectId: resolvedProjectId })
   const boardId = await getOrCreateBoard({ projectId: resolvedProjectId });
 
   // 4. Fetch board elements
   const elements = await getBoardElements(boardId);
 
   return (
-    <AssetsAssemblyClient
+    <AssetAssemblyView
       key={boardId}
       projects={projects}
       currentProjectId={resolvedProjectId}
