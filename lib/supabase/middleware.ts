@@ -78,6 +78,16 @@ export async function updateSession(request: NextRequest) {
       return redirectResponse;
     }
     
+    // Owner-only routes: block non-owners outright.
+    if (
+      request.nextUrl.pathname.startsWith("/settings/security/owner") &&
+      profile?.system_role !== "owner"
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/settings/security";
+      return NextResponse.redirect(url);
+    }
+
     // AAL2 Enforcement for Owner Access
     if (profile?.system_role === 'owner') {
       const { data: { session } } = await supabase.auth.getSession();
@@ -101,11 +111,6 @@ export async function updateSession(request: NextRequest) {
         } else if (isOwnerAuthRoute && isAal1 && !hasVerifiedFactors) {
           // Allow access to enrollment UI (owner settings) for initial setup
           // No action needed
-        } else if (isOwnerAuthRoute && profile.system_role !== 'owner') {
-          // Non-owners shouldn't access owner settings
-          const url = request.nextUrl.clone();
-          url.pathname = "/settings/security";
-          return NextResponse.redirect(url);
         }
       }
     }

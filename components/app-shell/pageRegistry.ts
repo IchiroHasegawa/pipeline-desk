@@ -55,7 +55,7 @@ export const PAGE_REGISTRY: readonly PageRegistryItem[] = [
   {
     key: "settings",
     label: "Settings",
-    href: "/settings",
+    href: "/settings-next",
     icon: Settings,
     enabled: true,
     isActive: (pathname: string) => pathname.startsWith("/settings"),

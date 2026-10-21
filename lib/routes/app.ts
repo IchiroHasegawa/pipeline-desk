@@ -63,4 +63,9 @@ export function assetAssemblyHref(projectId?: string): string {
     : "/assets/assembly-next";
 }
 
+export function settingsHref(section?: string): string {
+  return section ? `/settings-next/${encodeURIComponent(section)}` : "/settings-next";
+}
+
+
 
