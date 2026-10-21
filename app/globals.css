@@ -15,6 +15,66 @@
   --text-list: 12px;
   --text-body: 13px;
   --text-heading: 24px;
+
+  /* Production OS v3 Tokens — Light */
+  --po-bg: #E8E8E6;
+  --po-panel: #F4F4F2;
+  --po-card: #FFFFFF;
+  --po-sunken: #ECECEA;
+  --po-line: rgba(20, 20, 24, 0.07);
+  --po-line-2: rgba(20, 20, 24, 0.13);
+  --po-ink: #18181B;
+  --po-ink-2: #56565D;
+  --po-ink-3: #8B8B93;
+  --po-chip: rgba(20, 20, 24, 0.05);
+  --po-sk: rgba(20, 20, 24, 0.06);
+  --po-rail: #1F1F22;
+  --po-rail-ink: #9C9CA4;
+  --po-rail-hover: rgba(255, 255, 255, 0.09);
+  --po-rail-active: rgba(255, 255, 255, 0.17);
+  --po-accent: oklch(0.57 0.15 262);
+  --po-ok: #2FA36B;
+  --po-heat0: rgba(20, 20, 24, 0.06);
+  --po-ph1: #E3E3E0;
+  --po-ph2: #CDCDC9;
+  --po-tip: #18181B;
+  --po-tip-ink: #FFFFFF;
+  --po-dot: rgba(20, 20, 24, 0.13);
+  --po-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.03);
+  --po-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.06);
+  --po-shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.04), 0 18px 40px rgba(0, 0, 0, 0.10);
+  --po-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --po-bg: #E8E8E6;
+  --po-panel: #F4F4F2;
+  --po-card: #FFFFFF;
+  --po-sunken: #ECECEA;
+  --po-line: rgba(20, 20, 24, 0.07);
+  --po-line-2: rgba(20, 20, 24, 0.13);
+  --po-ink: #18181B;
+  --po-ink-2: #56565D;
+  --po-ink-3: #8B8B93;
+  --po-chip: rgba(20, 20, 24, 0.05);
+  --po-sk: rgba(20, 20, 24, 0.06);
+  --po-rail: #1F1F22;
+  --po-rail-ink: #9C9CA4;
+  --po-rail-hover: rgba(255, 255, 255, 0.09);
+  --po-rail-active: rgba(255, 255, 255, 0.17);
+  --po-accent: oklch(0.57 0.15 262);
+  --po-ok: #2FA36B;
+  --po-heat0: rgba(20, 20, 24, 0.06);
+  --po-ph1: #E3E3E0;
+  --po-ph2: #CDCDC9;
+  --po-tip: #18181B;
+  --po-tip-ink: #FFFFFF;
+  --po-dot: rgba(20, 20, 24, 0.13);
+  --po-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.03);
+  --po-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 12px 32px rgba(0, 0, 0, 0.06);
+  --po-shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.04), 0 18px 40px rgba(0, 0, 0, 0.10);
+  --po-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 @theme inline {
@@ -22,6 +82,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Production OS v3 Colors for Tailwind utility classes */
+  --color-po-bg: var(--po-bg);
+  --color-po-panel: var(--po-panel);
+  --color-po-card: var(--po-card);
+  --color-po-sunken: var(--po-sunken);
+  --color-po-line: var(--po-line);
+  --color-po-line-2: var(--po-line-2);
+  --color-po-ink: var(--po-ink);
+  --color-po-ink-2: var(--po-ink-2);
+  --color-po-ink-3: var(--po-ink-3);
+  --color-po-chip: var(--po-chip);
+  --color-po-sk: var(--po-sk);
+  --color-po-rail: var(--po-rail);
+  --color-po-rail-ink: var(--po-rail-ink);
+  --color-po-rail-hover: var(--po-rail-hover);
+  --color-po-rail-active: var(--po-rail-active);
+  --color-po-accent: var(--po-accent);
+  --color-po-ok: var(--po-ok);
+  --color-po-heat0: var(--po-heat0);
+  --color-po-ph1: var(--po-ph1);
+  --color-po-ph2: var(--po-ph2);
+  --color-po-tip: var(--po-tip);
+  --color-po-tip-ink: var(--po-tip-ink);
+  --color-po-dot: var(--po-dot);
+  --shadow-po-sm: var(--po-shadow-sm);
+  --shadow-po: var(--po-shadow);
+  --shadow-po-lift: var(--po-shadow-lift);
+  --shadow-po-lg: var(--po-shadow-lg);
 }
 
 html, body {
@@ -70,6 +159,36 @@ html[data-theme="dark"] {
   --color-panel: #18181b;
   --color-glass: rgba(24, 24, 27, 0.72);
   --shadow-glass: 0 8px 24px rgba(0, 0, 0, 0.40);
+
+  /* Production OS v3 Tokens — Dark */
+  color-scheme: dark;
+  --po-bg: #0C0C0E;
+  --po-panel: #141416;
+  --po-card: #1B1B1E;
+  --po-sunken: #111113;
+  --po-line: rgba(255, 255, 255, 0.06);
+  --po-line-2: rgba(255, 255, 255, 0.12);
+  --po-ink: #EDEDEF;
+  --po-ink-2: #A4A4AC;
+  --po-ink-3: #6F6F77;
+  --po-chip: rgba(255, 255, 255, 0.06);
+  --po-sk: rgba(255, 255, 255, 0.06);
+  --po-rail: #2A2A2E;
+  --po-rail-ink: #9C9CA4;
+  --po-rail-hover: rgba(255, 255, 255, 0.08);
+  --po-rail-active: rgba(255, 255, 255, 0.16);
+  --po-accent: oklch(0.68 0.14 262);
+  --po-ok: #3DB87C;
+  --po-heat0: rgba(255, 255, 255, 0.06);
+  --po-ph1: #2A2A2E;
+  --po-ph2: #1E1E21;
+  --po-tip: #F2F2F3;
+  --po-tip-ink: #18181B;
+  --po-dot: rgba(255, 255, 255, 0.09);
+  --po-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --po-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --po-shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 18px 40px rgba(0, 0, 0, 0.5);
+  --po-shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 @theme {
@@ -167,9 +286,9 @@ html[data-theme="dark"] {
   animation: tool-nudge 0.4s ease-in-out;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .group:hover .group-hover\:animate-tool-nudge {
-    animation: none;
-  }
+/* Reposition Next.js dev tools indicator away from ActionRail bottom button */
+nextjs-portal {
+  left: auto !important;
+  right: 20px !important;
 }
 

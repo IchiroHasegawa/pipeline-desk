@@ -912,6 +912,65 @@ export async function getSceneBoardTasks(
 }
 
 /**
+ * Main Tasks for a single episode, each carrying the workflow process it was
+ * generated from so the manage view can display its process badge, colour,
+ * status, completion, and assignee.
+ *
+ * Filtered by episode_id and day_id is null.
+ * Sorted by processPosition ascending (nulls last), then by name.
+ */
+export async function getEpisodeBoardTasks(
+  episodeId: string
+): Promise<SceneBoardTask[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("production_tasks")
+    .select(
+      "id, episode_id, scene_id, name, progress, status, assignee, sort_order, source_workflow_process_id, task_status_definition_id, task_status_workflow_id, created_at, workflow_processes(name, colour, position)"
+    )
+    .eq("episode_id", episodeId)
+    .is("day_id", null);
+
+  if (error) {
+    throw formatPostgrestError("getEpisodeBoardTasks", error);
+  }
+
+  const tasks: SceneBoardTask[] = (data || []).map((row) => {
+    const process = row.workflow_processes;
+    return {
+      id: row.id,
+      episodeId: row.episode_id ?? null,
+      sceneId: row.scene_id ?? null,
+      name: row.name,
+      progress: row.progress,
+      status: row.status,
+      assignee: row.assignee ?? null,
+      sortOrder: row.sort_order ?? null,
+      sourceWorkflowProcessId: row.source_workflow_process_id ?? null,
+      taskStatusDefinitionId: row.task_status_definition_id ?? null,
+      taskStatusWorkflowId: row.task_status_workflow_id ?? null,
+      createdAt: row.created_at,
+      processName: process?.name ?? null,
+      processColour: process?.colour ?? null,
+      processPosition: process?.position ?? null,
+    };
+  });
+
+  tasks.sort((a, b) => {
+    const ap = a.processPosition;
+    const bp = b.processPosition;
+    if (ap === null && bp === null) return a.name.localeCompare(b.name);
+    if (ap === null) return 1;
+    if (bp === null) return -1;
+    if (ap !== bp) return ap - bp;
+    return a.name.localeCompare(b.name);
+  });
+
+  return tasks;
+}
+
+/**
  * The statuses each of these workflows defines, keyed by workflow id.
  *
  * Batched deliberately: a scene's tasks can come from more than one status
@@ -996,3 +1055,126 @@ export async function getAssignableUsers(): Promise<AssignableUser[]> {
     displayName: row.display_name ?? row.username,
   }));
 }
+
+export async function getEpisodesForProjects(
+  projectIds: string[]
+): Promise<Record<string, EpisodeV2[]>> {
+  if (projectIds.length === 0) return {};
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("episodes")
+    .select("*")
+    .in("project_id", projectIds)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("episode_name", { ascending: true });
+
+  if (error) {
+    throw formatPostgrestError("getEpisodesForProjects", error);
+  }
+
+  const grouped: Record<string, EpisodeV2[]> = {};
+  for (const pid of projectIds) {
+    grouped[pid] = [];
+  }
+  for (const row of data || []) {
+    const episode = mapEpisodeV2(row);
+    if (grouped[episode.projectId]) {
+      grouped[episode.projectId].push(episode);
+    }
+  }
+
+  return grouped;
+}
+
+export async function getScenesForEpisodes(
+  episodeIds: string[]
+): Promise<Record<string, SceneV2[]>> {
+  if (episodeIds.length === 0) return {};
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("scenes")
+    .select("*")
+    .in("episode_id", episodeIds)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("scene_name", { ascending: true });
+
+  if (error) {
+    throw formatPostgrestError("getScenesForEpisodes", error);
+  }
+
+  const grouped: Record<string, SceneV2[]> = {};
+  for (const eid of episodeIds) {
+    grouped[eid] = [];
+  }
+  for (const row of data || []) {
+    const scene = mapSceneV2(row);
+    if (grouped[scene.episodeId]) {
+      grouped[scene.episodeId].push(scene);
+    }
+  }
+
+  return grouped;
+}
+
+export async function getEpisodeTaskRollup(episodeIds: string[]): Promise<{
+  byEpisode: Record<string, { total: number; complete: number }>;
+  byScene: Record<string, { total: number; complete: number }>;
+}> {
+  if (episodeIds.length === 0) {
+    return { byEpisode: {}, byScene: {} };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("production_tasks")
+    // One string literal, deliberately unbroken: supabase-js infers the row shape
+    // from the literal type of this argument, and concatenating it collapses the
+    // inference to GenericStringError.
+    .select(
+      "scene_id, scenes!inner(episode_id), workflow_task_statuses(completion_percentage)"
+    )
+    .in("scenes.episode_id", episodeIds)
+    .is("day_id", null);
+
+  if (error) {
+    throw formatPostgrestError("getEpisodeTaskRollup", error);
+  }
+
+  const byEpisode: Record<string, { total: number; complete: number }> = {};
+  for (const eid of episodeIds) {
+    byEpisode[eid] = { total: 0, complete: 0 };
+  }
+
+  const byScene: Record<string, { total: number; complete: number }> = {};
+
+  for (const row of data || []) {
+    const sceneId = row.scene_id;
+    const episodeId = row.scenes?.episode_id;
+    if (!episodeId) continue;
+
+    const isComplete =
+      row.workflow_task_statuses?.completion_percentage === 100;
+
+    if (byEpisode[episodeId]) {
+      byEpisode[episodeId].total += 1;
+      if (isComplete) {
+        byEpisode[episodeId].complete += 1;
+      }
+    }
+
+    if (sceneId) {
+      if (!byScene[sceneId]) {
+        byScene[sceneId] = { total: 0, complete: 0 };
+      }
+      byScene[sceneId].total += 1;
+      if (isComplete) {
+        byScene[sceneId].complete += 1;
+      }
+    }
+  }
+
+  return { byEpisode, byScene };
+}
+

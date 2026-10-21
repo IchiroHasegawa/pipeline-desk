@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.469.0/font/lucide.css">
+<style>
+:root,[data-theme="light"]{--bg:#E8E8E6;--panel:#F4F4F2;--card:#FFFFFF;--sunken:#ECECEA;--line:rgba(20,20,24,.07);--line-2:rgba(20,20,24,.13);--ink:#18181B;--ink-2:#56565D;--ink-3:#8B8B93;--chip:rgba(20,20,24,.05);--sk:rgba(20,20,24,.06);--rail:#1F1F22;--rail-ink:#9C9CA4;--rail-hover:rgba(255,255,255,.09);--rail-active:rgba(255,255,255,.17);--accent:oklch(0.57 0.15 262);--ok:#2FA36B;--heat0:rgba(20,20,24,.06);--ph1:#E3E3E0;--ph2:#CDCDC9;--tip:#18181B;--tip-ink:#FFFFFF;--dot:rgba(20,20,24,.13);--shadow-sm:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.03);--shadow:0 1px 2px rgba(0,0,0,.05),0 12px 32px rgba(0,0,0,.06);--shadow-lift:0 2px 4px rgba(0,0,0,.04),0 18px 40px rgba(0,0,0,.10);--shadow-lg:0 24px 64px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)}
+[data-theme="dark"]{--bg:#0C0C0E;--panel:#141416;--card:#1B1B1E;--sunken:#111113;--line:rgba(255,255,255,.06);--line-2:rgba(255,255,255,.12);--ink:#EDEDEF;--ink-2:#A4A4AC;--ink-3:#6F6F77;--chip:rgba(255,255,255,.06);--sk:rgba(255,255,255,.06);--rail:#2A2A2E;--rail-ink:#9C9CA4;--rail-hover:rgba(255,255,255,.08);--rail-active:rgba(255,255,255,.16);--accent:oklch(0.68 0.14 262);--ok:#3DB87C;--heat0:rgba(255,255,255,.06);--ph1:#2A2A2E;--ph2:#1E1E21;--tip:#F2F2F3;--tip-ink:#18181B;--dot:rgba(255,255,255,.09);--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35);--shadow-lift:0 2px 4px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.5);--shadow-lg:0 24px 64px rgba(0,0,0,.6)}
+html,body{margin:0;height:100%;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{color:var(--accent)}
+[class^="icon-"],[class*=" icon-"]{line-height:1;display:inline-block}
+select option{color:#18181B}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="height:100vh;width:100%;min-width:0;display:flex;gap:16px;padding:16px;box-sizing:border-box;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:14px;overflow:hidden;position:relative;color-scheme:{{ theme }};">
+
+  <div style="width:68px;flex:none;display:flex;flex-direction:column;gap:12px;">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:6px;border-radius:34px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow-sm);">
+      <div style="width:56px;border-radius:28px;background:var(--rail);padding:6px 0 8px;display:flex;flex-direction:column;align-items:center;gap:4px;box-shadow:0 8px 20px rgba(0,0,0,.18);">
+        <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-size:20px;"><i class="icon-clapperboard"></i></div>
+        <div style="width:22px;height:1px;background:rgba(255,255,255,.12);margin:2px 0 4px;"></div>
+        <sc-for list="{{ railMain }}" as="a" hint-placeholder-count="4">
+          <div onMouseEnter="{{ a.enter }}" onMouseLeave="{{ leaveTip }}" style="position:relative;">
+            <button onClick="{{ a.onClick }}" aria-label="{{ a.label }}" style="width:44px;height:44px;border-radius:22px;border:none;display:flex;align-items:center;justify-content:center;font-size:19px;padding:0;cursor:{{ a.cursor }};background:{{ a.bg }};color:{{ a.fg }};opacity:{{ a.opacity }};transition:background .15s;"><i class="{{ a.icon }}"></i></button>
+            <sc-if value="{{ a.showTip }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;left:56px;top:50%;transform:translateY(-50%);z-index:90;background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;box-shadow:var(--shadow);pointer-events:none;display:flex;gap:8px;align-items:center;">{{ a.label }}<span style="opacity:.55;font-weight:400;">{{ a.hint }}</span></div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+        <span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;letter-spacing:.26em;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace;text-transform:uppercase;">{{ railLabel }}</span>
+      </div>
+    </div>
+    <div style="padding:6px;border-radius:34px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow-sm);display:flex;justify-content:center;">
+      <div style="width:56px;height:56px;border-radius:28px;background:var(--rail);display:flex;align-items:center;justify-content:center;">
+        <sc-for list="{{ railBottom }}" as="a" hint-placeholder-count="1">
+          <div onMouseEnter="{{ a.enter }}" onMouseLeave="{{ leaveTip }}" style="position:relative;">
+            <button onClick="{{ a.onClick }}" aria-label="{{ a.label }}" style="width:44px;height:44px;border-radius:22px;border:none;display:flex;align-items:center;justify-content:center;font-size:19px;padding:0;cursor:{{ a.cursor }};background:{{ a.bg }};color:{{ a.fg }};opacity:{{ a.opacity }};"><i class="{{ a.icon }}"></i></button>
+            <sc-if value="{{ a.showTip }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;left:62px;top:50%;transform:translateY(-50%);z-index:90;background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;box-shadow:var(--shadow);pointer-events:none;display:flex;gap:8px;align-items:center;">{{ a.label }}<span style="opacity:.55;font-weight:400;">{{ a.hint }}</span></div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1;min-width:0;position:relative;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;">
+    <div style="padding:26px 112px 20px 36px;display:flex;flex-direction:column;gap:12px;flex:none;">
+      <div style="display:flex;align-items:center;gap:2px;font-size:13px;flex-wrap:wrap;">
+        <sc-for list="{{ crumbs }}" as="c" hint-placeholder-count="1">
+          <div style="display:flex;align-items:center;gap:2px;">
+            <sc-if value="{{ c.sep }}"><span style="color:var(--ink-3);opacity:.6;padding:0 2px;">/</span></sc-if>
+            <button onClick="{{ c.onClick }}" style="border:none;background:none;padding:3px 6px;border-radius:6px;font:inherit;cursor:pointer;color:{{ c.color }};font-weight:{{ c.weight }};" style-hover="background:var(--chip);">{{ c.label }}</button>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:40px;">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+          <h1 style="margin:0;font-size:30px;font-weight:600;letter-spacing:-0.025em;white-space:nowrap;">{{ title }}</h1>
+          <sc-if value="{{ hasCount }}"><span style="font-size:12px;font-weight:600;color:var(--ink-2);background:var(--chip);padding:3px 9px;border-radius:999px;">{{ count }}</span></sc-if>
+          <sc-if value="{{ hasSubtitle }}"><span style="font-size:13px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px;">{{ subtitle }}</span></sc-if>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex:none;">
+          <sc-if value="{{ aHasTabs }}">
+            <div style="display:flex;gap:2px;padding:3px;border-radius:999px;background:var(--chip);">
+              <sc-for list="{{ aTabs }}" as="t">
+                <button onClick="{{ t.onClick }}" style="height:32px;padding:0 14px;border-radius:999px;border:none;font:500 13px Inter,sans-serif;cursor:pointer;display:flex;align-items:center;gap:8px;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.shadow }};">{{ t.label }}<span style="font-size:11px;color:var(--ink-3);">{{ t.count }}</span></button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ searchOpen }}">
+            <div style="display:flex;align-items:center;gap:8px;height:40px;width:300px;padding:0 12px;border-radius:999px;background:var(--card);border:1px solid var(--line-2);box-shadow:var(--shadow-sm);">
+              <i class="icon-search" style="font-size:16px;color:var(--ink-3);"></i>
+              <input autoFocus value="{{ q }}" onChange="{{ onQ }}" placeholder="{{ searchPh }}" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font:400 14px Inter,sans-serif;color:var(--ink);">
+              <button onClick="{{ closeSearch }}" style="border:none;background:none;color:var(--ink-3);cursor:pointer;padding:0;font-size:15px;display:flex;"><i class="icon-x"></i></button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ showState }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow:hidden;padding:4px 36px 36px;display:flex;flex-direction:column;">
+        <sc-if value="{{ st.loading }}">
+          <sc-if value="{{ st.cards }}">
+            <div style="display:flex;flex-direction:column;gap:20px;">
+              <sc-for list="{{ skel3 }}" as="x">
+                <div style="display:grid;grid-template-columns:minmax(0,34%) minmax(0,1fr);gap:28px;padding:14px;border-radius:24px;background:var(--card);border:1px solid var(--line);">
+                  <div style="aspect-ratio:16/9;border-radius:16px;background:var(--sk);"></div>
+                  <div style="display:flex;flex-direction:column;gap:14px;padding-top:8px;">
+                    <div style="width:30%;height:22px;border-radius:8px;background:var(--sk);"></div>
+                    <div style="width:58%;height:12px;border-radius:6px;background:var(--sk);"></div>
+                    <div style="width:92%;height:12px;border-radius:6px;background:var(--sk);"></div>
+                    <div style="width:70%;height:12px;border-radius:6px;background:var(--sk);"></div>
+                    <div style="margin-top:auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;">
+                      <sc-for list="{{ skel5 }}" as="y"><div style="aspect-ratio:16/9;border-radius:12px;background:var(--sk);"></div></sc-for>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ st.grid }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;">
+              <sc-for list="{{ skel8 }}" as="x">
+                <div style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:12px;">
+                  <div style="aspect-ratio:16/7;border-radius:12px;background:var(--sk);"></div>
+                  <div style="width:40%;height:14px;border-radius:6px;background:var(--sk);margin:0 4px;"></div>
+                  <sc-for list="{{ skel5 }}" as="y"><div style="height:22px;border-radius:8px;background:var(--sk);margin:0 4px;"></div></sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ st.message }}">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;">
+            <div style="max-width:380px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;">
+              <div style="width:64px;height:64px;border-radius:22px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:26px;color:{{ st.iconColor }};box-shadow:var(--shadow-sm);"><i class="{{ st.icon }}"></i></div>
+              <div style="font-size:18px;font-weight:600;letter-spacing:-0.01em;">{{ st.title }}</div>
+              <div style="font-size:14px;line-height:1.55;color:var(--ink-2);text-wrap:pretty;">{{ st.body }}</div>
+              <button onClick="{{ st.action }}" style="margin-top:6px;height:38px;padding:0 16px;border-radius:999px;border:none;background:var(--ink);color:var(--panel);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer;"><i class="{{ st.btnIcon }}" style="font-size:15px;"></i>{{ st.btn }}</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isProjects }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;min-height:0;overflow:auto;padding:4px 36px 36px;">
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <sc-for list="{{ projects }}" as="p" hint-placeholder-count="3">
+            <div onClick="{{ p.onClick }}" onDoubleClick="{{ p.onOpen }}" style="display:grid;grid-template-columns:minmax(0,34%) minmax(0,1fr);gap:28px;padding:14px;border-radius:24px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);outline:{{ p.outline }};outline-offset:-1px;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;" style-hover="transform:translateY(-3px);box-shadow:var(--shadow-lift);">
+              <div style="position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:{{ p.img }};">
+                <sc-if value="{{ p.hasImg }}"><span style="position:absolute;left:14px;bottom:12px;font:500 11px ui-monospace,Menlo,monospace;color:rgba(255,255,255,.78);letter-spacing:.04em;">project thumbnail · 16:9</span></sc-if>
+                <sc-if value="{{ p.noImg }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:600;letter-spacing:-0.04em;color:var(--ink-3);opacity:.8;">{{ p.initials }}</div></sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:11px;min-width:0;padding:6px 6px 2px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
+                  <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.02em;">{{ p.title }}</h2>
+                  <button onClick="{{ p.onOpen }}" style="height:32px;padding:0 12px 0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:6px;cursor:pointer;flex:none;" style-hover="background:var(--chip);">Open<i class="icon-arrow-right" style="font-size:14px;"></i></button>
+                </div>
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--ink-2);">
+                  <span style="font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--ink);background:var(--chip);padding:4px 8px;border-radius:6px;">{{ p.code }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:{{ p.statusBg }};color:{{ p.statusFg }};"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>{{ p.status }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;"><i class="icon-calendar" style="font-size:14px;color:var(--ink-3);"></i>{{ p.dateText }}<span style="color:var(--ink-3);">{{ p.dur }}</span></span>
+                  <span style="color:var(--ink);font-weight:500;">{{ p.epsLabel }}</span>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="display:flex;width:96px;height:6px;border-radius:3px;overflow:hidden;gap:2px;background:var(--chip);">
+                      <div style="width:{{ p.barNS }};background:var(--ink-3);opacity:.4;"></div>
+                      <div style="width:{{ p.barIP }};background:var(--accent);opacity:.5;"></div>
+                      <div style="width:{{ p.barC }};background:var(--accent);"></div>
+                    </div>
+                    <span style="font-size:12px;color:var(--ink-3);">{{ p.barLabel }}</span>
+                  </div>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:22px;color:var(--ink-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:44px;text-wrap:pretty;">{{ p.desc }}</p>
+                <div style="display:flex;align-items:center;gap:10px 28px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,3px);grid-auto-columns:3px;gap:1px;">
+                      <sc-for list="{{ p.heat }}" as="h" hint-placeholder-count="0"><div style="background:{{ h.bg }};border-radius:1px;"></div></sc-for>
+                    </div>
+                    <span><b style="color:var(--ink);font-weight:600;">{{ p.commits }}</b> commits · last 365 days</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;"><i class="icon-boxes" style="font-size:14px;color:var(--ink-3);"></i><b style="color:var(--ink);font-weight:600;">{{ p.assetsN }}</b> assets<span style="color:var(--ink-3);">·</span><b style="color:var(--ink);font-weight:600;">{{ p.files }}</b> files<span style="color:var(--ink-3);">·</span><b style="color:var(--ink);font-weight:600;">{{ p.size }}</b></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><i class="icon-message-square" style="font-size:14px;color:var(--ink-3);"></i>Reviews<span style="font-size:11px;color:var(--ink-3);border:1px dashed var(--line-2);padding:2px 7px;border-radius:999px;">Coming soon</span></div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:auto;">
+                  <sc-for list="{{ p.tiles }}" as="t" hint-placeholder-count="5">
+                    <div onClick="{{ t.onClick }}" style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:{{ t.img }};cursor:pointer;transition:transform .15s;" style-hover="transform:scale(1.025);">
+                      <sc-if value="{{ t.isEp }}">
+                        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.55));"></div>
+                        <div style="position:absolute;left:10px;right:10px;bottom:9px;display:flex;flex-direction:column;gap:6px;">
+                          <span style="color:#FFFFFF;font-size:12px;font-weight:600;letter-spacing:.02em;">{{ t.name }}</span>
+                          <div style="display:flex;gap:2px;height:3px;">
+                            <sc-for list="{{ t.procs }}" as="s"><div style="flex:1;background:rgba(255,255,255,.28);border-radius:2px;overflow:hidden;"><div style="height:100%;width:{{ s.w }};background:{{ s.color }};"></div></div></sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ t.isMore }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);border:1px solid var(--line);border-radius:12px;">{{ t.name }}<i class="icon-arrow-right" style="font-size:13px;"></i></div></sc-if>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ p.noEps }}">
+                    <div style="grid-column:1/-1;aspect-ratio:9.2/1;border-radius:12px;border:1.5px dashed var(--line-2);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--ink-3);"><i class="icon-clapperboard" style="font-size:16px;"></i>No episodes yet</div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEpisodes }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow:auto;padding:4px 36px 36px;">
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <sc-for list="{{ episodes }}" as="e" hint-placeholder-count="3">
+            <div onClick="{{ e.onClick }}" onDoubleClick="{{ e.onOpen }}" style="display:grid;grid-template-columns:minmax(0,30%) minmax(0,1fr);gap:28px;padding:14px;border-radius:24px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);outline:{{ e.outline }};outline-offset:-1px;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease;" style-hover="transform:translateY(-3px);box-shadow:var(--shadow-lift);">
+              <div style="position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:{{ e.img }};">
+                <span style="position:absolute;left:14px;bottom:12px;font:500 11px ui-monospace,Menlo,monospace;color:rgba(255,255,255,.78);letter-spacing:.04em;">episode preview</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:12px;min-width:0;padding:6px 6px 2px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.02em;">{{ e.name }}</h2>
+                    <span style="font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--ink);background:var(--chip);padding:4px 8px;border-radius:6px;">{{ e.code }}</span>
+                    <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:{{ e.statusBg }};color:{{ e.statusFg }};"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>{{ e.status }}</span>
+                  </div>
+                  <div style="display:flex;gap:8px;flex:none;">
+                    <button onClick="{{ e.onManage }}" style="height:32px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" style-hover="background:var(--chip);"><i class="icon-list-checks" style="font-size:14px;"></i>Manage</button>
+                    <button onClick="{{ e.onOpen }}" style="height:32px;padding:0 12px 0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:6px;cursor:pointer;" style-hover="background:var(--chip);">Scenes<i class="icon-arrow-right" style="font-size:14px;"></i></button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--ink-2);">
+                  <span style="display:inline-flex;align-items:center;gap:6px;"><i class="icon-calendar" style="font-size:14px;color:var(--ink-3);"></i>{{ e.start }} – {{ e.end }}<span style="color:var(--ink-3);">{{ e.dur }}</span></span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;"><i class="icon-workflow" style="font-size:14px;color:var(--ink-3);"></i>{{ e.workflow }}</span>
+                  <span style="color:var(--ink);font-weight:500;">{{ e.sceneCount }}</span>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:22px;color:var(--ink-2);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:44px;">{{ e.desc }}</p>
+                <div style="display:flex;flex-wrap:wrap;gap:10px 26px;">
+                  <sc-for list="{{ e.rings }}" as="r" hint-placeholder-count="5">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div style="position:relative;width:40px;height:40px;flex:none;">
+                        <svg width="40" height="40" viewBox="0 0 40 40" style="transform:rotate(-90deg);display:block;"><circle cx="20" cy="20" r="16" fill="none" stroke-width="4" style="stroke:var(--chip);"></circle><circle cx="20" cy="20" r="16" fill="none" stroke-width="4" stroke="{{ r.color }}" stroke-dasharray="{{ r.dash }}"></circle></svg>
+                        <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">{{ r.pct }}</span>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:12px;font-weight:500;">{{ r.name }}</span><span style="font-size:11px;color:var(--ink-3);">of scenes</span></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:auto;">
+                  <sc-for list="{{ e.tiles }}" as="t" hint-placeholder-count="5">
+                    <div onClick="{{ t.onClick }}" style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:{{ t.img }};cursor:pointer;transition:transform .15s;" style-hover="transform:scale(1.025);">
+                      <sc-if value="{{ t.isEp }}">
+                        <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.55));"></div>
+                        <div style="position:absolute;left:10px;right:10px;bottom:9px;display:flex;flex-direction:column;gap:6px;">
+                          <span style="color:#FFFFFF;font-size:12px;font-weight:600;letter-spacing:.02em;">{{ t.name }}</span>
+                          <div style="display:flex;gap:2px;height:3px;">
+                            <sc-for list="{{ t.procs }}" as="s"><div style="flex:1;background:rgba(255,255,255,.28);border-radius:2px;overflow:hidden;"><div style="height:100%;width:{{ s.w }};background:{{ s.color }};"></div></div></sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ t.isMore }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);border:1px solid var(--line);border-radius:12px;">{{ t.name }}<i class="icon-arrow-right" style="font-size:13px;"></i></div></sc-if>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ e.noScenes }}"><div style="grid-column:1/-1;aspect-ratio:9.2/1;border-radius:12px;border:1.5px dashed var(--line-2);display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--ink-3);"><i class="icon-film" style="font-size:16px;"></i>No scenes yet</div></sc-if>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isScenes }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow:auto;padding:4px 36px 36px;display:flex;flex-direction:column;gap:18px;">
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:24px;padding:16px 20px;border-radius:18px;background:var(--card);border:1px solid var(--line);">
+          <sc-for list="{{ epSummary }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                <span style="width:18px;height:18px;border-radius:5px;background:{{ r.color }};color:#FFFFFF;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;">{{ r.num }}</span>
+                <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.name }}</span>
+                <span style="margin-left:auto;color:var(--ink-2);font-weight:600;">{{ r.pct }}</span>
+              </div>
+              <div style="height:4px;border-radius:2px;background:var(--chip);overflow:hidden;"><div style="height:100%;width:{{ r.pct }};background:{{ r.color }};border-radius:2px;"></div></div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;">
+          <sc-for list="{{ scenes }}" as="s" hint-placeholder-count="8">
+            <div onClick="{{ s.onClick }}" onDoubleClick="{{ s.onOpen }}" style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:10px;outline:{{ s.outline }};outline-offset:-1px;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease;" style-hover="transform:translateY(-2px);box-shadow:var(--shadow-lift);">
+              <div style="position:relative;aspect-ratio:16/7;border-radius:12px;overflow:hidden;background:{{ s.img }};">
+                <span style="position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;padding:3px 9px 3px 7px;border-radius:999px;background:rgba(255,255,255,.9);color:#18181B;"><span style="width:6px;height:6px;border-radius:3px;background:{{ s.statusDot }};"></span>{{ s.status }}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:0 4px;">
+                <span style="font-size:15px;font-weight:600;letter-spacing:-0.01em;">{{ s.name }}</span>
+                <span style="flex:1;"></span>
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-2);"><i class="icon-film" style="font-size:13px;color:var(--ink-3);"></i>{{ s.frames }} fr</span>
+                <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--chip);color:{{ s.prioFg }};"><i class="{{ s.prioIcon }}" style="font-size:12px;"></i>{{ s.priority }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:1px;">
+                <sc-for list="{{ s.tasks }}" as="k" hint-placeholder-count="5">
+                  <div style="display:grid;grid-template-columns:20px minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:4px;border-radius:8px;" style-hover="background:var(--chip);">
+                    <span style="width:20px;height:20px;border-radius:6px;background:{{ k.pcolor }};color:#FFFFFF;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ k.pnum }}</span>
+                    <span style="font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.pname }}</span>
+                    <label onClick="{{ stop }}" style="position:relative;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 22px 0 9px;border-radius:999px;background:{{ k.sbg }};font-size:12px;font-weight:500;cursor:pointer;">
+                      <span style="width:7px;height:7px;border-radius:4px;background:{{ k.scolor }};flex:none;"></span>
+                      <select value="{{ k.status }}" onChange="{{ k.onStatus }}" style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:500 12px Inter,sans-serif;padding:0;cursor:pointer;outline:none;"><option value="0">Not started</option><option value="1">In progress</option><option value="2">Review</option><option value="3">Retake</option><option value="4">Approved</option></select>
+                      <i class="icon-chevron-down" style="position:absolute;right:7px;font-size:12px;color:var(--ink-3);pointer-events:none;"></i>
+                    </label>
+                    <label onClick="{{ stop }}" style="position:relative;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 20px 0 3px;border-radius:999px;border:1px solid var(--line);font-size:12px;cursor:pointer;">
+                      <span style="width:18px;height:18px;border-radius:9px;background:var(--chip);font-size:8px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;flex:none;">{{ k.uIni }}</span>
+                      <select value="{{ k.user }}" onChange="{{ k.onUser }}" style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:400 12px Inter,sans-serif;padding:0;cursor:pointer;outline:none;width:52px;"><option value="0">Mika</option><option value="1">Jonas</option><option value="2">Ana</option><option value="3">Tomás</option><option value="4">Priya</option><option value="5">Dae-ho</option></select>
+                      <i class="icon-chevron-down" style="position:absolute;right:6px;font-size:12px;color:var(--ink-3);pointer-events:none;"></i>
+                    </label>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px 300px;gap:16px;padding:4px 36px 36px;">
+        <div style="min-height:0;display:flex;flex-direction:column;gap:16px;">
+          <sc-if value="{{ isScManage }}">
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:22px;padding:14px;border-radius:20px;background:var(--card);border:1px solid var(--line);flex:none;">
+              <div style="aspect-ratio:16/9;border-radius:12px;background:{{ scn.img }};position:relative;overflow:hidden;"><span style="position:absolute;left:10px;bottom:8px;font:500 10px ui-monospace,Menlo,monospace;color:rgba(255,255,255,.78);">scene preview</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:4px 4px 0 0;min-width:0;">
+                <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;">
+                  <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:20px;font-weight:600;letter-spacing:-0.02em;">{{ scn.name }}</span><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:var(--chip);"><span style="width:6px;height:6px;border-radius:3px;background:{{ scn.statusDot }};"></span>{{ scn.status }}</span></div>
+                  <button onClick="{{ openAssembly }}" style="height:34px;padding:0 14px;border-radius:999px;border:none;background:var(--ink);color:var(--panel);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer;"><i class="icon-layout-dashboard" style="font-size:15px;"></i>Open Assembly</button>
+                </div>
+                <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2);">{{ scn.desc }}</p>
+                <div style="display:flex;gap:18px;font-size:13px;color:var(--ink-2);margin-top:auto;">
+                  <span style="display:inline-flex;align-items:center;gap:6px;"><i class="icon-film" style="font-size:14px;color:var(--ink-3);"></i>{{ scn.frames }} frames</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;"><i class="{{ scn.prioIcon }}" style="font-size:14px;color:var(--ink-3);"></i>{{ scn.priority }} priority</span>
+                  <span style="display:inline-flex;align-items:center;gap:6px;"><i class="icon-clapperboard" style="font-size:14px;color:var(--ink-3);"></i>{{ scn.epName }}</span>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;min-height:0;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:44px minmax(0,1.2fr) 170px minmax(0,1fr) 170px;gap:16px;padding:14px 20px;font-size:12px;font-weight:500;color:var(--ink-3);border-bottom:1px solid var(--line);"><span>#</span><span>Process</span><span>Status</span><span>Completion</span><span>Assignee</span></div>
+              <sc-for list="{{ scTasks }}" as="k" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:44px minmax(0,1.2fr) 170px minmax(0,1fr) 170px;gap:16px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);" style-hover="background:var(--chip);">
+                  <span style="width:24px;height:24px;border-radius:7px;background:{{ k.pcolor }};color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ k.pnum }}</span>
+                  <span style="font-size:14px;font-weight:500;">{{ k.pname }}</span>
+                  <label style="position:relative;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 24px 0 10px;border-radius:999px;background:{{ k.sbg }};font-size:12px;font-weight:500;cursor:pointer;justify-self:start;">
+                    <span style="width:7px;height:7px;border-radius:4px;background:{{ k.scolor }};flex:none;"></span>
+                    <select value="{{ k.status }}" onChange="{{ k.onStatus }}" style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:500 12px Inter,sans-serif;padding:0;cursor:pointer;outline:none;"><option value="0">Not started</option><option value="1">In progress</option><option value="2">Review</option><option value="3">Retake</option><option value="4">Approved</option></select>
+                    <i class="icon-chevron-down" style="position:absolute;right:8px;font-size:12px;color:var(--ink-3);pointer-events:none;"></i>
+                  </label>
+                  <div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;height:5px;border-radius:3px;background:var(--chip);overflow:hidden;"><div style="height:100%;width:{{ k.pctW }};background:{{ k.scolor }};"></div></div><span style="font-size:12px;color:var(--ink-2);width:36px;text-align:right;">{{ k.pctW }}</span></div>
+                  <label style="position:relative;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 24px 0 4px;border-radius:999px;border:1px solid var(--line);font-size:13px;cursor:pointer;justify-self:start;">
+                    <span style="width:22px;height:22px;border-radius:11px;background:var(--chip);font-size:9px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;">{{ k.uIni }}</span>
+                    <select value="{{ k.user }}" onChange="{{ k.onUser }}" style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:400 13px Inter,sans-serif;padding:0;cursor:pointer;outline:none;"><option value="0">Mika Kato</option><option value="1">Jonas Reyes</option><option value="2">Ana Lindqvist</option><option value="3">Tomás Silva</option><option value="4">Priya Nair</option><option value="5">Dae-ho Won</option></select>
+                    <i class="icon-chevron-down" style="position:absolute;right:8px;font-size:12px;color:var(--ink-3);pointer-events:none;"></i>
+                  </label>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isEpManage }}">
+            <div style="flex:1;min-height:0;border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:auto;">
+              <div style="min-width:1080px;">
+                <div style="position:sticky;top:0;z-index:2;background:var(--card);display:grid;grid-template-columns:200px 70px repeat(5,minmax(160px,1fr));border-bottom:1px solid var(--line);font-size:12px;font-weight:500;color:var(--ink-3);">
+                  <span style="padding:14px 16px;">Scene</span><span style="padding:14px 0;">Frames</span>
+                  <sc-for list="{{ emProcs }}" as="h" hint-placeholder-count="5">
+                    <span style="padding:14px 10px;display:flex;align-items:center;gap:8px;color:var(--ink);"><span style="width:18px;height:18px;border-radius:5px;background:{{ h.color }};color:#FFFFFF;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ h.num }}</span>{{ h.name }}</span>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ emRows }}" as="row" hint-placeholder-count="10">
+                  <div style="display:grid;grid-template-columns:200px 70px repeat(5,minmax(160px,1fr));align-items:center;border-bottom:1px solid var(--line);min-height:54px;" style-hover="background:var(--chip);">
+                    <button onClick="{{ row.onOpen }}" style="display:flex;align-items:center;gap:10px;padding:8px 16px;border:none;background:none;cursor:pointer;color:var(--ink);font:600 13px Inter,sans-serif;text-align:left;"><span style="width:52px;height:30px;border-radius:6px;background:{{ row.img }};flex:none;"></span>{{ row.name }}</button>
+                    <span style="font-size:12px;color:var(--ink-2);">{{ row.frames }}</span>
+                    <sc-for list="{{ row.cells }}" as="k">
+                      <div style="display:flex;align-items:center;gap:6px;padding:0 10px;">
+                        <label style="position:relative;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 22px 0 9px;border-radius:999px;background:{{ k.sbg }};cursor:pointer;">
+                          <span style="width:7px;height:7px;border-radius:4px;background:{{ k.scolor }};flex:none;"></span>
+                          <select value="{{ k.status }}" onChange="{{ k.onStatus }}" style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:500 12px Inter,sans-serif;padding:0;cursor:pointer;outline:none;"><option value="0">Not started</option><option value="1">In progress</option><option value="2">Review</option><option value="3">Retake</option><option value="4">Approved</option></select>
+                          <i class="icon-chevron-down" style="position:absolute;right:7px;font-size:12px;color:var(--ink-3);pointer-events:none;"></i>
+                        </label>
+                        <label title="{{ k.uName }}" style="position:relative;width:26px;height:26px;border-radius:13px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--ink-2);flex:none;cursor:pointer;">{{ k.uIni }}<select value="{{ k.user }}" onChange="{{ k.onUser }}" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;"><option value="0">Mika Kato</option><option value="1">Jonas Reyes</option><option value="2">Ana Lindqvist</option><option value="3">Tomás Silva</option><option value="4">Priya Nair</option><option value="5">Dae-ho Won</option></select></label>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="min-height:0;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:8px;padding:16px 16px 12px;">
+            <i class="icon-list-todo" style="font-size:16px;color:var(--ink-3);"></i><span style="font-size:14px;font-weight:600;">To Do</span>
+            <span style="font-size:11px;font-weight:600;color:var(--ink-2);background:var(--chip);padding:2px 7px;border-radius:999px;">{{ todoCount }}</span>
+            <button onClick="{{ addTodo }}" aria-label="Add to do" style="margin-left:auto;width:28px;height:28px;border-radius:14px;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;padding:0;" style-hover="background:var(--chip);"><i class="icon-plus"></i></button>
+          </div>
+          <div style="flex:1;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ todos }}" as="t" hint-placeholder-count="4">
+              <div onClick="{{ t.onSelect }}" style="display:flex;gap:10px;padding:10px;border-radius:12px;background:{{ t.bg }};cursor:pointer;" style-hover="background:var(--chip);">
+                <button onClick="{{ t.onCheck }}" aria-label="Complete" style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-2);background:transparent;flex:none;margin-top:1px;cursor:pointer;padding:0;" style-hover="border-color:var(--accent);"></button>
+                <div style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:13px;line-height:1.4;text-wrap:pretty;">{{ t.text }}</span><span style="font-size:11px;color:var(--ink-3);">{{ t.scope }} · {{ t.author }}</span></div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noTodos }}"><div style="padding:28px 12px;text-align:center;font-size:13px;color:var(--ink-3);">Nothing open. Add a to do with +.</div></sc-if>
+          </div>
+        </div>
+        <div style="min-height:0;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:8px;padding:16px 16px 12px;">
+            <i class="icon-git-commit-horizontal" style="font-size:16px;color:var(--ink-3);"></i><span style="font-size:14px;font-weight:600;">Commits</span>
+            <span style="font-size:11px;font-weight:600;color:var(--ink-2);background:var(--chip);padding:2px 7px;border-radius:999px;">{{ commitCount }}</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--ink-3);">Newest first</span>
+          </div>
+          <div style="flex:1;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ commits }}" as="c" hint-placeholder-count="4">
+              <div style="display:flex;gap:10px;padding:10px;border-radius:12px;">
+                <span style="width:18px;height:18px;border-radius:9px;background:color-mix(in oklch, var(--accent) 16%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;flex:none;margin-top:1px;"><i class="icon-check"></i></span>
+                <div style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:13px;line-height:1.4;color:var(--ink-2);">{{ c.text }}</span><span style="font-size:11px;color:var(--ink-3);"><b style="font-weight:600;color:var(--ink-2);">{{ c.time }}</b> · {{ c.scope }} · {{ c.author }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAssembly }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;gap:16px;padding:4px 36px 36px;">
+        <div style="flex:1;min-width:0;position:relative;border-radius:20px;border:1px solid var(--line);background-color:var(--sunken);background-image:radial-gradient(var(--dot) 1px, transparent 1px);background-size:22px 22px;overflow:auto;">
+          <div style="position:relative;width:1380px;height:780px;">
+            <sc-for list="{{ arrows }}" as="ar" hint-placeholder-count="0">
+              <div style="position:absolute;left:{{ ar.x }}px;top:{{ ar.y }}px;width:{{ ar.len }}px;height:0;border-top:1.5px solid var(--ink-3);transform:rotate({{ ar.deg }}deg);transform-origin:0 0;"><div style="position:absolute;right:-1px;top:-5.25px;width:0;height:0;border-left:8px solid var(--ink-3);border-top:4.5px solid transparent;border-bottom:4.5px solid transparent;"></div></div>
+            </sc-for>
+            <sc-for list="{{ board }}" as="b" hint-placeholder-count="0">
+              <div onClick="{{ b.onClick }}" style="position:absolute;left:{{ b.x }}px;top:{{ b.y }}px;width:{{ b.w }}px;border-radius:14px;background:{{ b.bg }};border:1px solid var(--line);box-shadow:var(--shadow-sm);outline:{{ b.outline }};outline-offset:2px;cursor:grab;box-sizing:border-box;">
+                <sc-if value="{{ b.isKf }}">
+                  <div style="padding:6px;">
+                    <div style="position:relative;aspect-ratio:16/9;border-radius:9px;background:{{ b.img }};"><span style="position:absolute;left:7px;top:7px;font-size:11px;font-weight:700;color:#FFFFFF;background:rgba(0,0,0,.55);padding:3px 7px;border-radius:6px;letter-spacing:.03em;">KF {{ b.num }}</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:8px 4px 2px;font-size:12px;"><span style="font-weight:500;">Keyframe {{ b.num }}</span><span style="color:var(--ink-3);">f. {{ b.frame }}</span></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ b.isAsset }}">
+                  <div style="padding:6px;">
+                    <div style="aspect-ratio:4/3;border-radius:9px;background:{{ b.img }};"></div>
+                    <div style="display:flex;flex-direction:column;gap:2px;padding:8px 4px 2px;"><span style="font-size:12px;font-weight:600;">{{ b.name }}</span><span style="font-size:11px;color:var(--ink-3);">{{ b.code }} · {{ b.cat }}</span></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ b.isFolder }}">
+                  <div style="display:flex;align-items:center;gap:12px;padding:12px;">
+                    <span style="width:40px;height:40px;border-radius:10px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--ink-2);"><i class="icon-folder"></i></span>
+                    <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:13px;font-weight:600;">{{ b.name }}</span><span style="font-size:11px;color:var(--ink-3);">{{ b.count }} items</span></div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ b.isNote }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;padding:14px;">
+                    <span style="font-size:13px;line-height:1.45;text-wrap:pretty;">{{ b.text }}</span>
+                    <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-3);"><span style="width:20px;height:20px;border-radius:10px;background:var(--card);font-size:8px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;">{{ b.author }}</span>{{ b.time }}<i class="icon-message-square" style="margin-left:auto;font-size:13px;"></i></div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="position:sticky;left:16px;bottom:16px;width:max-content;display:flex;align-items:center;gap:14px;padding:8px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-sm);font-size:12px;color:var(--ink-2);margin-top:-52px;">
+            <span>{{ boardSummary }}</span>
+          </div>
+        </div>
+        <sc-if value="{{ panelOpen }}">
+          <div style="width:300px;flex:none;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;padding:16px 16px 10px;"><span style="font-size:14px;font-weight:600;">Scene assets</span><span style="font-size:11px;font-weight:600;color:var(--ink-2);background:var(--chip);padding:2px 7px;border-radius:999px;">{{ sceneAssetsN }}</span></div>
+            <div style="padding:0 16px 10px;font-size:12px;color:var(--ink-3);">Drag onto the board to reference.</div>
+            <div style="flex:1;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+              <sc-for list="{{ sceneAssets }}" as="a" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;cursor:grab;" style-hover="background:var(--chip);">
+                  <span style="width:56px;height:42px;border-radius:8px;background:{{ a.img }};flex:none;"></span>
+                  <div style="display:flex;flex-direction:column;gap:3px;min-width:0;"><span style="font-size:13px;font-weight:500;">{{ a.name }}</span><span style="font-size:11px;color:var(--ink-3);">{{ a.code }} · {{ a.cat }}</span></div>
+                  <i class="icon-grip-vertical" style="margin-left:auto;color:var(--ink-3);font-size:14px;"></i>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAssets }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow:auto;padding:4px 36px 36px;">
+        <sc-if value="{{ aIsPosters }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:24px;">
+            <sc-for list="{{ posters }}" as="p" hint-placeholder-count="3">
+              <div onClick="{{ p.onClick }}" style="display:flex;flex-direction:column;gap:12px;cursor:pointer;">
+                <div style="position:relative;aspect-ratio:3/4;border-radius:20px;overflow:hidden;background:{{ p.img }};box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease;" style-hover="transform:translateY(-3px);box-shadow:var(--shadow-lift);">
+                  <sc-if value="{{ p.noImg }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:600;color:var(--ink-3);">{{ p.initials }}</div></sc-if>
+                  <sc-if value="{{ p.hasImg }}"><span style="position:absolute;left:14px;top:14px;font:500 10px ui-monospace,Menlo,monospace;color:rgba(255,255,255,.78);">poster · 3:4</span></sc-if>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;padding:0 4px;"><span style="font-size:15px;font-weight:600;">{{ p.title }}</span><span style="font-size:12px;color:var(--ink-3);">{{ p.code }} · {{ p.meta }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ aShowEpisodes }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;">
+            <sc-for list="{{ aEpTiles }}" as="t" hint-placeholder-count="6">
+              <div onClick="{{ t.onClick }}" style="display:flex;flex-direction:column;gap:10px;padding:8px;border-radius:18px;background:var(--card);border:1px solid var(--line);cursor:pointer;" style-hover="box-shadow:var(--shadow-lift);transform:translateY(-2px);">
+                <div style="aspect-ratio:16/9;border-radius:12px;background:{{ t.img }};"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0 6px 4px;"><span style="font-size:14px;font-weight:600;">{{ t.name }}</span><span style="font-size:12px;color:var(--ink-3);">{{ t.count }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ aShowTable }}">
+          <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;">
+            <div style="display:grid;grid-template-columns:96px minmax(0,1.4fr) minmax(0,1fr) 130px 120px 110px 140px;gap:16px;padding:13px 20px;font-size:12px;font-weight:500;color:var(--ink-3);border-bottom:1px solid var(--line);"><span>Preview</span><span>Name</span><span>Code</span><span>Category</span><span>Priority</span><span>Episode</span><span>Drive files</span></div>
+            <sc-for list="{{ aRows }}" as="a" hint-placeholder-count="8">
+              <div onClick="{{ a.onClick }}" style="display:grid;grid-template-columns:96px minmax(0,1.4fr) minmax(0,1fr) 130px 120px 110px 140px;gap:16px;align-items:center;padding:9px 20px;border-bottom:1px solid var(--line);cursor:pointer;background:{{ a.bg }};font-size:13px;" style-hover="background:var(--chip);">
+                <span style="width:72px;height:44px;border-radius:8px;background:{{ a.img }};"></span>
+                <span style="font-weight:600;">{{ a.name }}</span>
+                <span style="font-size:12px;letter-spacing:.03em;color:var(--ink-2);">{{ a.code }}</span>
+                <span style="color:var(--ink-2);">{{ a.cat }}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;color:{{ a.prioFg }};font-weight:500;"><i class="{{ a.prioIcon }}" style="font-size:13px;"></i>{{ a.priority }}</span>
+                <span style="color:var(--ink-2);">{{ a.epName }}</span>
+                <span style="color:var(--ink-2);">{{ a.files }} · {{ a.size }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ aNoRows }}"><div style="padding:56px 20px;text-align:center;font-size:14px;color:var(--ink-3);">No assets here yet. Use + in the rail to add one.</div></sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAsm }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;gap:16px;padding:4px 36px 36px;">
+        <sc-if value="{{ asmPanel }}">
+          <div style="width:300px;flex:none;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;">
+            <div style="padding:16px 16px 8px;font-size:12px;font-weight:500;color:var(--ink-3);">Assign to</div>
+            <div style="flex:1;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;">
+              <sc-for list="{{ asmTree }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                  <div style="display:flex;align-items:center;gap:6px;padding:6px;border-radius:12px;background:{{ p.bg }};" style-hover="background:var(--chip);">
+                    <button onClick="{{ p.onToggle }}" style="width:22px;height:22px;border:none;background:none;color:var(--ink-3);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;"><i class="{{ p.chev }}"></i></button>
+                    <button onClick="{{ p.onPick }}" style="flex:1;display:flex;align-items:center;gap:10px;border:none;background:none;cursor:pointer;padding:0;color:var(--ink);font:500 13px Inter,sans-serif;text-align:left;min-width:0;"><span style="width:30px;height:30px;border-radius:8px;background:{{ p.img }};flex:none;"></span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.title }}</span></button>
+                    <span style="font-size:11px;font-weight:600;color:var(--ink-2);background:var(--chip);padding:2px 7px;border-radius:999px;">{{ p.count }}</span>
+                  </div>
+                  <sc-for list="{{ p.eps }}" as="e">
+                    <button onClick="{{ e.onPick }}" style="display:flex;align-items:center;gap:10px;margin-left:28px;padding:7px 10px;border-radius:10px;border:none;background:{{ e.bg }};color:{{ e.fg }};font:500 13px Inter,sans-serif;cursor:pointer;text-align:left;" style-hover="background:var(--chip);"><i class="icon-clapperboard" style="font-size:13px;color:var(--ink-3);"></i>{{ e.name }}<span style="margin-left:auto;font-size:11px;color:var(--ink-3);">{{ e.count }}</span></button>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 10px 10px 18px;border-radius:999px;background:var(--card);border:1px solid var(--line);">
+            <span style="font-size:13px;color:var(--ink-3);">Target</span>
+            <span style="font-size:13px;font-weight:600;">{{ asmTarget }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-size:13px;color:var(--ink-2);">{{ asmCount }}</span>
+            <button onClick="{{ asmUnassign }}" style="height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;cursor:pointer;opacity:{{ asmOpacity }};" style-hover="background:var(--chip);">Unassign</button>
+            <button onClick="{{ asmAssign }}" style="height:34px;padding:0 16px;border-radius:999px;border:none;background:var(--ink);color:var(--panel);font:500 13px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px;opacity:{{ asmOpacity }};"><i class="icon-check" style="font-size:14px;"></i>Assign</button>
+          </div>
+          <div style="flex:1;min-height:0;overflow:auto;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;">
+              <sc-for list="{{ asmCards }}" as="a" hint-placeholder-count="10">
+                <div onClick="{{ a.onToggle }}" style="display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:18px;background:var(--card);border:1px solid var(--line);outline:{{ a.outline }};outline-offset:-1px;cursor:pointer;" style-hover="box-shadow:var(--shadow-lift);">
+                  <div style="position:relative;aspect-ratio:4/3;border-radius:12px;background:{{ a.img }};">
+                    <span style="position:absolute;left:8px;top:8px;width:22px;height:22px;border-radius:7px;background:{{ a.boxBg }};border:1.5px solid rgba(255,255,255,.9);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:13px;"><i class="{{ a.boxIcon }}"></i></span>
+                    <span style="position:absolute;right:8px;bottom:8px;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.9);color:#18181B;">{{ a.where }}</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:2px;padding:0 4px 4px;"><span style="font-size:13px;font-weight:600;">{{ a.name }}</span><span style="font-size:11px;color:var(--ink-3);">{{ a.code }} · {{ a.cat }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow:auto;padding:4px 36px 36px;">
+        <sc-if value="{{ setProjects }}">
+          <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;max-width:1280px;">
+            <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 90px 110px minmax(0,1.6fr) 100px 110px 48px;gap:16px;padding:13px 20px;font-size:12px;font-weight:500;color:var(--ink-3);border-bottom:1px solid var(--line);"><span>Project</span><span>Code</span><span>Status</span><span>Dates</span><span>Episodes</span><span>Storage</span><span></span></div>
+            <sc-for list="{{ sProjects }}" as="p" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 90px 110px minmax(0,1.6fr) 100px 110px 48px;gap:16px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);font-size:13px;">
+                <span style="display:flex;align-items:center;gap:12px;font-weight:600;"><span style="width:56px;height:32px;border-radius:7px;background:{{ p.img }};flex:none;"></span>{{ p.title }}</span>
+                <span style="font-size:12px;letter-spacing:.05em;color:var(--ink-2);font-weight:600;">{{ p.code }}</span>
+                <span><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:{{ p.statusBg }};color:{{ p.statusFg }};"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>{{ p.status }}</span></span>
+                <span style="color:var(--ink-2);">{{ p.dateText }} <span style="color:var(--ink-3);">{{ p.dur }}</span></span>
+                <span style="color:var(--ink-2);">{{ p.epCount }}</span>
+                <span style="color:var(--ink-2);">{{ p.size }}</span>
+                <button style="width:32px;height:32px;border-radius:16px;border:none;background:transparent;color:var(--ink-3);cursor:pointer;font-size:15px;" style-hover="background:var(--chip);color:var(--ink);"><i class="icon-pencil"></i></button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ setUsers }}">
+          <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;max-width:1080px;">
+            <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.5fr) 180px;gap:16px;padding:13px 20px;font-size:12px;font-weight:500;color:var(--ink-3);border-bottom:1px solid var(--line);"><span>Name</span><span>Email</span><span>Role</span></div>
+            <sc-for list="{{ sUsers }}" as="u" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.5fr) 180px;gap:16px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);font-size:13px;">
+                <span style="display:flex;align-items:center;gap:12px;font-weight:500;"><span style="position:relative;width:34px;height:34px;border-radius:17px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2);">{{ u.ini }}<sc-if value="{{ u.isOwner }}"><span style="position:absolute;right:-3px;top:-3px;width:16px;height:16px;border-radius:8px;background:var(--ink);color:var(--panel);display:flex;align-items:center;justify-content:center;font-size:9px;border:2px solid var(--card);"><i class="icon-crown"></i></span></sc-if></span>{{ u.name }}</span>
+                <span style="color:var(--ink-2);">{{ u.email }}</span>
+                <sc-if value="{{ u.isOwner }}"><span style="display:inline-flex;align-items:center;gap:6px;font-weight:500;"><i class="icon-crown" style="font-size:14px;color:var(--ink-3);"></i>Owner</span></sc-if>
+                <sc-if value="{{ u.notOwner }}">
+                  <label style="position:relative;display:inline-flex;align-items:center;height:32px;padding:0 28px 0 12px;border-radius:999px;border:1px solid var(--line-2);justify-self:start;cursor:pointer;"><select value="{{ u.role }}" onChange="{{ u.onRole }}" style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;cursor:pointer;outline:none;"><option value="Admin">Admin</option><option value="Member">Member</option></select><i class="icon-chevron-down" style="position:absolute;right:10px;font-size:13px;color:var(--ink-3);pointer-events:none;"></i></label>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ setSecurity }}">
+          <div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
+            <div style="padding:22px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;gap:16px;">
+              <span style="position:relative;width:52px;height:52px;border-radius:26px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;">MK<span style="position:absolute;right:-2px;top:-2px;width:20px;height:20px;border-radius:10px;background:var(--ink);color:var(--panel);display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--card);"><i class="icon-crown"></i></span></span>
+              <div style="display:flex;flex-direction:column;gap:3px;"><span style="font-size:16px;font-weight:600;">Mika Kato</span><span style="font-size:13px;color:var(--ink-2);">Owner · mika.kato@lanternworks.studio</span></div>
+              <span style="margin-left:auto;font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:6px;"><i class="icon-shield" style="font-size:14px;"></i>Only the Owner sees this section</span>
+            </div>
+            <div style="padding:22px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:15px;font-weight:600;">Transfer ownership</span><span style="font-size:13px;color:var(--ink-2);line-height:1.5;">The new Owner gets full control of projects, users and storage. You become an Admin.</span></div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <label style="position:relative;display:inline-flex;align-items:center;height:38px;padding:0 32px 0 14px;border-radius:999px;border:1px solid var(--line-2);cursor:pointer;"><select style="appearance:none;-webkit-appearance:none;border:none;background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;cursor:pointer;outline:none;"><option>Jonas Reyes</option><option>Ana Lindqvist</option><option>Tomás Silva</option><option>Priya Nair</option><option>Dae-ho Won</option></select><i class="icon-chevron-down" style="position:absolute;right:12px;font-size:13px;color:var(--ink-3);pointer-events:none;"></i></label>
+                <button style="height:38px;padding:0 16px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;cursor:pointer;" style-hover="background:var(--chip);">Transfer</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ setWorkflows }}">
+          <div style="display:grid;grid-template-columns:300px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;">
+            <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:2px;">
+              <div style="padding:10px 10px 6px;font-size:12px;font-weight:500;color:var(--ink-3);">Workflows</div>
+              <sc-for list="{{ workflows }}" as="w" hint-placeholder-count="3">
+                <button onClick="{{ w.onClick }}" style="display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:12px;border:none;background:{{ w.bg }};color:var(--ink);cursor:pointer;text-align:left;font-family:Inter,sans-serif;" style-hover="background:var(--chip);">
+                  <span style="font-size:14px;font-weight:600;">{{ w.name }}</span>
+                  <span style="font-size:12px;color:var(--ink-3);">{{ w.type }} · {{ w.meta }}</span>
+                  <span style="display:flex;gap:3px;margin-top:4px;"><sc-for list="{{ w.procs }}" as="c"><span style="width:18px;height:4px;border-radius:2px;background:{{ c.color }};"></span></sc-for></span>
+                </button>
+              </sc-for>
+            </div>
+            <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;"><div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:600;">Processes</span><span style="font-size:12px;color:var(--ink-3);">{{ wfName }} · in order</span></div><button style="height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 12px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" style-hover="background:var(--chip);"><i class="icon-plus" style="font-size:13px;"></i>Process</button></div>
+              <sc-for list="{{ wfProcs }}" as="c" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:18px 26px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 18px;border-top:1px solid var(--line);">
+                  <i class="icon-grip-vertical" style="font-size:14px;color:var(--ink-3);cursor:grab;"></i>
+                  <span style="width:26px;height:26px;border-radius:8px;background:{{ c.color }};color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ c.num }}</span>
+                  <span style="font-size:14px;font-weight:500;">{{ c.name }}</span>
+                  <span style="display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 10px 0 4px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--ink-2);font-family:ui-monospace,Menlo,monospace;"><span style="width:20px;height:20px;border-radius:10px;background:{{ c.color }};"></span>{{ c.color }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="border-radius:20px;background:var(--card);border:1px solid var(--line);overflow:hidden;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;"><div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:600;">Task statuses</span><span style="font-size:12px;color:var(--ink-3);">Colour and completion %</span></div><button style="height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 12px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" style-hover="background:var(--chip);"><i class="icon-plus" style="font-size:13px;"></i>Status</button></div>
+              <sc-for list="{{ wfStats }}" as="s" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) 140px 44px;gap:14px;align-items:center;padding:13px 18px;border-top:1px solid var(--line);">
+                  <span style="display:inline-flex;align-items:center;gap:8px;justify-self:start;font-size:13px;font-weight:500;padding:4px 11px 4px 9px;border-radius:999px;background:{{ s.bg }};"><span style="width:8px;height:8px;border-radius:4px;background:{{ s.color }};"></span>{{ s.name }}</span>
+                  <div style="height:5px;border-radius:3px;background:var(--chip);overflow:hidden;"><div style="height:100%;width:{{ s.pct }};background:{{ s.color }};"></div></div>
+                  <span style="font-size:13px;font-weight:600;text-align:right;">{{ s.pct }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ setStorage }}">
+          <div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
+            <div style="padding:22px;border-radius:20px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:18px;">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <span style="width:48px;height:48px;border-radius:14px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink-2);"><i class="icon-hard-drive"></i></span>
+                <div style="display:flex;flex-direction:column;gap:3px;"><span style="font-size:16px;font-weight:600;">Google Drive</span><span style="font-size:13px;color:var(--ink-2);">{{ drive.sub }}</span></div>
+                <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 10px 4px 8px;border-radius:999px;background:{{ drive.pillBg }};color:{{ drive.pillFg }};"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>{{ drive.label }}</span>
+                <button onClick="{{ toggleDrive }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line-2);background:{{ drive.btnBg }};color:{{ drive.btnFg }};font:500 13px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px;"><i class="{{ drive.btnIcon }}" style="font-size:14px;"></i>{{ drive.btn }}</button>
+              </div>
+              <sc-if value="{{ drive.on }}">
+                <div style="display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:16px;">
+                  <sc-for list="{{ storageRows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:grid;grid-template-columns:200px minmax(0,1fr) 150px;gap:16px;align-items:center;font-size:13px;">
+                      <span style="font-weight:500;">{{ r.title }}</span>
+                      <div style="height:6px;border-radius:3px;background:var(--chip);overflow:hidden;"><div style="height:100%;width:{{ r.w }};background:var(--accent);"></div></div>
+                      <span style="color:var(--ink-2);text-align:right;">{{ r.files }} files · {{ r.size }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasSlideP }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;top:124px;right:12px;bottom:12px;width:440px;background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;overflow:hidden;z-index:20;">
+        <div style="padding:14px 14px 14px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);">
+          <span style="font-size:13px;font-weight:500;color:var(--ink-3);">Project details</span>
+          <button onClick="{{ closeSlide }}" aria-label="Close" style="margin-left:auto;width:32px;height:32px;border-radius:16px;border:none;background:var(--chip);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;"><i class="icon-x"></i></button>
+        </div>
+        <div style="flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:22px;">
+          <div style="position:relative;aspect-ratio:16/9;border-radius:14px;background:{{ slideP.img }};overflow:hidden;"><sc-if value="{{ slideP.noImg }}"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:56px;font-weight:600;color:var(--ink-3);">{{ slideP.initials }}</div></sc-if></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:22px;font-weight:600;letter-spacing:-0.02em;">{{ slideP.title }}</span>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--ink-2);"><span style="font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--ink);background:var(--chip);padding:4px 8px;border-radius:6px;">{{ slideP.code }}</span><span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:{{ slideP.statusBg }};color:{{ slideP.statusFg }};"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>{{ slideP.status }}</span><span>{{ slideP.dateText }}</span><span style="color:var(--ink-3);">{{ slideP.dur }}</span></div>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2);text-wrap:pretty;">{{ slideP.desc }}</p>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button onClick="{{ slideP.onOpen }}" style="height:36px;padding:0 16px;border-radius:999px;border:none;background:var(--ink);color:var(--panel);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer;">Open project<i class="icon-arrow-right" style="font-size:14px;"></i></button>
+              <button style="height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 13px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer;" style-hover="background:var(--chip);"><i class="icon-pencil" style="font-size:14px;"></i>Edit</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:12px;font-weight:500;color:var(--ink-3);">Episodes</span>
+            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;">
+              <sc-for list="{{ slideP.epStats }}" as="x"><div style="padding:12px;border-radius:12px;background:var(--sunken);display:flex;flex-direction:column;gap:4px;"><span style="font-size:20px;font-weight:600;">{{ x.n }}</span><span style="font-size:11px;color:var(--ink-3);">{{ x.label }}</span></div></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;font-weight:500;color:var(--ink-3);">Commits · last 365 days</span><span style="font-size:12px;font-weight:600;">{{ slideP.commits }}</span></div>
+            <div style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,5px);grid-auto-columns:5px;gap:2px;">
+              <sc-for list="{{ slideP.heat }}" as="h" hint-placeholder-count="0"><div style="background:{{ h.bg }};border-radius:1.5px;"></div></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:12px;font-weight:500;color:var(--ink-3);">Storage</span>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
+              <div style="padding:12px;border-radius:12px;background:var(--sunken);display:flex;flex-direction:column;gap:4px;"><span style="font-size:18px;font-weight:600;">{{ slideP.assetsN }}</span><span style="font-size:11px;color:var(--ink-3);">Assets</span></div>
+              <div style="padding:12px;border-radius:12px;background:var(--sunken);display:flex;flex-direction:column;gap:4px;"><span style="font-size:18px;font-weight:600;">{{ slideP.files }}</span><span style="font-size:11px;color:var(--ink-3);">Files</span></div>
+              <div style="padding:12px;border-radius:12px;background:var(--sunken);display:flex;flex-direction:column;gap:4px;"><span style="font-size:18px;font-weight:600;">{{ slideP.size }}</span><span style="font-size:11px;color:var(--ink-3);">Total size</span></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:12px;font-weight:500;color:var(--ink-3);">Reviews</span>
+            <div style="padding:18px;border-radius:12px;border:1.5px dashed var(--line-2);font-size:13px;color:var(--ink-3);text-align:center;">Coming soon</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasAssetD }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;top:124px;right:12px;bottom:12px;width:420px;background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;overflow:hidden;z-index:20;">
+        <div style="padding:14px 14px 14px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);">
+          <span style="font-size:13px;font-weight:500;color:var(--ink-3);">Asset details</span>
+          <button onClick="{{ closeAsset }}" aria-label="Close" style="margin-left:auto;width:32px;height:32px;border-radius:16px;border:none;background:var(--chip);color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;"><i class="icon-x"></i></button>
+        </div>
+        <div style="flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:22px;">
+          <div style="aspect-ratio:4/3;border-radius:14px;background:{{ assetD.img }};"></div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <span style="font-size:20px;font-weight:600;letter-spacing:-0.02em;">{{ assetD.name }}</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);align-items:center;"><span style="font-weight:600;letter-spacing:.04em;color:var(--ink);background:var(--chip);padding:4px 8px;border-radius:6px;font-size:11px;">{{ assetD.code }}</span><span>{{ assetD.cat }}</span><span style="color:var(--ink-3);">·</span><span style="display:inline-flex;align-items:center;gap:4px;"><i class="{{ assetD.prioIcon }}"></i>{{ assetD.priority }}</span><span style="color:var(--ink-3);">·</span><span>{{ assetD.epName }}</span></div>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2);">{{ assetD.desc }}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-size:12px;font-weight:500;color:var(--ink-3);padding-bottom:4px;">Tasks</span>
+            <sc-for list="{{ assetD.tasks }}" as="k">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--sunken);">
+                <span style="font-size:13px;font-weight:500;flex:1;">{{ k.name }}</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:{{ k.sbg }};"><span style="width:7px;height:7px;border-radius:4px;background:{{ k.scolor }};"></span>{{ k.sname }}</span>
+                <span title="{{ k.uName }}" style="width:24px;height:24px;border-radius:12px;background:var(--chip);font-size:9px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;">{{ k.uIni }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <span style="font-size:12px;font-weight:500;color:var(--ink-3);">Drive files</span>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;border:1px solid var(--line);">
+              <span style="width:38px;height:38px;border-radius:10px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink-2);"><i class="icon-hard-drive"></i></span>
+              <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:600;">{{ assetD.files }} files</span><span style="font-size:12px;color:var(--ink-3);">{{ assetD.size }} in Google Drive</span></div>
+              <button style="margin-left:auto;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 12px Inter,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;" style-hover="background:var(--chip);">Open<i class="icon-external-link" style="font-size:13px;"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ swOpen }}" hint-placeholder-val="{{ false }}"><div onClick="{{ closeSw }}" style="position:absolute;inset:0;z-index:70;"></div></sc-if>
+  <div style="position:absolute;top:28px;right:28px;z-index:80;display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <div onMouseEnter="{{ enterAvatar }}" onMouseLeave="{{ leaveTip }}" style="position:relative;">
+      <button onClick="{{ toggleSw }}" aria-label="Account and pages" style="position:relative;width:48px;height:48px;border-radius:24px;border:2px solid var(--card);background:color-mix(in oklch, var(--accent) 18%, var(--card));color:var(--accent);font:600 14px Inter,sans-serif;cursor:pointer;box-shadow:var(--shadow);padding:0;" style-hover="box-shadow:var(--shadow-lift);">MK<span style="position:absolute;right:-4px;top:-4px;width:20px;height:20px;border-radius:10px;background:var(--ink);color:var(--panel);display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--panel);"><i class="icon-crown"></i></span></button>
+      <sc-if value="{{ avatarTip }}"><div style="position:absolute;right:58px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;box-shadow:var(--shadow);pointer-events:none;">Mika Kato<span style="opacity:.55;font-weight:400;padding-left:8px;">Owner</span></div></sc-if>
+    </div>
+    <div onMouseEnter="{{ enterPage }}" onMouseLeave="{{ leaveTip }}" style="position:relative;">
+      <button onClick="{{ toggleSw }}" aria-label="Switch page" style="width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:{{ pageBtnBg }};color:{{ pageBtnFg }};font-size:19px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:0;"><i class="{{ pageIcon }}"></i></button>
+      <sc-if value="{{ pageTipOn }}"><div style="position:absolute;right:58px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;box-shadow:var(--shadow);pointer-events:none;">{{ pageTip }}</div></sc-if>
+    </div>
+    <sc-if value="{{ swOpen }}">
+      <div style="margin-top:2px;padding:5px;border-radius:28px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <sc-for list="{{ userItems }}" as="u">
+          <div onMouseEnter="{{ u.enter }}" onMouseLeave="{{ leaveTip }}" style="position:relative;">
+            <button onClick="{{ u.onClick }}" aria-label="{{ u.label }}" style="width:40px;height:40px;border-radius:20px;border:none;background:transparent;color:var(--ink-2);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;" style-hover="background:var(--chip);color:var(--ink);"><i class="{{ u.icon }}"></i></button>
+            <sc-if value="{{ u.showTip }}"><div style="position:absolute;right:52px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;box-shadow:var(--shadow);pointer-events:none;">{{ u.label }}</div></sc-if>
+          </div>
+        </sc-for>
+        <div style="width:22px;height:1px;background:var(--line-2);margin:3px 0;"></div>
+        <sc-for list="{{ pageItems }}" as="u">
+          <div onMouseEnter="{{ u.enter }}" onMouseLeave="{{ leaveTip }}" style="position:relative;">
+            <button onClick="{{ u.onClick }}" aria-label="{{ u.label }}" style="width:40px;height:40px;border-radius:20px;border:none;background:{{ u.bg }};color:{{ u.fg }};opacity:{{ u.opacity }};font-size:17px;cursor:{{ u.cursor }};display:flex;align-items:center;justify-content:center;padding:0;"><i class="{{ u.icon }}"></i></button>
+            <sc-if value="{{ u.showTip }}"><div style="position:absolute;right:52px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;box-shadow:var(--shadow);pointer-events:none;display:flex;gap:8px;">{{ u.label }}<span style="opacity:.55;font-weight:400;">{{ u.hint }}</span></div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ narrow }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:32px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;max-width:360px;">
+        <span style="width:56px;height:56px;border-radius:28px;background:var(--rail);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:22px;"><i class="icon-monitor"></i></span>
+        <span style="font-size:17px;font-weight:600;">Production OS requires a wider window.</span>
+        <span style="font-size:13px;color:var(--ink-2);line-height:1.5;">Resize to at least 1280px wide to continue.</span>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;projects&quot;,&quot;episodes&quot;,&quot;scenes&quot;,&quot;episodeManage&quot;,&quot;sceneManage&quot;,&quot;sceneAssembly&quot;,&quot;assets&quot;,&quot;assetAssembly&quot;,&quot;settings&quot;],&quot;default&quot;:&quot;projects&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;listState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ready&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;error&quot;],&quot;default&quot;:&quot;ready&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;minWidthGuard&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const PROC=[{name:'Layout',color:'#5B8DEF'},{name:'Rough Animation',color:'#9A7AE6'},{name:'Clean-up',color:'#2FB0A0'},{name:'Colour',color:'#E39A2D'},{name:'Compositing',color:'#E0617B'}];
+const STAT=[{name:'Not started',color:'#9A9AA3',pct:0},{name:'In progress',color:'#5B8DEF',pct:40},{name:'Review',color:'#E39A2D',pct:80},{name:'Retake',color:'#E5534B',pct:50},{name:'Approved',color:'#2FA36B',pct:100}];
+const USERS=[{name:'Mika Kato',ini:'MK',email:'mika.kato@lanternworks.studio',role:'Owner'},{name:'Jonas Reyes',ini:'JR',email:'jonas.reyes@lanternworks.studio',role:'Admin'},{name:'Ana Lindqvist',ini:'AL',email:'ana.lindqvist@lanternworks.studio',role:'Member'},{name:'Tomás Silva',ini:'TS',email:'tomas.silva@lanternworks.studio',role:'Member'},{name:'Priya Nair',ini:'PN',email:'priya.nair@lanternworks.studio',role:'Admin'},{name:'Dae-ho Won',ini:'DW',email:'daeho.won@lanternworks.studio',role:'Member'}];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const rng=s=>()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>`${pad(d.getDate())} ${MON[d.getMonth()]} ${d.getFullYear()}`;
+const fmtS=d=>`${pad(d.getDate())} ${MON[d.getMonth()]}`;
+const durS=(a,b)=>{const n=Math.round((b-a)/864e5);return `${Math.floor(n/7)}W ${n%7}Days`;};
+const addD=(d,n)=>new Date(d.getTime()+n*864e5);
+const IMG=h=>`repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 1px, transparent 1px 11px), linear-gradient(145deg, oklch(0.76 0.055 ${h}), oklch(0.5 0.065 ${(h+40)%360}))`;
+const NOIMG='linear-gradient(145deg, var(--ph1), var(--ph2))';
+const HEATC=['var(--heat0)','color-mix(in oklch, var(--accent) 30%, var(--heat0))','color-mix(in oklch, var(--accent) 55%, var(--heat0))','color-mix(in oklch, var(--accent) 80%, var(--heat0))','var(--accent)'];
+const soft=(c,p=15)=>`color-mix(in oklch, ${c} ${p}%, transparent)`;
+const fmtSize=mb=>mb<=0?'0 B':mb>=1024?(mb/1024).toFixed(1)+' GB':Math.round(mb)+' MB';
+const PRIO={High:{icon:'icon-chevrons-up',fg:'var(--ink)'},Medium:{icon:'icon-equal',fg:'var(--ink-2)'},Low:{icon:'icon-chevron-down',fg:'var(--ink-3)'}};
+function heat(seed,act,cut){const r=rng(seed);const cells=[];let total=0;for(let i=0;i<371;i++){let l=0;const v=r()*act*(0.55+0.6*i/371);if(i<cut)l=v<0.3?0:v<0.5?1:v<0.7?2:v<0.85?3:4;total+=[0,1,3,6,10][l];cells.push({bg:HEATC[l]});}return {cells,total};}
+const EPD={lnf:['Mira finds the lantern washed up below the lighthouse.','The lantern pulls the rowboat out past the breakwater.','A tide spirit asks Mira to read a chart nobody can.','Storm night in the flooded market; Ansel goes missing.','The stairwell of the drowned lighthouse.','Mira trades her compass for a way across the shallows.','The spirits hold a council on the sandbar.','Ansel’s old logbook resurfaces.','The lantern dims and Mira must choose a heading.','Fog bank. A no-dialogue episode.','The archipelago maps itself.','Home tide.'],pmc:['First delivery: a letter with no address.','Rooftop chase through the fold district.','The courier’s satchel tears.','A reply arrives before the letter was sent.','The paper moon rises late.','Last route of the night.']};
+const SCD=['Wide on the harbour; the lantern drifts into frame.','Close on Mira’s hands untying the rope.','Over-the-shoulder toward the breakwater.','Tracking shot along the flooded market stalls.','Ansel turns, lit from below by the lantern.','Insert: the tide chart unfolding.','Reverse angle as spirits gather at the waterline.','Camera push into the lighthouse doorway.'];
+const PRI=['High','Medium','Low'];
+const PRJ=[
+{id:'lnf',title:'Lanternfall',code:'LNF',status:'Active',start:new Date(2026,7,3),end:new Date(2026,11,18),hue:235,seed:11,epBase:101,eps:12,L0:7,step:0.8,act:1,cut:371,desc:'A lighthouse keeper’s daughter follows a drifting lantern across a flooded archipelago, trading stories with the tide spirits who keep the old charts. Twelve 11-minute episodes, hand-drawn characters over painted backgrounds, with a light 3D camera pass on the storm sequences.'},
+{id:'pmc',title:'Paper Moon Courier',code:'PMC',status:'Retired',start:new Date(2026,2,2),end:new Date(2026,5,5),hue:55,seed:23,epBase:201,eps:6,L0:9,step:0,act:0.8,cut:240,desc:'A night-shift courier delivers letters between rooftops in a city made of folded paper. Six-episode short-form series produced for the spring festival slate; delivered and archived in June.'},
+{id:'slt',title:'Saltwater Pilot',code:'SLT',status:'Active',start:null,end:null,hue:190,seed:37,epBase:301,eps:0,act:0.35,cut:371,noImage:true,desc:'Pilot for a coastal mystery series. Development materials only — episodes and scenes will be added once the animatic is locked.'}];
+const PROJECTS=PRJ.map(p=>{const eps=[];for(let i=0;i<p.eps;i++){const num=p.epBase+i;const L=p.L0-i*p.step;const target=PROC.map((pr,j)=>Math.round(Math.min(1,Math.max(0,L-j))*100));const s=addD(p.start,i*9);const e=addD(s,18+(i%3)*4);eps.push({id:p.id+num,pid:p.id,num,name:'EP_'+num,code:`${p.code}_E${num}`,desc:EPD[p.id][i],target,hue:(p.hue+i*29)%360,start:fmtS(s),end:fmtS(e),dur:durS(s,e),workflow:'Standard 2D'});}const h=heat(p.seed,p.act,p.cut);return {...p,episodes:eps,heat:h.cells,commits:h.total.toLocaleString('en-US'),dateText:p.start?`${fmt(p.start)} – ${fmt(p.end)}`:'No dates',dur:p.start?durS(p.start,p.end):'',initials:p.title.split(' ').map(w=>w[0]).join('').slice(0,2)};});
+const SCENES={};
+PROJECTS.forEach(p=>p.episodes.forEach(ep=>{const r=rng(ep.num*7+3);const n=8+(ep.num%5)*2;const list=[];for(let k=1;k<=n;k++){const tasks=PROC.map((pr,j)=>{const pct=ep.target[j];const roll=r()*100;let st;if(pct>=100)st=4;else if(pct<=0)st=0;else if(roll<pct-12)st=4;else if(roll<pct)st=r()<.6?2:3;else if(roll<pct+25)st=1;else st=0;return {pnum:j+1,pname:pr.name,pcolor:pr.color,status:st,user:Math.floor(r()*USERS.length)};});const id3=String(k).padStart(3,'0');list.push({id:`${ep.id}_${id3}`,name:`${ep.num}_${id3}`,desc:SCD[(k+ep.num)%8],frames:Math.round(48+r()*312),priority:PRI[Math.floor(r()*3)],hue:(ep.hue+k*17)%360,tasks});}SCENES[ep.id]=list;}));
+const AS=[['lnf','Mira','CH_MIRA','Character','High',null,'Lead character. Turnaround, expression sheet and colour key.'],['lnf','Ansel','CH_ANSEL','Character','Medium',null,'The old lighthouse keeper. Two costume variants.'],['lnf','Tide Spirit','CH_TIDE','Character','High','lnf104','Translucent water spirit; needs an FX pass on the edges.'],['lnf','Drifting Lantern','PR_LANTERN','Prop','High',null,'Hero prop. Lit and unlit states.'],['lnf','Tide Chart Book','PR_CHART','Prop','Low','lnf103','Open and closed poses, page inserts.'],['lnf','Rowboat','PR_ROWBOAT','Prop','Medium','lnf104','Side and three-quarter views with oars.'],['lnf','Lighthouse Exterior','BG_LIGHT_EXT','Background','High',null,'Day, dusk and storm paint-overs.'],['lnf','Lighthouse Stairwell','BG_LIGHT_STAIR','Background','Medium','lnf101','Spiral stair at three camera heights.'],['lnf','Flooded Market','BG_MARKET','Background','High','lnf104','Wide establishing plate plus four close-up sections.'],['lnf','Storm Sky Set','BG_STORM','Background','Medium','lnf105','Layered sky for parallax.'],['lnf','Lantern Glow','FX_GLOW','FX','Medium',null,'Looping glow cycle, 24 frames.'],['lnf','Rain Layer','FX_RAIN','FX','Low','lnf105','Foreground and background rain passes.'],['pmc','Courier','CH_COURIER','Character','High',null,'Lead. Folded-paper construction guide.'],['pmc','Satchel','PR_SATCHEL','Prop','Medium','pmc203','Torn and intact versions.'],['pmc','Fold District','BG_FOLD','Background','High',null,'Rooftop panorama, night.'],['pmc','Paper Moon','BG_MOON','Background','Medium','pmc205','Rising sequence plates.'],['pmc','Letter Flutter','FX_FLUTTER','FX','Low',null,'Paper flutter cycle.']];
+const TASKN={Character:['Design','Turnaround','Colour key'],Prop:['Design','Colour key'],Background:['Layout','Paint'],FX:['Design','Test render']};
+const ASSETS=AS.map((a,i)=>{const files=6+(i*7)%30;const mb=files*(a[3]==='Background'?42:a[3]==='FX'?26:9)+i*13;return {id:'as'+i,pid:a[0],name:a[1],code:a[2],cat:a[3],priority:a[4],ep:a[5],desc:a[6],hue:(i*41+200)%360,files,mb,tasks:TASKN[a[3]].map((t,j)=>({name:t,status:(i+j*2)%5,user:(i+j*3)%6}))};});
+const BOARD=[{id:'k1',type:'kf',x:40,y:48,w:208,h:152,frame:1,hue:230},{id:'k2',type:'kf',x:300,y:48,w:208,h:152,frame:24,hue:250},{id:'k3',type:'kf',x:560,y:48,w:208,h:152,frame:52,hue:270},{id:'k4',type:'kf',x:820,y:48,w:208,h:152,frame:88,hue:290},{id:'a1',type:'asset',x:40,y:300,w:168,h:176,name:'Mira',code:'CH_MIRA',cat:'Character',hue:200},{id:'a2',type:'asset',x:1090,y:470,w:168,h:176,name:'Drifting Lantern',code:'PR_LANTERN',cat:'Prop',hue:40},{id:'f1',type:'folder',x:560,y:330,w:208,h:64,name:'Storm sky refs',count:9},{id:'c1',type:'note',x:1090,y:48,w:240,h:124,text:'Hold KF 03 for 6 frames before the lantern drifts out of frame.',author:'JR',time:'Today 10:14'},{id:'c2',type:'note',x:820,y:300,w:230,h:110,text:'Use the stairwell BG from EP_101 as the base plate.',author:'AL',time:'Yesterday'},{id:'k5',type:'kf',x:300,y:560,w:208,h:152,frame:120,hue:210},{id:'k6',type:'kf',x:560,y:560,w:208,h:152,frame:148,hue:190}];
+const ARROWS=[['k1','k2'],['k2','k3'],['k3','k4'],['a1','k5'],['k5','k6'],['c1','k4'],['f1','k6'],['a2','k6']];
+const PAGES=[{key:'projects',label:'Projects',icon:'icon-folder-kanban'},{key:'assets',label:'Assets',icon:'icon-boxes'},{key:'assetAssembly',label:'Asset Assembly',icon:'icon-layers'},{key:'reports',label:'Reports',icon:'icon-chart-column',disabled:true},{key:'settings',label:'Settings',icon:'icon-settings'}];
+const SUBNAME={projects:'Projects',episodes:'Episodes',scenes:'Scenes',episodeManage:'Episode Manage',sceneManage:'Scene Manage',sceneAssembly:'Scene Assembly',assets:'Assets',assetAssembly:'Asset Assembly',settings:'Settings'};
+const SETS=[{key:'projects',label:'Projects',icon:'folder-kanban'},{key:'users',label:'Users',icon:'users'},{key:'security',label:'Security',icon:'shield'},{key:'workflows',label:'Workflows',icon:'workflow'},{key:'storage',label:'Storage',icon:'hard-drive'}];
+const WFS=[{name:'Standard 2D',type:'Scene',procs:PROC,stats:STAT},{name:'Commercial Short',type:'Scene',procs:[{name:'Animatic',color:'#7C8CF0'},{name:'Animation',color:'#B07BE0'},{name:'Colour',color:'#E39A2D'},{name:'Compositing',color:'#E0617B'}],stats:[STAT[0],STAT[1],STAT[2],STAT[4]]},{name:'Asset Pipeline',type:'Asset',procs:[{name:'Design',color:'#3FA7D6'},{name:'Turnaround',color:'#9A7AE6'},{name:'Colour key',color:'#E39A2D'}],stats:[STAT[0],STAT[1],STAT[2],STAT[4]]}];
+
+class Component extends DCLogic {
+  state={theme:this.props.theme||'light',page:this.props.startPage||'projects',pid:'lnf',eid:'lnf104',sid:'lnf104_006',selP:null,selE:null,selS:null,slide:false,sw:false,tip:null,q:'',search:false,scenes:SCENES,todos:{},commits:{},selTodo:null,board:BOARD,selB:null,panel:true,aView:'projects',aPid:'lnf',aEid:null,aTab:'assets',selA:null,assetEp:Object.fromEntries(ASSETS.map(a=>[a.id,a.ep])),asmT:{pid:'lnf',eid:'lnf104'},asmChk:{},asmPanel:true,asmOpen:{lnf:true},set:'workflows',wf:0,drive:true,vs:null,del:{},roles:{},narrow:false};
+  componentDidMount(){this._k=e=>{if(e.key==='Escape')this.setState({sw:false,slide:false,selA:null});};window.addEventListener('keydown',this._k);this._r=()=>this.setState({narrow:(this.props.minWidthGuard??false)&&window.innerWidth<1280});this._r();window.addEventListener('resize',this._r);}
+  componentWillUnmount(){window.removeEventListener('keydown',this._k);window.removeEventListener('resize',this._r);}
+  componentDidUpdate(pp){if(pp.theme!==this.props.theme&&this.props.theme)this.setState({theme:this.props.theme});if(pp.startPage!==this.props.startPage&&this.props.startPage)this.go(this.props.startPage);if(pp.listState!==this.props.listState)this.setState({vs:null});if(pp.minWidthGuard!==this.props.minWidthGuard)this._r();}
+  go(page,extra={}){this.setState({page,sw:false,slide:false,tip:null,search:false,q:'',selTodo:null,selB:null,selA:null,...extra});}
+  epStats(eid){const sc=(this.state.scenes[eid]||[]).filter(s=>!this.state.del[s.id]);const n=sc.length;const procs=PROC.map((pr,j)=>({...pr,pct:n?Math.round(sc.filter(s=>s.tasks[j].status===4).length/n*100):0}));const avg=procs.reduce((a,b)=>a+b.pct,0)/5;return {procs,n,status:n&&avg>=100?'Complete':avg<=0?'Not started':'In progress'};}
+  setTask(eid,sid,j,f,v){this.setState(s=>({scenes:{...s.scenes,[eid]:s.scenes[eid].map(sc=>sc.id!==sid?sc:{...sc,tasks:sc.tasks.map((t,i)=>i!==j?t:{...t,[f]:+v})})}}));}
+  tv(eid,sc,t,j){const S=STAT[t.status],U=USERS[t.user];return {...t,scolor:S.color,sname:S.name,sbg:soft(S.color,14),status:String(t.status),user:String(t.user),uIni:U.ini,uName:U.name,pctW:S.pct+'%',onStatus:e=>this.setTask(eid,sc.id,j,'status',e.target.value),onUser:e=>this.setTask(eid,sc.id,j,'user',e.target.value)};}
+  defTodos(scope){const sc=this.state.scenes[scope];if(sc){const s=i=>sc[i%sc.length].name;const ep=scope.replace(/^[a-z]+/,'EP_');return [{id:'t1',text:`Lock layout for ${s(5)} after director notes`,scope:s(5),author:'JR'},{id:'t2',text:`Re-export colour key for ${s(10)} with the updated palette`,scope:s(10),author:'AL'},{id:'t3',text:`Confirm final frame count for ${s(13)}`,scope:s(13),author:'PN'},{id:'t4',text:'Collect retake notes from Friday review',scope:ep,author:'MK'}];}const nm=scope.split('_').slice(-2).join('_').replace(/^[a-z]+/,'');return [{id:'t1',text:'Fix line boil on Mira’s sleeve, frames 40–56',scope:nm,author:'AL'},{id:'t2',text:'Match lantern glow intensity to KF 03',scope:nm,author:'TS'},{id:'t3',text:'Add a 6-frame hold before the camera push',scope:nm,author:'JR'}];}
+  defCommits(scope){const sc=this.state.scenes[scope];if(sc){const s=i=>sc[i%sc.length].name;const ep=scope.replace(/^[a-z]+/,'EP_');return [{id:'c1',text:`Clean-up pass approved on ${s(1)}`,time:'Today 14:32',scope:s(1),author:'AL'},{id:'c2',text:`Rough animation delivered for ${s(3)}`,time:'Today 11:05',scope:s(3),author:'DW'},{id:'c3',text:`Layout locked for ${s(0)}`,time:'Yesterday 18:40',scope:s(0),author:'JR'},{id:'c4',text:'Episode colour script uploaded',time:'18 Oct 16:12',scope:ep,author:'MK'},{id:'c5',text:`Background paint swap on ${s(2)}`,time:'17 Oct 10:27',scope:s(2),author:'TS'}];}const nm=scope.split('_').slice(-2).join('_').replace(/^[a-z]+/,'');return [{id:'c1',text:'Rough animation approved',time:'Today 09:48',scope:nm,author:'JR'},{id:'c2',text:'Layout locked — camera move baked',time:'Yesterday 17:20',scope:nm,author:'PN'},{id:'c3',text:'Storyboard panels attached to assembly',time:'16 Oct 13:02',scope:nm,author:'MK'}];}
+  getTodos(s){return this.state.todos[s]||this.defTodos(s);}
+  getCommits(s){return this.state.commits[s]||this.defCommits(s);}
+  check(scope,id){const t=this.getTodos(scope).find(x=>x.id===id);this.setState(s=>({todos:{...s.todos,[scope]:this.getTodos(scope).filter(x=>x.id!==id)},commits:{...s.commits,[scope]:[{...t,id:'c'+Date.now(),time:'Just now'},...this.getCommits(scope)]},selTodo:null}));}
+  pv(p){const S=this.state;const st=p.episodes.filter(e=>!S.del[e.id]).map(e=>({e,...this.epStats(e.id)}));const c={ns:st.filter(x=>x.status==='Not started').length,ip:st.filter(x=>x.status==='In progress').length,c:st.filter(x=>x.status==='Complete').length};const tot=st.length||1;const tiles=(st.length>5?st.slice(0,4):st).map(x=>({isEp:true,isMore:false,name:x.e.name,img:IMG(x.e.hue),procs:x.procs.map(pp=>({color:pp.color,w:pp.pct+'%'})),onClick:ev=>{ev.stopPropagation();this.go('scenes',{pid:p.id,eid:x.e.id,selS:null});}}));if(st.length>5)tiles.push({isEp:false,isMore:true,name:`+${st.length-4} more`,img:'var(--sunken)',procs:[],onClick:ev=>{ev.stopPropagation();this.go('episodes',{pid:p.id,selE:null});}});const pa=ASSETS.filter(a=>a.pid===p.id);const files=pa.reduce((a,b)=>a+b.files,0),mb=pa.reduce((a,b)=>a+b.mb,0);const sel=S.selP===p.id;const act=p.status==='Active';
+    return {...p,statusBg:act?soft('var(--accent)',14):'var(--chip)',statusFg:act?'var(--accent)':'var(--ink-2)',epsLabel:`${st.length} episode${st.length===1?'':'s'}`,barNS:c.ns/tot*100+'%',barIP:c.ip/tot*100+'%',barC:c.c/tot*100+'%',barLabel:`${c.ns} not started · ${c.ip} in progress · ${c.c} complete`,epStats:[{n:c.ns,label:'Not started'},{n:c.ip,label:'In progress'},{n:c.c,label:'Complete'},{n:st.length,label:'Total'}],img:p.noImage?NOIMG:IMG(p.hue),hasImg:!p.noImage,noImg:!!p.noImage,tiles,noEps:st.length===0,assetsN:pa.length,files:files.toLocaleString('en-US'),size:fmtSize(mb),mb,epCount:st.length,outline:sel?'2px solid var(--accent)':'2px solid transparent',onClick:()=>this.setState({selP:p.id,slide:true}),onOpen:ev=>{ev&&ev.stopPropagation&&ev.stopPropagation();this.go('episodes',{pid:p.id,selE:null});}};}
+  renderVals(){
+    const S=this.state,pg=S.page,stop=e=>e.stopPropagation();
+    const live=PROJECTS.filter(p=>!S.del[p.id]);
+    const proj=PROJECTS.find(p=>p.id===S.pid)||PROJECTS[0];
+    const eps=proj.episodes.filter(e=>!S.del[e.id]);
+    const ep=eps.find(e=>e.id===S.eid)||eps[0]||null;
+    const scAll=ep?(S.scenes[ep.id]||[]).filter(s=>!S.del[s.id]):[];
+    const scene=scAll.find(s=>s.id===S.sid)||scAll[0]||null;
+    const q=S.q.trim().toLowerCase(),m=(...t)=>!q||t.some(x=>x.toLowerCase().includes(q));
+    const vs=S.vs||this.props.listState||'ready';
+    const listPage=['projects','episodes','scenes'].includes(pg);
+    const showState=listPage&&vs!=='ready';
+    const leaveTip=()=>this.setState({tip:null});
+    const noun={projects:'projects',episodes:'episodes',scenes:'scenes'}[pg]||'items';
+    const st={loading:vs==='loading',grid:pg==='scenes',cards:pg!=='scenes',message:vs==='empty'||vs==='error',icon:vs==='error'?'icon-circle-alert':({projects:'icon-folder-kanban',episodes:'icon-clapperboard',scenes:'icon-film'})[pg]||'icon-folder',iconColor:vs==='error'?'#E5534B':'var(--ink-3)',title:vs==='error'?`Couldn’t load ${noun}`:`No ${noun} yet`,body:vs==='error'?'The server didn’t respond. Check your connection and try again — nothing was lost.':({projects:'Create your first project to start tracking episodes, scenes and assets.',episodes:`${proj.title} has no episodes yet. Create one to start adding scenes.`,scenes:`${ep?ep.name:'This episode'} has no scenes yet. Create one to start assigning tasks.`})[pg],btn:vs==='error'?'Retry':`Create ${noun.slice(0,-1)}`,btnIcon:vs==='error'?'icon-refresh-cw':'icon-plus',action:vs==='error'?()=>{this.setState({vs:'loading'});setTimeout(()=>this.setState({vs:'ready'}),1000);}:()=>{}};
+    const searchA=n=>({icon:'search',label:`Search ${n}`,kbd:'/',active:S.search,onClick:()=>this.setState(s=>({search:!s.search,q:''}))});
+    const delSel=k=>()=>this.setState(s=>({del:{...s.del,[s[k]]:true},[k]:null,slide:false}));
+    const scope=pg==='episodeManage'&&ep?ep.id:pg==='sceneManage'&&scene?scene.id:null;
+    const todoAdd=()=>{if(!scope)return;const list=this.getTodos(scope);this.setState(s=>({todos:{...s.todos,[scope]:[...list,{id:'n'+Date.now(),text:'New to do — click to edit',scope:pg==='episodeManage'?ep.name:scene.name,author:'MK'}]}}));};
+    const todoDel=()=>this.setState(s=>({todos:{...s.todos,[scope]:this.getTodos(scope).filter(x=>x.id!==s.selTodo)},selTodo:null}));
+    const chkN=Object.values(S.asmChk).filter(Boolean).length;
+    const asmApply=val=>()=>{if(!chkN)return;this.setState(s=>{const ae={...s.assetEp};Object.keys(s.asmChk).forEach(k=>{if(s.asmChk[k])ae[k]=val;});return {assetEp:ae,asmChk:{}};});};
+    let main=[],bottom=[],railLabel='';
+    const back=(label,page)=>({icon:'arrow-left',label,onClick:()=>this.go(page)});
+    if(pg==='projects'){main=[{icon:'plus',label:'Create project',kbd:'N'},{icon:'trash-2',label:'Delete project',disabled:!S.selP,why:'Select a project first',onClick:delSel('selP')},{icon:'sliders-horizontal',label:'Manage project',disabled:!S.selP,why:'Select a project first',onClick:()=>this.setState({slide:true})}];bottom=[searchA('projects')];railLabel='Projects';}
+    else if(pg==='episodes'){main=[{icon:'plus',label:'Create episode',kbd:'N'},{icon:'trash-2',label:'Delete episode',disabled:!S.selE,why:'Select an episode first',onClick:delSel('selE')},{icon:'sliders-horizontal',label:'Manage episode',disabled:!S.selE,why:'Select an episode first',onClick:()=>this.go('episodeManage',{eid:S.selE})}];bottom=[searchA('episodes')];railLabel='Episodes';}
+    else if(pg==='scenes'){main=[{icon:'plus',label:'Create scene',kbd:'N'},{icon:'trash-2',label:'Delete scene',disabled:!S.selS,why:'Select a scene first',onClick:delSel('selS')},{icon:'sliders-horizontal',label:'Manage scene',disabled:!S.selS,why:'Select a scene first',onClick:()=>this.go('sceneManage',{sid:S.selS})}];bottom=[searchA('scenes')];railLabel='Scenes';}
+    else if(pg==='episodeManage'){main=[{icon:'plus',label:'Add to do',onClick:todoAdd},{icon:'trash-2',label:'Delete to do',disabled:!S.selTodo,why:'Select a to do first',onClick:todoDel}];bottom=[back('Back to scenes','scenes')];railLabel='Episode Manage';}
+    else if(pg==='sceneManage'){main=[{icon:'plus',label:'Add to do',onClick:todoAdd},{icon:'trash-2',label:'Delete to do',disabled:!S.selTodo,why:'Select a to do first',onClick:todoDel},{icon:'layout-dashboard',label:'Open Assembly',onClick:()=>this.go('sceneAssembly')}];bottom=[back('Back to scenes','scenes')];railLabel='Scene Manage';}
+    else if(pg==='sceneAssembly'){main=[{icon:'plus',label:'Add keyframe',onClick:()=>this.setState(s=>{const n=s.board.filter(b=>b.type==='kf').length;return {board:[...s.board,{id:'k'+Date.now(),type:'kf',x:820+(n%2)*0,y:560,w:208,h:152,frame:148+24*(n-5),hue:(170+n*20)%360}]};})},{icon:'trash-2',label:'Delete item',disabled:!S.selB,why:'Select an item on the board',onClick:()=>this.setState(s=>({board:s.board.filter(b=>b.id!==s.selB),selB:null}))}];bottom=[{icon:S.panel?'panel-right-close':'panel-right-open',label:S.panel?'Hide panel':'Show panel',onClick:()=>this.setState(s=>({panel:!s.panel}))}];railLabel='Assembly';}
+    else if(pg==='assets'){main=[{icon:'plus',label:'Add asset',kbd:'N'},{icon:'trash-2',label:'Delete asset',disabled:!S.selA,why:'Select an asset first',onClick:()=>this.setState(s=>({del:{...s.del,[s.selA]:true},selA:null}))}];bottom=[searchA('assets')];railLabel='Assets';}
+    else if(pg==='assetAssembly'){main=[{icon:'plus',label:'Assign to target',disabled:!chkN,why:'Select assets first',onClick:asmApply(S.asmT.eid)},{icon:'trash-2',label:'Unassign from episode',disabled:!chkN,why:'Select assets first',onClick:asmApply(null)}];bottom=[{icon:S.asmPanel?'panel-left-close':'panel-left-open',label:S.asmPanel?'Hide panel':'Show panel',onClick:()=>this.setState(s=>({asmPanel:!s.asmPanel}))}];railLabel='Asset Assembly';}
+    else if(pg==='settings'){main=SETS.map(x=>({icon:x.icon,label:x.label,active:S.set===x.key,onClick:()=>this.setState({set:x.key})}));bottom=[back('Back to Projects','projects')];railLabel='Settings';}
+    const mk=(list,pre)=>list.map((a,i)=>{const key=pre+i,dis=!!a.disabled,hov=S.tip===key;return {...a,icon:'icon-'+a.icon,enter:()=>this.setState({tip:key}),showTip:hov,onClick:dis?()=>{}:(a.onClick||(()=>{})),bg:a.active?'var(--rail-active)':hov&&!dis?'var(--rail-hover)':'transparent',fg:a.active||(hov&&!dis)?'#FFFFFF':'var(--rail-ink)',opacity:dis?0.3:1,cursor:dis?'not-allowed':'pointer',hint:dis?a.why:(a.kbd||'')};});
+    const C=(label,fn)=>({label,onClick:fn});
+    const projGroup=['projects','episodes','scenes','episodeManage','sceneManage','sceneAssembly'].includes(pg);
+    let crumbs=[];
+    if(projGroup){crumbs=[C('Projects',()=>this.go('projects'))];if(pg!=='projects')crumbs.push(C(proj.title,()=>this.go('episodes')));if(ep&&['scenes','episodeManage','sceneManage','sceneAssembly'].includes(pg))crumbs.push(C(ep.name,()=>this.go('scenes')));if(scene&&['sceneManage','sceneAssembly'].includes(pg))crumbs.push(C(scene.name,()=>this.go('sceneManage')));}
+    else if(pg==='assets'){const ap=PROJECTS.find(p=>p.id===S.aPid);crumbs=[C('Assets',()=>this.setState({aView:'projects',selA:null}))];if(S.aView!=='projects')crumbs.push(C(ap.title,()=>this.setState({aView:'project',selA:null})));if(S.aView==='episode'){const ae=ap.episodes.find(e=>e.id===S.aEid);crumbs.push(C(ae?ae.name:'',()=>{}));}}
+    else if(pg==='assetAssembly')crumbs=[C('Asset Assembly',()=>{})];
+    else if(pg==='settings')crumbs=[C('Settings',()=>{}),C(SETS.find(x=>x.key===S.set).label,()=>{})];
+    crumbs=crumbs.map((c,i)=>({...c,sep:i>0,color:i===crumbs.length-1?'var(--ink)':'var(--ink-3)',weight:i===crumbs.length-1?500:400}));
+    let title=SUBNAME[pg],count='',subtitle='';
+    if(pg==='projects')count=String(live.length);
+    if(pg==='episodes'){count=String(eps.length);subtitle=`${proj.code} · ${proj.dateText}`;}
+    if(pg==='scenes'&&ep){count=String(scAll.length);subtitle=`${ep.name} · ${ep.workflow} workflow · ${ep.start} – ${ep.end}`;}
+    if(pg==='episodeManage'&&ep)subtitle=`${ep.name} · ${scAll.length} scenes · ${ep.workflow}`;
+    if(pg==='sceneManage'&&scene)subtitle=`${scene.name} · ${ep.name}`;
+    if(pg==='sceneAssembly'&&scene)subtitle=`${scene.name} · ${scene.frames} frames`;
+    if(pg==='settings')title=SETS.find(x=>x.key===S.set).label;
+    const projects=pg==='projects'?live.filter(p=>m(p.title,p.code)).map(p=>this.pv(p)):[];
+    const slideRaw=pg==='projects'&&S.slide&&S.selP?PROJECTS.find(p=>p.id===S.selP):null;
+    const ringOf=pp=>({name:pp.name,color:pp.color,pct:pp.pct+'%',dash:`${(pp.pct*1.0053).toFixed(1)} 101`});
+    const stCol=s=>s==='Complete'?['color-mix(in oklch, var(--ok) 14%, transparent)','var(--ok)']:s==='In progress'?[soft('var(--accent)',14),'var(--accent)']:['var(--chip)','var(--ink-2)'];
+    const episodes=pg==='episodes'?eps.filter(e=>m(e.name,e.code)).map(e=>{const x=this.epStats(e.id);const sc=(S.scenes[e.id]||[]).filter(s=>!S.del[s.id]);const tiles=(sc.length>5?sc.slice(0,4):sc).map(s=>({isEp:true,isMore:false,name:s.name,img:IMG(s.hue),procs:s.tasks.map(t=>({color:STAT[t.status].color,w:'100%'})),onClick:ev=>{ev.stopPropagation();this.go('scenes',{eid:e.id,selS:s.id});}}));if(sc.length>5)tiles.push({isEp:false,isMore:true,name:`+${sc.length-4} more`,img:'var(--sunken)',procs:[],onClick:ev=>{ev.stopPropagation();this.go('scenes',{eid:e.id,selS:null});}});const [sb,sf]=stCol(x.status);return {...e,status:x.status,statusBg:sb,statusFg:sf,rings:x.procs.map(ringOf),img:IMG(e.hue),tiles,noScenes:!sc.length,sceneCount:`${sc.length} scenes`,outline:S.selE===e.id?'2px solid var(--accent)':'2px solid transparent',onClick:()=>this.setState({selE:e.id}),onOpen:ev=>{ev&&ev.stopPropagation&&ev.stopPropagation();this.go('scenes',{eid:e.id,selS:null});},onManage:ev=>{ev.stopPropagation();this.go('episodeManage',{eid:e.id});}};}):[];
+    const scStatus=s=>{const d=s.tasks.filter(t=>t.status===4).length;return d===5?['Complete','#2FA36B']:s.tasks.every(t=>t.status===0)?['Not started','#9A9AA3']:['In progress','#5B8DEF'];};
+    const scenes=pg==='scenes'&&ep?scAll.filter(s=>m(s.name)).map(s=>{const [sn,sd]=scStatus(s);return {...s,img:IMG(s.hue),status:sn,statusDot:sd,prioIcon:PRIO[s.priority].icon,prioFg:PRIO[s.priority].fg,tasks:s.tasks.map((t,j)=>this.tv(ep.id,s,t,j)),outline:S.selS===s.id?'2px solid var(--accent)':'2px solid transparent',onClick:()=>this.setState({selS:s.id}),onOpen:()=>this.go('sceneManage',{sid:s.id})};}):[];
+    const epSummary=ep?this.epStats(ep.id).procs.map((p,j)=>({...p,num:j+1,pct:p.pct+'%'})):[];
+    const emRows=pg==='episodeManage'&&ep?scAll.map(s=>({name:s.name,img:IMG(s.hue),frames:s.frames,cells:s.tasks.map((t,j)=>this.tv(ep.id,s,t,j)),onOpen:()=>this.go('sceneManage',{sid:s.id})})):[];
+    const todosRaw=scope?this.getTodos(scope):[];
+    const todos=todosRaw.map(t=>({...t,bg:S.selTodo===t.id?'var(--chip)':'transparent',onSelect:()=>this.setState({selTodo:S.selTodo===t.id?null:t.id}),onCheck:e=>{e.stopPropagation();this.check(scope,t.id);}}));
+    const commits=scope?this.getCommits(scope):[];
+    let scn={},scTasks=[];
+    if(scene&&ep){const [sn,sd]=scStatus(scene);scn={...scene,img:IMG(scene.hue),status:sn,statusDot:sd,prioIcon:PRIO[scene.priority].icon,epName:ep.name};scTasks=scene.tasks.map((t,j)=>this.tv(ep.id,scene,t,j));}
+    const B=S.board;let kn=0;
+    const board=B.map(b=>{const o={...b,isKf:b.type==='kf',isAsset:b.type==='asset',isFolder:b.type==='folder',isNote:b.type==='note',img:IMG(b.hue||0),bg:b.type==='note'?'color-mix(in oklch, var(--accent) 8%, var(--card))':'var(--card)',outline:S.selB===b.id?'2px solid var(--accent)':'2px solid transparent',onClick:e=>{e.stopPropagation();this.setState({selB:S.selB===b.id?null:b.id});}};if(b.type==='kf')o.num=pad(++kn);return o;});
+    const byId=Object.fromEntries(B.map(b=>[b.id,b]));
+    const arrows=ARROWS.filter(([a,b])=>byId[a]&&byId[b]).map(([ai,bi])=>{const a=byId[ai],b=byId[bi];let x1,y1,x2,y2;if(b.x>a.x+a.w){x1=a.x+a.w;y1=a.y+a.h/2;x2=b.x;y2=b.y+b.h/2;}else if(b.x+b.w<a.x){x1=a.x;y1=a.y+a.h/2;x2=b.x+b.w;y2=b.y+b.h/2;}else if(b.y>a.y+a.h){x1=a.x+a.w/2;y1=a.y+a.h;x2=x1;y2=b.y;}else{x1=a.x+a.w/2;y1=a.y;x2=x1;y2=b.y+b.h;}const dx=x2-x1,dy=y2-y1;return {x:x1,y:y1,len:Math.max(0,Math.hypot(dx,dy)-2),deg:Math.atan2(dy,dx)*180/Math.PI};});
+    const kfN=B.filter(b=>b.type==='kf').length;
+    const sAssets=ASSETS.filter(a=>a.pid===proj.id&&!S.del[a.id]&&(!S.assetEp[a.id]||S.assetEp[a.id]===(ep&&ep.id))).map(a=>({...a,img:IMG(a.hue)}));
+    const aP=PROJECTS.find(p=>p.id===S.aPid);
+    const aAll=ASSETS.filter(a=>a.pid===aP.id&&!S.del[a.id]);
+    const aList=aAll.filter(a=>(S.aView!=='episode'||S.assetEp[a.id]===S.aEid)&&m(a.name,a.code,a.cat));
+    const epName=id=>{const e=PROJECTS.flatMap(p=>p.episodes).find(e=>e.id===id);return e?e.name:'—';};
+    const aRows=aList.map(a=>({...a,img:IMG(a.hue),epName:epName(S.assetEp[a.id]),size:fmtSize(a.mb),prioIcon:PRIO[a.priority].icon,prioFg:PRIO[a.priority].fg,bg:S.selA===a.id?'var(--chip)':'transparent',onClick:()=>this.setState({selA:a.id})}));
+    const isAssets=pg==='assets';
+    const aTabs=[{k:'episodes',label:'Episodes',count:aP.episodes.length},{k:'assets',label:'Assets',count:aAll.length}].map(t=>({...t,bg:S.aTab===t.k?'var(--card)':'transparent',fg:S.aTab===t.k?'var(--ink)':'var(--ink-2)',shadow:S.aTab===t.k?'var(--shadow-sm)':'none',onClick:()=>this.setState({aTab:t.k,selA:null})}));
+    const aSel=isAssets&&S.selA?ASSETS.find(a=>a.id===S.selA):null;
+    const assetD=aSel?{...aSel,img:IMG(aSel.hue),epName:S.assetEp[aSel.id]?epName(S.assetEp[aSel.id]):'Project-level',size:fmtSize(aSel.mb),prioIcon:PRIO[aSel.priority].icon,tasks:aSel.tasks.map(t=>({name:t.name,sname:STAT[t.status].name,scolor:STAT[t.status].color,sbg:soft(STAT[t.status].color,14),uIni:USERS[t.user].ini,uName:USERS[t.user].name}))}:{};
+    if(isAssets){title='Assets';if(S.aView==='project')title=aP.title;if(S.aView==='episode')title=epName(S.aEid);if(S.aView!=='projects')count=String(aList.length)+' assets';}
+    const tP=PROJECTS.find(p=>p.id===S.asmT.pid);
+    const asmTree=PROJECTS.map(p=>{const open=!!S.asmOpen[p.id];return {title:p.title,img:p.noImage?NOIMG:IMG(p.hue),count:ASSETS.filter(a=>a.pid===p.id).length,chev:p.episodes.length?(open?'icon-chevron-down':'icon-chevron-right'):'icon-dot',bg:S.asmT.pid===p.id&&!S.asmT.eid?'var(--chip)':'transparent',onToggle:()=>this.setState(s=>({asmOpen:{...s.asmOpen,[p.id]:!s.asmOpen[p.id]}})),onPick:()=>this.setState({asmT:{pid:p.id,eid:null},asmChk:{}}),eps:open?p.episodes.map(e=>({name:e.name,count:Object.values(S.assetEp).filter(v=>v===e.id).length||'',bg:S.asmT.eid===e.id?'var(--ink)':'transparent',fg:S.asmT.eid===e.id?'var(--panel)':'var(--ink)',onPick:()=>this.setState({asmT:{pid:p.id,eid:e.id},asmChk:{}})})):[]};});
+    const asmCards=ASSETS.filter(a=>a.pid===tP.id&&!S.del[a.id]).map(a=>{const c=!!S.asmChk[a.id];return {...a,img:IMG(a.hue),where:S.assetEp[a.id]?epName(S.assetEp[a.id]):'Project',outline:c?'2px solid var(--accent)':'2px solid transparent',boxBg:c?'var(--accent)':'rgba(0,0,0,.25)',boxIcon:c?'icon-check':'',onToggle:()=>this.setState(s=>({asmChk:{...s.asmChk,[a.id]:!s.asmChk[a.id]}}))};});
+    const wf=WFS[S.wf];
+    const sizeMax=Math.max(...PROJECTS.map(p=>ASSETS.filter(a=>a.pid===p.id).reduce((x,y)=>x+y.mb,0)),1);
+    const grp=projGroup?'projects':pg;
+    const curPage=PAGES.find(p=>p.key===grp);
+    const userItems=[{k:'profile',label:'Profile',icon:'icon-user'},{k:'theme',label:S.theme==='light'?'Dark mode':'Light mode',icon:S.theme==='light'?'icon-moon':'icon-sun',onClick:()=>this.setState(s=>({theme:s.theme==='light'?'dark':'light'}))},{k:'logout',label:'Log out',icon:'icon-log-out'}].map(u=>({...u,onClick:u.onClick||(()=>{}),enter:()=>this.setState({tip:'u-'+u.k}),showTip:S.tip==='u-'+u.k}));
+    const pageItems=PAGES.map(p=>{const cur=p.key===grp;return {...p,enter:()=>this.setState({tip:'p-'+p.key}),showTip:S.tip==='p-'+p.key,hint:p.disabled?'Coming soon':cur?'Current':'',bg:cur?'var(--ink)':'transparent',fg:cur?'var(--panel)':'var(--ink-2)',opacity:p.disabled?0.35:1,cursor:p.disabled?'not-allowed':'pointer',onClick:p.disabled?()=>{}:()=>this.go(p.key,p.key==='assets'?{aView:'projects'}:{})};});
+    return {
+      theme:S.theme,narrow:S.narrow,stop,leaveTip,railMain:mk(main,'m'),railBottom:mk(bottom,'b'),railLabel,crumbs,title,count,hasCount:!!count,subtitle,hasSubtitle:!!subtitle,
+      searchOpen:S.search,q:S.q,onQ:e=>this.setState({q:e.target.value}),closeSearch:()=>this.setState({search:false,q:''}),searchPh:`Search ${noun==='items'?'assets':noun}…`,
+      showState,st,skel3:[1,2,3],skel5:[1,2,3,4,5],skel8:[1,2,3,4,5,6,7,8],
+      isProjects:pg==='projects'&&!showState,projects,hasSlideP:!!slideRaw,slideP:slideRaw?this.pv(slideRaw):{},closeSlide:()=>this.setState({slide:false}),
+      isEpisodes:pg==='episodes'&&!showState,episodes,isScenes:pg==='scenes'&&!showState,scenes,epSummary,
+      isManage:pg==='episodeManage'||pg==='sceneManage',isEpManage:pg==='episodeManage',isScManage:pg==='sceneManage',emProcs:PROC.map((p,j)=>({...p,num:j+1})),emRows,todos,commits,todoCount:String(todos.length),commitCount:String(commits.length),noTodos:!todos.length,addTodo:todoAdd,scn,scTasks,openAssembly:()=>this.go('sceneAssembly'),
+      isAssembly:pg==='sceneAssembly',board,arrows,panelOpen:S.panel,sceneAssets:sAssets,sceneAssetsN:String(sAssets.length),boardSummary:`${kfN} keyframes · ${B.filter(b=>b.type==='asset').length} assets · ${B.filter(b=>b.type==='folder').length} folder · ${B.filter(b=>b.type==='note').length} comments`,
+      isAssets,aIsPosters:isAssets&&S.aView==='projects',posters:PROJECTS.map(p=>{const pa=ASSETS.filter(a=>a.pid===p.id);return {title:p.title,code:p.code,img:p.noImage?NOIMG:IMG(p.hue),noImg:!!p.noImage,hasImg:!p.noImage,initials:p.initials,meta:`${pa.length} assets · ${fmtSize(pa.reduce((a,b)=>a+b.mb,0))}`,onClick:()=>this.setState({aView:'project',aPid:p.id,selA:null})};}),
+      aHasTabs:isAssets&&S.aView==='project',aTabs,aShowEpisodes:isAssets&&S.aView==='project'&&S.aTab==='episodes',aShowTable:isAssets&&(S.aView==='episode'||(S.aView==='project'&&S.aTab==='assets')),aEpTiles:aP.episodes.map(e=>({name:e.name,img:IMG(e.hue),count:`${Object.values(S.assetEp).filter(v=>v===e.id).length} assets`,onClick:()=>this.setState({aView:'episode',aEid:e.id,selA:null})})),aRows,aNoRows:!aRows.length,hasAssetD:!!aSel,assetD,closeAsset:()=>this.setState({selA:null}),
+      isAsm:pg==='assetAssembly',asmPanel:S.asmPanel,asmTree,asmCards,asmTarget:S.asmT.eid?`${tP.title} / ${epName(S.asmT.eid)}`:`${tP.title} (project-level)`,asmCount:chkN?`${chkN} selected`:'Select assets to assign',asmOpacity:chkN?1:0.4,asmAssign:asmApply(S.asmT.eid),asmUnassign:asmApply(null),
+      isSettings:pg==='settings',setProjects:S.set==='projects',setUsers:S.set==='users',setSecurity:S.set==='security',setWorkflows:S.set==='workflows',setStorage:S.set==='storage',
+      sProjects:PROJECTS.map(p=>this.pv(p)),sUsers:USERS.map((u,i)=>({...u,isOwner:u.role==='Owner',notOwner:u.role!=='Owner',role:S.roles[i]||u.role,onRole:e=>this.setState(s=>({roles:{...s.roles,[i]:e.target.value}}))})),
+      workflows:WFS.map((w,i)=>({name:w.name,type:w.type+' workflow',meta:`${w.procs.length} processes · ${w.stats.length} statuses`,procs:w.procs,bg:S.wf===i?'var(--chip)':'transparent',onClick:()=>this.setState({wf:i})})),wfName:wf.name,wfProcs:wf.procs.map((p,j)=>({...p,num:j+1})),wfStats:wf.stats.map(s=>({...s,pct:s.pct+'%',bg:soft(s.color,14)})),
+      drive:S.drive?{on:true,label:'Connected',sub:'drive@lanternworks.studio · root folder “Production OS”',pillBg:'color-mix(in oklch, var(--ok) 14%, transparent)',pillFg:'var(--ok)',btn:'Disconnect',btnIcon:'icon-unplug',btnBg:'transparent',btnFg:'var(--ink)'}:{on:false,label:'Not connected',sub:'Connect a Google Drive account to store asset files.',pillBg:'var(--chip)',pillFg:'var(--ink-2)',btn:'Connect Google Drive',btnIcon:'icon-link',btnBg:'var(--ink)',btnFg:'var(--panel)'},toggleDrive:()=>this.setState(s=>({drive:!s.drive})),
+      storageRows:PROJECTS.map(p=>{const pa=ASSETS.filter(a=>a.pid===p.id);const mb=pa.reduce((a,b)=>a+b.mb,0);return {title:p.title,w:(mb/sizeMax*100)+'%',files:pa.reduce((a,b)=>a+b.files,0),size:fmtSize(mb)};}),
+      swOpen:S.sw,toggleSw:()=>this.setState(s=>({sw:!s.sw,tip:null})),closeSw:()=>this.setState({sw:false}),enterAvatar:()=>this.setState({tip:'avatar'}),enterPage:()=>this.setState({tip:'page'}),avatarTip:S.tip==='avatar'&&!S.sw,pageTipOn:S.tip==='page'&&!S.sw,pageTip:projGroup&&pg!=='projects'?`Projects · ${SUBNAME[pg]}`:curPage.label,pageIcon:curPage.icon,pageBtnBg:S.sw?'var(--ink)':'var(--card)',pageBtnFg:S.sw?'var(--panel)':'var(--ink)',userItems,pageItems
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -990,3 +990,15 @@ export async function updateTaskAssignee(
 
   revalidatePath("/projects", "layout");
 }
+
+export async function deleteSceneV2(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("scenes").delete().eq("id", id);
+
+  if (error) {
+    throw formatPostgrestError("deleteSceneV2", error);
+  }
+
+  revalidatePath("/projects", "layout");
+}
+

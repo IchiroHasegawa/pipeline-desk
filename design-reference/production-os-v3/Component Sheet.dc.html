@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.469.0/font/lucide.css">
+<style>
+:root,[data-theme="light"]{--bg:#E8E8E6;--panel:#F4F4F2;--card:#FFFFFF;--sunken:#ECECEA;--line:rgba(20,20,24,.07);--line-2:rgba(20,20,24,.13);--ink:#18181B;--ink-2:#56565D;--ink-3:#8B8B93;--chip:rgba(20,20,24,.05);--rail:#1F1F22;--rail-ink:#9C9CA4;--accent:oklch(0.57 0.15 262);--ok:#2FA36B;--tip:#18181B;--tip-ink:#FFFFFF;--shadow-sm:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.03);--shadow:0 1px 2px rgba(0,0,0,.05),0 12px 32px rgba(0,0,0,.06);--shadow-lg:0 24px 64px rgba(0,0,0,.16)}
+[data-theme="dark"]{--bg:#0C0C0E;--panel:#141416;--card:#1B1B1E;--sunken:#111113;--line:rgba(255,255,255,.06);--line-2:rgba(255,255,255,.12);--ink:#EDEDEF;--ink-2:#A4A4AC;--ink-3:#6F6F77;--chip:rgba(255,255,255,.06);--rail:#2A2A2E;--rail-ink:#9C9CA4;--accent:oklch(0.68 0.14 262);--ok:#3DB87C;--tip:#F2F2F3;--tip-ink:#18181B;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow:0 12px 32px rgba(0,0,0,.35);--shadow-lg:0 24px 64px rgba(0,0,0,.6)}
+html,body{margin:0;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}a:hover{color:var(--accent)}
+[class^="icon-"],[class*=" icon-"]{line-height:1;display:inline-block}
+</style>
+</helmet>
+<section data-theme="{{ theme }}" data-screen-label="Component sheet" style="background:var(--bg);color:var(--ink);font-family:Inter,sans-serif;padding:56px;display:flex;flex-direction:column;gap:32px;width:1800px;box-sizing:border-box;">
+  <div style="display:flex;align-items:baseline;gap:14px;"><h1 style="margin:0;font-size:32px;font-weight:600;letter-spacing:-0.025em;">Production OS — Components</h1><span style="font-size:14px;color:var(--ink-3);">Inter · Lucide · one accent · data colours from the database</span></div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;">
+    <div id="c1" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:20px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Action rail button</span>
+      <div style="display:flex;gap:28px;align-items:flex-start;">
+        <div style="width:56px;border-radius:28px;background:var(--rail);padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--rail-ink);"><i class="icon-plus"></i></span>
+          <span style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#FFFFFF;background:rgba(255,255,255,.09);"><i class="icon-sliders-horizontal"></i></span>
+          <span style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#FFFFFF;background:rgba(255,255,255,.17);"><i class="icon-workflow"></i></span>
+          <span style="width:44px;height:44px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--rail-ink);opacity:.3;"><i class="icon-trash-2"></i></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2);">
+          <span style="height:48px;display:flex;align-items:center;">Default</span>
+          <span style="height:48px;display:flex;align-items:center;gap:10px;">Hover<span style="background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;">Manage project</span></span>
+          <span style="height:48px;display:flex;align-items:center;">Active (Settings section)</span>
+          <span style="height:48px;display:flex;align-items:center;gap:10px;">Disabled<span style="background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;">Delete project <span style="opacity:.55;font-weight:400;">Select a project first</span></span></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="c2" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:20px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Page switcher — closed · hover · open</span>
+      <div style="display:flex;gap:44px;align-items:flex-start;justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <span style="position:relative;width:48px;height:48px;border-radius:24px;border:2px solid var(--card);background:color-mix(in oklch, var(--accent) 18%, var(--card));color:var(--accent);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);box-sizing:border-box;">MK<span style="position:absolute;right:-4px;top:-4px;width:20px;height:20px;border-radius:10px;background:var(--ink);color:var(--panel);display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--panel);"><i class="icon-crown"></i></span></span>
+          <span style="width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:var(--card);font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);box-sizing:border-box;"><i class="icon-folder-kanban"></i></span>
+          <span style="font-size:12px;color:var(--ink-3);margin-top:6px;">Closed</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;">
+          <span style="width:48px;height:48px;border-radius:24px;border:2px solid var(--card);background:color-mix(in oklch, var(--accent) 18%, var(--card));color:var(--accent);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);box-sizing:border-box;">MK</span>
+          <span style="position:relative;width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:var(--card);font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);box-sizing:border-box;"><i class="icon-folder-kanban"></i><span style="position:absolute;right:58px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;">Projects · Scenes</span></span>
+          <span style="font-size:12px;color:var(--ink-3);margin-top:6px;">Hover</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <span style="width:48px;height:48px;border-radius:24px;border:2px solid var(--card);background:color-mix(in oklch, var(--accent) 18%, var(--card));color:var(--accent);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);box-sizing:border-box;">MK</span>
+          <span style="width:48px;height:48px;border-radius:24px;background:var(--ink);color:var(--panel);font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);"><i class="icon-folder-kanban"></i></span>
+          <div style="padding:5px;border-radius:28px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;align-items:center;gap:4px;">
+            <sc-for list="{{ userItems }}" as="u"><span style="position:relative;width:40px;height:40px;border-radius:20px;color:var(--ink-2);font-size:17px;display:flex;align-items:center;justify-content:center;background:{{ u.bg }};"><i class="{{ u.icon }}"></i><sc-if value="{{ u.tip }}"><span style="position:absolute;right:52px;background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;">{{ u.label }}</span></sc-if></span></sc-for>
+            <div style="width:22px;height:1px;background:var(--line-2);margin:3px 0;"></div>
+            <sc-for list="{{ pageItems }}" as="u"><span style="position:relative;width:40px;height:40px;border-radius:20px;font-size:17px;display:flex;align-items:center;justify-content:center;background:{{ u.bg }};color:{{ u.fg }};opacity:{{ u.op }};"><i class="{{ u.icon }}"></i><sc-if value="{{ u.tip }}"><span style="position:absolute;right:52px;background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;white-space:nowrap;">{{ u.label }}</span></sc-if></span></sc-for>
+          </div>
+          <span style="font-size:12px;color:var(--ink-3);margin-top:6px;">Open</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="c3" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:22px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Status chip · Assignee · Tooltip</span>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <sc-for list="{{ stats }}" as="s"><span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 22px 0 9px;border-radius:999px;background:{{ s.bg }};font-size:12px;font-weight:500;position:relative;"><span style="width:7px;height:7px;border-radius:4px;background:{{ s.color }};"></span>{{ s.name }}<i class="icon-chevron-down" style="position:absolute;right:7px;font-size:12px;color:var(--ink-3);"></i></span></sc-for>
+      </div>
+      <div style="display:flex;gap:28px;align-items:flex-start;">
+        <span style="display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 22px 0 3px;border-radius:999px;border:1px solid var(--line);font-size:12px;position:relative;"><span style="width:20px;height:20px;border-radius:10px;background:var(--chip);font-size:8px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;">AL</span>Ana<i class="icon-chevron-down" style="position:absolute;right:6px;font-size:12px;color:var(--ink-3);"></i></span>
+        <div style="width:200px;padding:5px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;gap:1px;">
+          <sc-for list="{{ users }}" as="u"><span style="display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;font-size:13px;background:{{ u.bg }};"><span style="width:22px;height:22px;border-radius:11px;background:var(--chip);font-size:9px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;">{{ u.ini }}</span>{{ u.name }}<sc-if value="{{ u.sel }}"><i class="icon-check" style="margin-left:auto;font-size:14px;color:var(--accent);"></i></sc-if></span></sc-for>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;"><span style="background:var(--tip);color:var(--tip-ink);font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;box-shadow:var(--shadow);">Create project <span style="opacity:.55;font-weight:400;">N</span></span><span style="font-size:12px;color:var(--ink-3);">12px / 500 · radius 8 · 8px from trigger</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;">
+    <div id="c4" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:20px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Project card — default / selected</span>
+      <div style="display:grid;grid-template-columns:minmax(0,34%) minmax(0,1fr);gap:24px;padding:14px;border-radius:24px;background:var(--card);border:1px solid var(--line);outline:2px solid var(--accent);outline-offset:-1px;">
+        <div style="aspect-ratio:16/9;border-radius:16px;background:{{ img1 }};"></div>
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:0;">
+          <span style="font-size:20px;font-weight:600;letter-spacing:-0.02em;">Lanternfall</span>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);"><span style="font-weight:600;font-size:11px;letter-spacing:.06em;color:var(--ink);background:var(--chip);padding:4px 8px;border-radius:6px;">LNF</span><span style="display:inline-flex;align-items:center;gap:6px;font-weight:500;padding:3px 10px 3px 8px;border-radius:999px;background:color-mix(in oklch, var(--accent) 14%, transparent);color:var(--accent);"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>Active</span><span>03 Aug 2026 – 18 Dec 2026 · 19W 4Days</span><span style="font-weight:500;color:var(--ink);">12 episodes</span></div>
+          <p style="margin:0;font-size:13px;line-height:20px;color:var(--ink-2);max-height:40px;overflow:hidden;">A lighthouse keeper’s daughter follows a drifting lantern across a flooded archipelago, trading stories with the tide spirits who keep the old charts.</p>
+          <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:auto;">
+            <sc-for list="{{ tiles }}" as="t"><div style="position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:{{ t.img }};"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.55));"></div><div style="position:absolute;left:8px;right:8px;bottom:7px;display:flex;flex-direction:column;gap:5px;"><span style="color:#FFFFFF;font-size:11px;font-weight:600;">{{ t.name }}</span><div style="display:flex;gap:2px;height:3px;"><sc-for list="{{ procs }}" as="s"><div style="flex:1;background:rgba(255,255,255,.28);border-radius:2px;overflow:hidden;"><div style="height:100%;width:{{ s.w }};background:{{ s.color }};"></div></div></sc-for></div></div></div></sc-for>
+            <div style="aspect-ratio:16/9;border-radius:10px;background:var(--sunken);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--ink-2);">+8 more</div>
+          </div>
+        </div>
+      </div>
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Episode tile — progress · more · empty · missing image</span>
+      <div style="display:grid;grid-template-columns:repeat(4,200px);gap:12px;">
+        <div style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:{{ img2 }};"><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.55));"></div><div style="position:absolute;left:10px;right:10px;bottom:9px;display:flex;flex-direction:column;gap:6px;"><span style="color:#FFFFFF;font-size:12px;font-weight:600;">EP_104</span><div style="display:flex;gap:2px;height:3px;"><sc-for list="{{ procs }}" as="s"><div style="flex:1;background:rgba(255,255,255,.28);border-radius:2px;overflow:hidden;"><div style="height:100%;width:{{ s.w }};background:{{ s.color }};"></div></div></sc-for></div></div></div>
+        <div style="aspect-ratio:16/9;border-radius:12px;background:var(--sunken);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink-2);">+8 more<i class="icon-arrow-right" style="font-size:13px;"></i></div>
+        <div style="aspect-ratio:16/9;border-radius:12px;border:1.5px dashed var(--line-2);display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--ink-3);box-sizing:border-box;"><i class="icon-clapperboard"></i>No episodes yet</div>
+        <div style="aspect-ratio:16/9;border-radius:12px;background:linear-gradient(145deg, var(--sunken), var(--chip));border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:600;color:var(--ink-3);">SP</div>
+      </div>
+    </div>
+
+    <div id="c5" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:20px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Scene card</span>
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:10px;">
+        <div style="position:relative;aspect-ratio:16/7;border-radius:12px;background:{{ img3 }};"><span style="position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;padding:3px 9px 3px 7px;border-radius:999px;background:rgba(255,255,255,.9);color:#18181B;"><span style="width:6px;height:6px;border-radius:3px;background:#5B8DEF;"></span>In progress</span></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:0 4px;"><span style="font-size:15px;font-weight:600;">104_006</span><span style="flex:1;"></span><span style="font-size:12px;color:var(--ink-2);">186 fr</span><span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--chip);display:inline-flex;gap:4px;align-items:center;"><i class="icon-chevrons-up"></i>High</span></div>
+        <sc-for list="{{ tasks }}" as="k">
+          <div style="display:grid;grid-template-columns:20px minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:4px;">
+            <span style="width:20px;height:20px;border-radius:6px;background:{{ k.pcolor }};color:#FFFFFF;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ k.num }}</span>
+            <span style="font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ k.pname }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 22px 0 9px;border-radius:999px;background:{{ k.sbg }};font-size:12px;font-weight:500;position:relative;"><span style="width:7px;height:7px;border-radius:4px;background:{{ k.scolor }};"></span>{{ k.sname }}<i class="icon-chevron-down" style="position:absolute;right:7px;font-size:12px;color:var(--ink-3);"></i></span>
+            <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 20px 0 3px;border-radius:999px;border:1px solid var(--line);font-size:12px;position:relative;"><span style="width:18px;height:18px;border-radius:9px;background:var(--chip);font-size:8px;font-weight:700;color:var(--ink-2);display:flex;align-items:center;justify-content:center;">{{ k.ini }}</span>{{ k.first }}<i class="icon-chevron-down" style="position:absolute;right:6px;font-size:12px;color:var(--ink-3);"></i></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;">
+    <div id="c6" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:20px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Process progress — ring / bar</span>
+      <div style="display:flex;flex-wrap:wrap;gap:14px 24px;">
+        <sc-for list="{{ rings }}" as="r"><div style="display:flex;align-items:center;gap:10px;"><div style="position:relative;width:40px;height:40px;"><svg width="40" height="40" viewBox="0 0 40 40" style="transform:rotate(-90deg);display:block;"><circle cx="20" cy="20" r="16" fill="none" stroke-width="4" style="stroke:var(--chip);"></circle><circle cx="20" cy="20" r="16" fill="none" stroke-width="4" stroke="{{ r.color }}" stroke-dasharray="{{ r.dash }}"></circle></svg><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">{{ r.pct }}</span></div><span style="font-size:12px;font-weight:500;">{{ r.name }}</span></div></sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <sc-for list="{{ rings }}" as="r"><div style="display:grid;grid-template-columns:130px minmax(0,1fr) 40px;gap:12px;align-items:center;font-size:12px;"><span style="font-weight:500;">{{ r.name }}</span><div style="height:4px;border-radius:2px;background:var(--chip);overflow:hidden;"><div style="height:100%;width:{{ r.pct }};background:{{ r.color }};"></div></div><span style="text-align:right;color:var(--ink-2);font-weight:600;">{{ r.pct }}</span></div></sc-for>
+      </div>
+    </div>
+    <div id="c7" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:14px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">To Do row — default / selected</span>
+      <div style="display:flex;gap:10px;padding:10px;border-radius:12px;background:var(--card);border:1px solid var(--line);"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-2);flex:none;box-sizing:border-box;"></span><div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;">Lock layout for 104_006 after director notes</span><span style="font-size:11px;color:var(--ink-3);">104_006 · JR</span></div></div>
+      <div style="display:flex;gap:10px;padding:10px;border-radius:12px;background:var(--chip);"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid var(--accent);flex:none;box-sizing:border-box;"></span><div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;">Collect retake notes from Friday review</span><span style="font-size:11px;color:var(--ink-3);">EP_104 · MK</span></div></div>
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-top:8px;">Commit row</span>
+      <div style="display:flex;gap:10px;padding:10px;border-radius:12px;background:var(--card);border:1px solid var(--line);"><span style="width:18px;height:18px;border-radius:9px;background:color-mix(in oklch, var(--accent) 16%, transparent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;flex:none;"><i class="icon-check"></i></span><div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:13px;color:var(--ink-2);">Clean-up pass approved on 104_002</span><span style="font-size:11px;color:var(--ink-3);"><b style="color:var(--ink-2);font-weight:600;">Today 14:32</b> · 104_002 · AL</span></div></div>
+    </div>
+    <div id="c8" style="background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:28px;display:flex;flex-direction:column;gap:14px;">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;">Buttons · pills · badges</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <span style="height:36px;padding:0 16px;border-radius:999px;background:var(--ink);color:var(--panel);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:8px;">Open project<i class="icon-arrow-right"></i></span>
+        <span style="height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line-2);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:8px;box-sizing:border-box;">Manage</span>
+        <span style="font-size:12px;font-weight:600;color:var(--ink-2);background:var(--chip);padding:3px 9px;border-radius:999px;">12</span>
+        <span style="font-weight:600;font-size:11px;letter-spacing:.06em;background:var(--chip);padding:4px 8px;border-radius:6px;">LNF</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12px;font-weight:500;">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;background:color-mix(in oklch, var(--accent) 14%, transparent);color:var(--accent);"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>Active</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;background:var(--chip);color:var(--ink-2);"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>Retired</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;background:color-mix(in oklch, var(--ok) 14%, transparent);color:var(--ok);"><span style="width:6px;height:6px;border-radius:3px;background:currentColor;"></span>Complete</span>
+        <span style="color:var(--ink-3);border:1px dashed var(--line-2);padding:2px 8px;border-radius:999px;font-weight:400;">Coming soon</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <sc-for list="{{ rings }}" as="r"><span style="width:24px;height:24px;border-radius:7px;background:{{ r.color }};color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ r.num }}</span></sc-for>
+        <span style="font-size:12px;color:var(--ink-3);align-self:center;padding-left:6px;">Process number badges</span>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const PROC=[{name:'Layout',color:'#5B8DEF',pct:100},{name:'Rough Animation',color:'#9A7AE6',pct:85},{name:'Clean-up',color:'#2FB0A0',pct:60},{name:'Colour',color:'#E39A2D',pct:25},{name:'Compositing',color:'#E0617B',pct:0}];
+const STAT=[{name:'Not started',color:'#9A9AA3'},{name:'In progress',color:'#5B8DEF'},{name:'Review',color:'#E39A2D'},{name:'Retake',color:'#E5534B'},{name:'Approved',color:'#2FA36B'}];
+const IMG=h=>`repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 1px, transparent 1px 11px), linear-gradient(145deg, oklch(0.76 0.055 ${h}), oklch(0.5 0.065 ${(h+40)%360}))`;
+const soft=c=>`color-mix(in oklch, ${c} 14%, transparent)`;
+class Component extends DCLogic {
+  renderVals(){
+    const users=[['MK','Mika Kato'],['JR','Jonas Reyes'],['AL','Ana Lindqvist'],['TS','Tomás Silva'],['PN','Priya Nair']].map(([ini,name])=>({ini,name,sel:ini==='AL',bg:ini==='AL'?'var(--chip)':'transparent'}));
+    const tk=[[4,'JR','Jonas'],[4,'AL','Ana'],[2,'DW','Dae-ho'],[1,'PN','Priya'],[0,'TS','Tomás']];
+    return {
+      theme:this.props.theme||'light',
+      userItems:[['icon-user','Profile'],['icon-moon','Dark mode'],['icon-log-out','Log out']].map(([icon,label],i)=>({icon,label,tip:i===1,bg:i===1?'var(--chip)':'transparent'})),
+      pageItems:[['icon-folder-kanban','Projects',true],['icon-boxes','Assets'],['icon-layers','Asset Assembly'],['icon-chart-column','Reports · Coming soon',false,true],['icon-settings','Settings']].map(([icon,label,cur,dis])=>({icon,label,tip:!!dis,bg:cur?'var(--ink)':'transparent',fg:cur?'var(--panel)':'var(--ink-2)',op:dis?0.35:1})),
+      stats:STAT.map(s=>({...s,bg:soft(s.color)})),users,
+      img1:IMG(235),img2:IMG(320),img3:IMG(260),
+      tiles:[235,264,293,322].map((h,i)=>({img:IMG(h),name:'EP_10'+(i+1)})),
+      procs:PROC.map(p=>({color:p.color,w:p.pct+'%'})),
+      rings:PROC.map((p,j)=>({...p,num:j+1,pct:p.pct+'%',dash:`${(p.pct*1.0053).toFixed(1)} 101`})),
+      tasks:PROC.map((p,j)=>{const [s,ini,first]=tk[j];return {num:j+1,pname:p.name,pcolor:p.color,sname:STAT[s].name,scolor:STAT[s].color,sbg:soft(STAT[s].color),ini,first};})
+    };
+  }
+}
+</script>
+</body>
+</html>
