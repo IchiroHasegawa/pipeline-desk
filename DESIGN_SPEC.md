@@ -1,3 +1,5 @@
+> SUPERSEDED: the current approved design is design-reference/production-os-v3/DESIGN_SPEC_V3.md (Production OS redesign, Oct 2026). This file is kept for history only.
+
 # Production OS — Design Specification
 
 Every value here is measured from the Figma file `NgBOa9Lt1AiTeFGEKgft12`, node

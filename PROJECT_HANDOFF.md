@@ -1,3 +1,5 @@
+> **UI Redesign Note (October 2026)**: The Production OS user interface was completely redesigned and cut over to canonical routes (`/projects`, `/assets/manage`, `/assets/assembly`, `/settings`). Active UI components reside in `components/app-shell/`, `components/projects-v3/`, `components/episodes-v3/`, `components/scenes-v3/`, `components/manage-v3/`, `components/assets-v3/`, `components/assembly-v3/`, `components/board-v3/`, `components/settings-v3/`, and `components/forms/`. Legacy Environment-era component descriptions and paths below are kept for historical reference only.
+
 # Production OS Project Handoff
 
 ## Product Name

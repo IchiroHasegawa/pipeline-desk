@@ -1,6 +1,11 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 
 type Theme = "light" | "dark";
 
@@ -12,35 +17,38 @@ interface ThemeContextType {
 
 const STORAGE_KEY = "production-os-theme";
 
+const listeners = new Set<() => void>();
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
+function getSnapshot(): Theme {
+  if (typeof document === "undefined") return "light";
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+function getServerSnapshot(): Theme {
+  return "light";
+}
+
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    const storedTheme = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    let initialTheme: Theme;
-
-    if (storedTheme === "light" || storedTheme === "dark") {
-      initialTheme = storedTheme;
-    } else {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      initialTheme = prefersDark ? "dark" : "light";
-    }
-
-    setThemeState(initialTheme);
-    document.documentElement.dataset.theme = initialTheme;
+  const setTheme = useCallback((t: Theme) => {
+    document.documentElement.dataset.theme = t;
+    try {
+      localStorage.setItem(STORAGE_KEY, t);
+    } catch {}
+    listeners.forEach((l) => l());
   }, []);
 
-  const setTheme = (t: Theme) => {
-    setThemeState(t);
-    document.documentElement.dataset.theme = t;
-    localStorage.setItem(STORAGE_KEY, t);
-  };
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+  const toggleTheme = useCallback(
+    () => setTheme(getSnapshot() === "dark" ? "light" : "dark"),
+    [setTheme]
+  );
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
