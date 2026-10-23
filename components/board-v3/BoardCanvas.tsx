@@ -26,6 +26,13 @@ import ArrowElement from "@/components/board-v3/elements/ArrowElement";
 
 export interface BoardCanvasHandle {
   deleteSelection: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+  fitToContent: () => void;
+  getZoom: () => number;
+  toggleSelected?: (id: string) => void;
+  clearSelection?: () => void;
 }
 
 export type BoardCanvasProps = {
@@ -53,6 +60,8 @@ export type BoardCanvasProps = {
   preSelectedId?: string | null;
   onSelectionChange?: (ids: string[]) => void;
   confirmDelete?: (message: string) => Promise<boolean>;
+  onZoomChange?: (zoom: number) => void;
+  className?: string;
 };
 
 const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
@@ -74,6 +83,8 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
       preSelectedId = null,
       onSelectionChange,
       confirmDelete,
+      onZoomChange,
+      className,
     },
     ref
   ) => {
@@ -112,7 +123,15 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
 
     // Refs for tracking in-flight drag without per-pointermove renders
     const isPanningRef = useRef(false);
+    const [isPanning, setIsPanning] = useState(false);
+    const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+    const isSpacePressedRef = useRef(false);
     const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+    const zoomRef = useRef(zoom);
+    zoomRef.current = zoom;
+    const panRef = useRef(pan);
+    panRef.current = pan;
 
     const draggingIdsRef = useRef<string[]>([]);
     const dragStartPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -144,19 +163,158 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
       return counts;
     }, [elements]);
 
-    // Zoom & Wheel handler
-    const handleWheel = useCallback((e: React.WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
+    // Zoom toward a point (or viewport center if cx, cy omitted)
+    const zoomTo = useCallback(
+      (nz: number, cx?: number, cy?: number) => {
+        const clampedZoom = Math.min(3, Math.max(0.25, nz));
+        const currentZoom = zoomRef.current;
+        const currentPan = panRef.current;
+
+        let centerScreenX = cx;
+        let centerScreenY = cy;
+
+        if (centerScreenX == null || centerScreenY == null) {
+          const container = containerRef.current;
+          centerScreenX = container ? container.clientWidth / 2 : window.innerWidth / 2;
+          centerScreenY = container ? container.clientHeight / 2 : window.innerHeight / 2;
+        }
+
+        const k = clampedZoom / currentZoom;
+        const newPan = {
+          x: centerScreenX - (centerScreenX - currentPan.x) * k,
+          y: centerScreenY - (centerScreenY - currentPan.y) * k,
+        };
+
+        setZoom(clampedZoom);
+        setPan(newPan);
+        onZoomChange?.(clampedZoom);
+      },
+      [onZoomChange]
+    );
+
+    // Native non-passive wheel listener on canvas container to prevent browser zoom
+    useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const onWheelNative = (e: WheelEvent) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const rect = container.getBoundingClientRect();
+          const cursorX = e.clientX - rect.left;
+          const cursorY = e.clientY - rect.top;
+          // Trackpad pinch or Ctrl/Cmd + wheel -> zoom towards cursor
+          const currentZoom = zoomRef.current;
+          const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+          const rawFactor = Math.exp(-delta * 0.002);
+          const factor = Math.min(1.2, Math.max(0.8, rawFactor));
+          const targetZoom = Math.min(3, Math.max(0.25, currentZoom * factor));
+          zoomTo(targetZoom, cursorX, cursorY);
+          return;
+        }
+
+        // Check if event target is inside an input/textarea/contenteditable or scrollable element
+        const targetEl = e.target instanceof Element ? e.target : null;
+        if (targetEl) {
+          if (
+            targetEl.closest("input, textarea, [contenteditable='true']") ||
+            (targetEl instanceof HTMLElement && targetEl.isContentEditable)
+          ) {
+            return;
+          }
+
+          let curr: Element | null = targetEl;
+          while (curr && curr !== container) {
+            if (curr instanceof HTMLElement) {
+              const style = window.getComputedStyle(curr);
+              const canScrollY =
+                (style.overflowY === "auto" || style.overflowY === "scroll" || style.overflowY === "overlay") &&
+                curr.scrollHeight > curr.clientHeight;
+              const canScrollX =
+                (style.overflowX === "auto" || style.overflowX === "scroll" || style.overflowX === "overlay") &&
+                curr.scrollWidth > curr.clientWidth;
+
+              if (canScrollY && e.deltaY !== 0) {
+                if (e.deltaY > 0 && curr.scrollTop < curr.scrollHeight - curr.clientHeight - 1) {
+                  return;
+                }
+                if (e.deltaY < 0 && curr.scrollTop > 0) {
+                  return;
+                }
+              }
+
+              if (canScrollX && e.deltaX !== 0) {
+                if (e.deltaX > 0 && curr.scrollLeft < curr.scrollWidth - curr.clientWidth - 1) {
+                  return;
+                }
+                if (e.deltaX < 0 && curr.scrollLeft > 0) {
+                  return;
+                }
+              }
+            }
+            curr = curr.parentElement;
+          }
+        }
+
         e.preventDefault();
-        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-        setZoom((prev) => Math.min(3, Math.max(0.25, prev * zoomFactor)));
-      } else {
+        // Plain wheel or trackpad scroll -> pan both deltaX and deltaY
         setPan((prev) => ({
-          x: prev.x,
+          x: prev.x - e.deltaX,
           y: prev.y - e.deltaY,
         }));
+      };
+
+      container.addEventListener("wheel", onWheelNative, { passive: false });
+      return () => {
+        container.removeEventListener("wheel", onWheelNative);
+      };
+    }, [zoomTo]);
+
+    // Fit content to viewport with 80px padding
+    const fitToContent = useCallback(() => {
+      const contentElements = elements.filter(
+        (e) => e.elementType !== "arrow" && !e.parentFolderId
+      );
+      if (contentElements.length === 0) return;
+
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      for (const el of contentElements) {
+        const w = el.width || (el.elementType === "folder" ? 208 : el.elementType === "comment" ? 230 : 208);
+        const h = el.height || (el.elementType === "folder" ? 64 : el.elementType === "comment" ? 110 : 152);
+        minX = Math.min(minX, el.x);
+        minY = Math.min(minY, el.y);
+        maxX = Math.max(maxX, el.x + w);
+        maxY = Math.max(maxY, el.y + h);
       }
-    }, []);
+
+      const bw = maxX - minX;
+      const bh = maxY - minY;
+      if (bw <= 0 || bh <= 0) return;
+
+      const container = containerRef.current;
+      const cw = container ? container.clientWidth : window.innerWidth;
+      const ch = container ? container.clientHeight : window.innerHeight;
+
+      const padding = 80;
+      const aw = Math.max(10, cw - padding * 2);
+      const ah = Math.max(10, ch - padding * 2);
+
+      const nz = Math.min(3, Math.max(0.25, Math.min(aw / bw, ah / bh)));
+      const newPan = {
+        x: padding + (aw - bw * nz) / 2 - minX * nz,
+        y: padding + (ah - bh * nz) / 2 - minY * nz,
+      };
+
+      setZoom(nz);
+      setPan(newPan);
+      onZoomChange?.(nz);
+    }, [elements, onZoomChange]);
+
+
 
     // Screen to Board coordinates conversion
     const screenToBoard = useCallback(
@@ -201,15 +359,37 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
       }
     }, [selectedIds, elements, elementMap, onElementDelete, onElementsChange, confirmDelete]);
 
-    // Expose deleteSelection handle to parent
+    // Expose handle methods to parent
     useImperativeHandle(
       ref,
       () => ({
         deleteSelection: () => {
           handleDeleteSelection();
         },
+        zoomIn: () => {
+          zoomTo(Math.min(3, zoomRef.current * 1.1));
+        },
+        zoomOut: () => {
+          zoomTo(Math.max(0.25, zoomRef.current * 0.9));
+        },
+        resetZoom: () => {
+          zoomTo(1);
+        },
+        fitToContent,
+        getZoom: () => zoomRef.current,
+        toggleSelected: (id: string) => {
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+          });
+        },
+        clearSelection: () => {
+          setSelectedIds(new Set());
+        },
       }),
-      [handleDeleteSelection]
+      [handleDeleteSelection, zoomTo, fitToContent]
     );
 
     // Keyboard shortcut listener (Delete / Backspace / Escape)
@@ -235,20 +415,43 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [handleDeleteSelection, activeTool, onToolSelect]);
 
-    const isSpacePressedRef = useRef(false);
-
+    // Space key listener for grab & pan
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.code === "Space") isSpacePressedRef.current = true;
+        const active = document.activeElement;
+        if (
+          active?.tagName === "INPUT" ||
+          active?.tagName === "TEXTAREA" ||
+          (active instanceof HTMLElement && active.isContentEditable) ||
+          Boolean(active?.closest?.('[role="textbox"]'))
+        ) {
+          return;
+        }
+        if (e.code === "Space" && !e.repeat) {
+          isSpacePressedRef.current = true;
+          setIsSpaceHeld(true);
+        }
       };
       const handleKeyUp = (e: KeyboardEvent) => {
-        if (e.code === "Space") isSpacePressedRef.current = false;
+        if (e.code === "Space") {
+          isSpacePressedRef.current = false;
+          setIsSpaceHeld(false);
+        }
       };
+      const handleBlur = () => {
+        isSpacePressedRef.current = false;
+        setIsSpaceHeld(false);
+        isPanningRef.current = false;
+        setIsPanning(false);
+      };
+
       window.addEventListener("keydown", handleKeyDown);
       window.addEventListener("keyup", handleKeyUp);
+      window.addEventListener("blur", handleBlur);
       return () => {
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
+        window.removeEventListener("blur", handleBlur);
       };
     }, []);
 
@@ -266,6 +469,7 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
         if (e.button === 1 || isSpacePressedRef.current) {
           // Start Pan
           isPanningRef.current = true;
+          setIsPanning(true);
           panStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
           e.currentTarget.setPointerCapture(e.pointerId);
           return;
@@ -324,6 +528,7 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
     const handleCanvasPointerUp = (e: React.PointerEvent) => {
       if (isPanningRef.current) {
         isPanningRef.current = false;
+        setIsPanning(false);
         try {
           e.currentTarget.releasePointerCapture(e.pointerId);
         } catch {}
@@ -365,6 +570,10 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
       e: React.PointerEvent,
       element: BoardElement
     ) => {
+      if (isSpacePressedRef.current) {
+        // Space + drag pans even when starting over an element
+        return;
+      }
       e.stopPropagation();
 
       // Arrow Tool Connection mode
@@ -680,11 +889,20 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
       [elements]
     );
 
+    const canvasCursor = isPanning
+      ? "grabbing"
+      : isSpaceHeld
+      ? "grab"
+      : activeTool === "arrow"
+      ? "crosshair"
+      : activeTool === "folder" || activeTool === "comment"
+      ? "copy"
+      : "default";
+
     return (
       <div
         ref={containerRef}
         tabIndex={0}
-        onWheel={handleWheel}
         onPaste={handlePaste}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
@@ -692,10 +910,12 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
         onPointerMove={handleCanvasPointerMove}
         onPointerUp={handleCanvasPointerUp}
         style={{
-          backgroundImage: "radial-gradient(var(--po-dot) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
+          backgroundImage: "radial-gradient(var(--po-dot) 1.2px, transparent 1.2px)",
+          backgroundSize: `${22 * zoom}px ${22 * zoom}px`,
+          backgroundPosition: `${pan.x}px ${pan.y}px`,
+          cursor: canvasCursor,
         }}
-        className="relative w-full h-full overflow-hidden bg-[var(--po-sunken)] rounded-[20px] border border-[var(--po-line)] select-none focus:outline-none"
+        className={`relative w-full h-full overflow-hidden bg-[var(--po-sunken)] select-none focus:outline-none ${className || ""}`.trim()}
       >
         {/* Canvas Transform Container */}
         <div
@@ -783,6 +1003,15 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
                     element={el}
                     selected={isSelected}
                     isProjectScoped={scope?.type === "project"}
+                    showCheckbox={scope?.type === "project"}
+                    onToggleCheckbox={(item) => {
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(item.id)) next.delete(item.id);
+                        else next.add(item.id);
+                        return next;
+                      });
+                    }}
                     onSelect={(e) => handleElementPointerDown(e, el)}
                     onDoubleClick={() => setPreviewImage(el.imageUrl || null)}
                   />

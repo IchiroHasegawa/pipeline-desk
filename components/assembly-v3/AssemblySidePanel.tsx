@@ -88,7 +88,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
   return (
     <aside
       aria-label="Scene Assembly Sidebar"
-      className="relative flex h-full w-[300px] flex-col overflow-hidden border-r border-[var(--po-line)] bg-[var(--po-card)] text-[var(--po-ink)] transition-all select-none"
+      className="relative flex h-full w-full flex-col overflow-hidden bg-[var(--po-card)] text-[var(--po-ink)] select-none"
       style={{
         fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
       }}

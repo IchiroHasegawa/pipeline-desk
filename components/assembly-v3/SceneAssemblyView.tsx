@@ -6,12 +6,14 @@ import {
   Trash2,
   PanelLeftClose,
   PanelLeftOpen,
+  PanelTopClose,
+  PanelTopOpen,
   Search,
   X,
   AlertTriangle,
+  Layers,
 } from "lucide-react";
 import {
-  AppShell,
   type RailAction,
   type BreadcrumbItem,
   ConfirmDialog,
@@ -25,6 +27,8 @@ import {
   type BoardTool,
 } from "@/components/board-v3/BoardToolbar";
 import { AssemblySidePanel } from "@/components/assembly-v3/AssemblySidePanel";
+import { AssemblyLayout } from "@/components/assembly-v3/AssemblyLayout";
+import { ZoomControls } from "@/components/assembly-v3/ZoomControls";
 import {
   createElement,
   deleteElement,
@@ -72,6 +76,8 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeTool, setActiveTool] = useState<BoardTool>("select");
   const [isSidebarHidden, setIsSidebarHidden] = useState<boolean>(false);
+  const [isTopBarHidden, setIsTopBarHidden] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -227,13 +233,6 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
       onSelect: () => fileInputRef.current?.click(),
     },
     {
-      key: "toggle-panel",
-      icon: isSidebarHidden ? PanelLeftOpen : PanelLeftClose,
-      label: isSidebarHidden ? "Show panel" : "Hide panel",
-      active: !isSidebarHidden,
-      onSelect: () => setIsSidebarHidden((prev) => !prev),
-    },
-    {
       key: "delete-selected",
       icon: Trash2,
       label: "Delete selected",
@@ -248,38 +247,79 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
         canvasRef.current?.deleteSelection();
       },
     },
+    {
+      key: "search",
+      icon: Search,
+      label: "Search board",
+      active: searchOpen,
+      onSelect: () => {
+        setSearchOpen((prev) => {
+          if (prev) {
+            setSearchQuery("");
+          }
+          return !prev;
+        });
+      },
+    },
   ];
 
-  // Bottom action: Search
-  const bottomAction: RailAction = {
-    key: "search",
-    icon: Search,
-    label: "Search board",
-    active: searchOpen,
-    onSelect: () => {
-      setSearchOpen((prev) => {
-        if (prev) {
-          setSearchQuery("");
-        }
-        return !prev;
-      });
+  // Rail bottom pill: Two hide/show toggles matching prototype
+  const bottomActions: RailAction[] = [
+    {
+      key: "toggle-panel",
+      icon: isSidebarHidden ? PanelLeftOpen : PanelLeftClose,
+      label: isSidebarHidden ? "Show side panel" : "Hide side panel",
+      onSelect: () => setIsSidebarHidden((prev) => !prev),
     },
-  };
+    {
+      key: "toggle-top-bar",
+      icon: isTopBarHidden ? PanelTopOpen : PanelTopClose,
+      label: isTopBarHidden ? "Show top bar" : "Hide top bar",
+      onSelect: () => setIsTopBarHidden((prev) => !prev),
+    },
+  ];
 
   return (
     <>
-      <AppShell
-        actions={actions}
-        bottomAction={bottomAction}
+      {/* Hidden File Input for Keyframes */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Inline Error Notice */}
+      {errorMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2.5 rounded-full border border-[#E5534B]/30 bg-[#E5534B]/10 px-4 py-2 text-[13px] text-[#E5534B] shadow-lg backdrop-blur-md">
+          <AlertTriangle size={15} />
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="ml-2 hover:opacity-80 cursor-pointer"
+            aria-label="Dismiss error"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      <AssemblyLayout
+        railActions={actions}
+        bottomActions={bottomActions}
         railLabel="Scene Assembly"
         breadcrumb={breadcrumbItems}
-        contentClassName="overflow-hidden p-0"
-        header={{
-          title: "Scene Assembly",
-          subtitle: `${scene.sceneName} · ${scene.numberOfFrames ?? 0} frames`,
-          right: searchOpen ? (
-            <div className="flex h-[38px] w-[280px] items-center gap-2 rounded-full border border-[var(--po-line-2)] bg-[var(--po-card)] px-3 shadow-[var(--po-shadow-sm)]">
-              <Search size={15} className="text-[var(--po-ink-3)]" />
+        title="Scene Assembly"
+        subtitle={`${scene.sceneName} · ${scene.numberOfFrames ?? 0} frames`}
+        isTopBarHidden={isTopBarHidden}
+        isSidePanelHidden={isSidebarHidden}
+        topBarRight={
+          searchOpen ? (
+            <div className="flex h-[34px] w-[260px] items-center gap-2 rounded-full border border-[var(--po-line-2)] bg-[var(--po-card)] px-3 shadow-[var(--po-shadow-sm)]">
+              <Search size={14} className="text-[var(--po-ink-3)]" />
               <input
                 autoFocus
                 type="text"
@@ -292,96 +332,72 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="text-[var(--po-ink-3)] hover:text-[var(--po-ink)]"
+                  className="text-[var(--po-ink-3)] hover:text-[var(--po-ink)] cursor-pointer"
                   aria-label="Clear search"
                 >
                   <X size={13} />
                 </button>
               )}
             </div>
-          ) : undefined,
-        }}
+          ) : undefined
+        }
+        sidePanel={
+          <AssemblySidePanel
+            currentScene={scene}
+            siblingScenes={siblingScenes}
+            episodeAssets={episodeAssets}
+            projectAssets={projectAssets}
+            projectId={project.id}
+            episodeId={episode.id}
+            searchQuery={searchQuery}
+            onClose={() => setIsSidebarHidden(true)}
+          />
+        }
+        summary={
+          <>
+            <Layers size={14} className="text-[var(--po-ink-3)] shrink-0" />
+            <span>{counts.keyframes} keyframes</span>
+            <span className="opacity-40">·</span>
+            <span>{counts.assets} assets</span>
+            <span className="opacity-40">·</span>
+            <span>{counts.folders} folders</span>
+            <span className="opacity-40">·</span>
+            <span>{counts.comments} comments</span>
+          </>
+        }
+        toolbar={
+          <BoardToolbar
+            activeTool={activeTool}
+            onToolSelect={setActiveTool}
+          />
+        }
+        zoomControls={
+          <ZoomControls
+            zoom={zoom}
+            onZoomIn={() => canvasRef.current?.zoomIn()}
+            onZoomOut={() => canvasRef.current?.zoomOut()}
+            onResetZoom={() => canvasRef.current?.resetZoom()}
+            onFitToContent={() => canvasRef.current?.fitToContent()}
+          />
+        }
       >
-        {/* Hidden File Input for Keyframes */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleFileChange}
-          className="hidden"
+        <BoardCanvas
+          ref={canvasRef}
+          boardId={boardId}
+          elements={visibleElements}
+          activeTool={activeTool}
+          scope={{ type: "scene", sceneId: scene.id }}
+          onToolSelect={setActiveTool}
+          onElementsChange={setElements}
+          onElementCreate={handleCreateElement}
+          onElementDelete={handleDeleteElement}
+          onElementMove={handleMoveElements}
+          preSelectedId={targetKeyframeId}
+          onSelectionChange={setSelectedIds}
+          confirmDelete={handleConfirmDelete}
+          onZoomChange={setZoom}
         />
-
-        {/* Main Canvas Workspace Container */}
-        <div className="relative flex h-full w-full overflow-hidden">
-          {/* Inline Error Notice */}
-          {errorMessage && (
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-[#E5534B]/30 bg-[#E5534B]/10 px-4 py-2 text-[13px] text-[#E5534B] shadow-lg backdrop-blur-md">
-              <AlertTriangle size={15} />
-              <span>{errorMessage}</span>
-              <button
-                type="button"
-                onClick={() => setErrorMessage(null)}
-                className="ml-2 hover:opacity-80"
-                aria-label="Dismiss error"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          )}
-
-          {/* Left Side Panel (Floating style / Docked) */}
-          {!isSidebarHidden && (
-            <AssemblySidePanel
-              currentScene={scene}
-              siblingScenes={siblingScenes}
-              episodeAssets={episodeAssets}
-              projectAssets={projectAssets}
-              projectId={project.id}
-              episodeId={episode.id}
-              searchQuery={searchQuery}
-              onClose={() => setIsSidebarHidden(true)}
-            />
-          )}
-
-          {/* Board Workspace */}
-          <div className="relative flex-1 h-full min-w-0 overflow-hidden bg-[var(--po-bg)]">
-            <BoardCanvas
-              ref={canvasRef}
-              boardId={boardId}
-              elements={visibleElements}
-              activeTool={activeTool}
-              scope={{ type: "scene", sceneId: scene.id }}
-              onToolSelect={setActiveTool}
-              onElementsChange={setElements}
-              onElementCreate={handleCreateElement}
-              onElementDelete={handleDeleteElement}
-              onElementMove={handleMoveElements}
-              preSelectedId={targetKeyframeId}
-              onSelectionChange={setSelectedIds}
-              confirmDelete={handleConfirmDelete}
-            />
-
-            {/* Bottom Floating Toolbar */}
-            <BoardToolbar
-              activeTool={activeTool}
-              onToolSelect={setActiveTool}
-              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
-            />
-
-            {/* Bottom-Left Summary Badge */}
-            <div className="pointer-events-none absolute bottom-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-[var(--po-line)] bg-[var(--po-card)]/90 px-3 py-1.5 text-[12px] font-medium text-[var(--po-ink-2)] shadow-sm backdrop-blur-xs select-none">
-              <span>{counts.keyframes} keyframes</span>
-              <span>·</span>
-              <span>{counts.assets} assets</span>
-              <span>·</span>
-              <span>{counts.folders} folders</span>
-              <span>·</span>
-              <span>{counts.comments} comments</span>
-            </div>
-          </div>
-        </div>
-      </AppShell>
+      </AssemblyLayout>
 
       {/* Confirm Dialog for Folder deletion */}
       <ConfirmDialog

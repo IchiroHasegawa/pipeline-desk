@@ -1,6 +1,9 @@
 // Production OS Phase 7b: Asset Assembly Redesign
 import React from "react";
-import { getProjectsV2 } from "@/lib/data/v2/productionRepositoryV2";
+import {
+  getProjectsV2,
+  getAssetLinkCounts,
+} from "@/lib/data/v2/productionRepositoryV2";
 import {
   getOrCreateBoard,
   getBoardElements,
@@ -19,7 +22,10 @@ export default async function AssetsAssemblyNextPage({
 }: AssetsAssemblyNextPageProps) {
   const { projectId: rawProjectId } = await searchParams;
   const supabase = await createClient();
-  const projects = await getProjectsV2();
+  const [projects, linkCounts] = await Promise.all([
+    getProjectsV2(),
+    getAssetLinkCounts(),
+  ]);
 
   let resolvedProjectId = rawProjectId || "";
 
@@ -70,6 +76,7 @@ export default async function AssetsAssemblyNextPage({
       currentProjectId={resolvedProjectId}
       boardId={boardId}
       initialElements={elements}
+      initialLinkCounts={linkCounts}
     />
   );
 }

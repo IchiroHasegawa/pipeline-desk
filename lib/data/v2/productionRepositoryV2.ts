@@ -1281,4 +1281,48 @@ export async function getAssetFileStats(
   return result;
 }
 
+/**
+ * Fetches counts of linked assets by project and by episode.
+ */
+export async function getAssetLinkCounts(): Promise<{
+  byProject: Record<string, number>;
+  byEpisode: Record<string, number>;
+}> {
+  const supabase = await createClient();
+
+  const [projResult, epResult] = await Promise.all([
+    supabase.from("asset_project_links").select("project_id"),
+    supabase.from("asset_job_links").select("episode_id"),
+  ]);
+
+  if (projResult.error) {
+    throw formatPostgrestError(
+      "getAssetLinkCounts (project links)",
+      projResult.error
+    );
+  }
+  if (epResult.error) {
+    throw formatPostgrestError(
+      "getAssetLinkCounts (episode links)",
+      epResult.error
+    );
+  }
+
+  const byProject: Record<string, number> = {};
+  for (const row of projResult.data || []) {
+    if (row.project_id) {
+      byProject[row.project_id] = (byProject[row.project_id] || 0) + 1;
+    }
+  }
+
+  const byEpisode: Record<string, number> = {};
+  for (const row of epResult.data || []) {
+    if (row.episode_id) {
+      byEpisode[row.episode_id] = (byEpisode[row.episode_id] || 0) + 1;
+    }
+  }
+
+  return { byProject, byEpisode };
+}
+
 

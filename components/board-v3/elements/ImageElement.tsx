@@ -3,6 +3,7 @@
 "use client";
 
 import React, { memo, useState } from "react";
+import { Check } from "lucide-react";
 import type { BoardElement } from "@/types/production-v2";
 import { PlaceholderArt } from "@/components/app-shell";
 
@@ -10,6 +11,8 @@ export type ImageElementProps = {
   element: BoardElement;
   selected?: boolean;
   isProjectScoped?: boolean;
+  showCheckbox?: boolean;
+  onToggleCheckbox?: (element: BoardElement) => void;
   onSelect?: (e: React.PointerEvent) => void;
   onDoubleClick?: (element: BoardElement) => void;
 };
@@ -18,6 +21,8 @@ export const ImageElementComponent: React.FC<ImageElementProps> = ({
   element,
   selected = false,
   isProjectScoped = false,
+  showCheckbox = false,
+  onToggleCheckbox,
   onSelect,
   onDoubleClick,
 }) => {
@@ -39,6 +44,27 @@ export const ImageElementComponent: React.FC<ImageElementProps> = ({
           : "border border-[var(--po-line)] hover:border-[var(--po-line-2)] shadow-[var(--po-shadow-sm)]"
       } bg-[var(--po-card)]`}
     >
+      {/* Asset Assembly Checkbox */}
+      {showCheckbox && element.elementType === "asset" && Boolean(element.assetId) && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCheckbox?.(element);
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          aria-label={selected ? "Deselect asset" : "Select asset"}
+          className="absolute top-2 left-2 z-20 flex h-[22px] w-[22px] items-center justify-center rounded-[7px] border-[1.5px] border-white/90 text-white transition-all cursor-pointer shadow-xs"
+          style={{
+            background: selected ? "var(--po-accent)" : "rgba(0,0,0,0.3)",
+          }}
+        >
+          {selected && <Check size={13} strokeWidth={2.5} />}
+        </button>
+      )}
+
       {element.imageUrl && !imgError ? (
         <img
           src={element.imageUrl}

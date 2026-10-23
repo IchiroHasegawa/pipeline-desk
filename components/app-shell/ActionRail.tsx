@@ -21,14 +21,19 @@ export interface RailAction {
 export interface ActionRailProps {
   actions: readonly RailAction[];
   bottomAction?: RailAction;
+  bottomActions?: readonly RailAction[];
   railLabel?: string;
+  className?: string;
 }
 
 export const ActionRail: React.FC<ActionRailProps> = ({
   actions,
   bottomAction,
+  bottomActions,
+  className = "",
   // railLabel retained in props for compatibility, not rendered in v2 design
 }) => {
+  const normalizedBottomActions = bottomActions ?? (bottomAction ? [bottomAction] : []);
   const pathname = usePathname() || "";
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
@@ -138,7 +143,7 @@ export const ActionRail: React.FC<ActionRailProps> = ({
 
       <aside
         aria-label="Action Rail"
-        className="relative z-[75] flex h-full w-[56px] flex-none flex-col justify-between"
+        className={`relative z-[75] flex h-full w-[56px] flex-none flex-col justify-between ${className}`.trim()}
       >
         {/* Top floating pill: Page Switcher + Actions */}
         <div className="flex w-[56px] flex-col items-center gap-1 rounded-[28px] bg-[var(--po-rail)] py-1.5 pb-2 shadow-[0_10px_28px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.2)]">
@@ -259,9 +264,9 @@ export const ActionRail: React.FC<ActionRailProps> = ({
         </div>
 
         {/* Bottom floating pill */}
-        {bottomAction && (
+        {normalizedBottomActions.length > 0 && (
           <div className="flex w-[56px] flex-col items-center gap-1 rounded-[28px] bg-[var(--po-rail)] py-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.2)]">
-            {renderActionButton(bottomAction, true)}
+            {normalizedBottomActions.map((act) => renderActionButton(act, true))}
           </div>
         )}
       </aside>
