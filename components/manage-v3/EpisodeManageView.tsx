@@ -15,6 +15,7 @@ import type {
 import { AppShell } from "@/components/app-shell/AppShell";
 import type { RailAction } from "@/components/app-shell/ActionRail";
 import { Select, type SelectOption } from "@/components/app-shell/Select";
+import { PlaceholderArt } from "@/components/app-shell";
 import { DeleteEpisodeDialog } from "@/components/episodes-v3/DeleteEpisodeDialog";
 import { useTaskEditing } from "@/lib/hooks/useTaskEditing";
 import { createTodo, setTodoComplete } from "@/app/actions/todos";
@@ -377,7 +378,6 @@ export const EpisodeManageView: React.FC<EpisodeManageViewProps> = ({
                     {/* Scene Rows */}
                     {scenes.map((scene) => {
                       const sceneTasks = sceneTasksByScene[scene.id] || [];
-                      const initials = (scene.sceneName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 2) || "SC").toUpperCase();
 
                       return (
                         <div
@@ -409,9 +409,10 @@ export const EpisodeManageView: React.FC<EpisodeManageViewProps> = ({
                                   className="h-full w-full object-cover"
                                 />
                               ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-[var(--po-ink-3)] opacity-70">
-                                  {initials}
-                                </div>
+                                <PlaceholderArt
+                                  seed={scene.id}
+                                  className="h-full w-full object-cover"
+                                />
                               )}
                             </div>
                             <span className="truncate text-[13px] font-semibold text-[var(--po-ink)]">

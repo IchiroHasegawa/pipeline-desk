@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { FolderOpen, ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
+import { PlaceholderArt } from "@/components/app-shell";
 import { resolveTaskStatus } from "@/lib/format/production";
 import type {
   AssetV2,
@@ -124,7 +125,7 @@ export const AssetTable: React.FC<AssetTableProps> = ({
               >
                 {/* 1. Preview */}
                 <div className="relative flex h-[44px] w-[72px] items-center justify-center overflow-hidden rounded-[8px] border border-[var(--po-line)] bg-[var(--po-sunken)]">
-                  <FolderOpen size={16} className="text-[var(--po-ink-3)] opacity-60" />
+                  <PlaceholderArt seed={asset.id} className="absolute inset-0 h-full w-full object-cover" />
                   {asset.previewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

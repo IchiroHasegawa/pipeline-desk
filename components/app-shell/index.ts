@@ -1,7 +1,8 @@
 export * from "./pageRegistry";
 export * from "./useCurrentProfile";
 export * from "./ActionRail";
-export * from "./PageSwitcher";
+export * from "./AvatarMenu";
+export * from "./PlaceholderArt";
 export * from "./Breadcrumb";
 export * from "./PageHeader";
 export * from "./AppShell";
@@ -10,3 +11,4 @@ export * from "./EmptyState";
 export * from "./ErrorState";
 export * from "./Select";
 export * from "./ConfirmDialog";
+

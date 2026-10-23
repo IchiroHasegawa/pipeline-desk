@@ -102,6 +102,10 @@ export async function signupAction(prevState: AuthState | null, formData: FormDa
     return { message: "Passwords do not match." };
   }
 
+  if (password.length < 8) {
+    return { message: "Password must be at least 8 characters." };
+  }
+
   if (username.length < 3 || username.length > 30 || !/^[a-zA-Z0-9_]+$/.test(username)) {
     return { message: "Username must be 3-30 characters and contain only letters, numbers, and underscores." };
   }

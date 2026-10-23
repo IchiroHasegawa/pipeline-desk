@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Film } from "lucide-react";
 import type { SceneV2 } from "@/types/production-v2";
 import { episodeScenesHref } from "@/lib/routes/app";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export interface SceneTileRowProps {
   projectId: string;
@@ -50,12 +51,6 @@ export const SceneTileRow: React.FC<SceneTileRowProps> = ({
             ? Math.max(0, Math.min(100, Math.round((rollup.complete / rollup.total) * 100)))
             : 0;
 
-        const sceneInitials =
-          scene.sceneName
-            .replace(/[^a-zA-Z0-9]/g, "")
-            .slice(0, 2)
-            .toUpperCase() || "SC";
-
         return (
           <div
             key={scene.id}
@@ -69,11 +64,6 @@ export const SceneTileRow: React.FC<SceneTileRowProps> = ({
               }
             }}
             className="group relative aspect-video cursor-pointer overflow-hidden rounded-[12px] border border-[var(--po-line)] bg-[var(--po-sunken)] transition-transform duration-150 hover:scale-[1.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)]"
-            style={{
-              background: scene.previewImage
-                ? undefined
-                : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-            }}
           >
             {scene.previewImage ? (
               <img
@@ -82,9 +72,10 @@ export const SceneTileRow: React.FC<SceneTileRowProps> = ({
                 className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
-              <div className="absolute inset-x-0 top-3 flex items-center justify-center text-[18px] font-semibold tracking-[-0.02em] text-[var(--po-ink-3)] opacity-60 select-none">
-                {sceneInitials}
-              </div>
+              <PlaceholderArt
+                seed={scene.id}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             )}
 
             {/* Dark gradient overlay at bottom for readability */}

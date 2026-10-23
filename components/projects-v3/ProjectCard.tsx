@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Boxes, Calendar, MessageSquare } from "lucide-react";
 import type {
@@ -19,6 +19,7 @@ import {
 import { projectEpisodesHref } from "@/lib/routes/app";
 import { EpisodeTileRow } from "./EpisodeTileRow";
 import { CommitHeatmap } from "./CommitHeatmap";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export interface ProjectCardProps {
   project: ProjectV2;
@@ -38,14 +39,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onSelect,
 }) => {
   const router = useRouter();
-
-  // Project initials fallback
-  const initials = useMemo(() => {
-    const words = project.title.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return "PR";
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }, [project.title]);
+  const [imgError, setImgError] = useState(false);
 
   // Duration and dates
   const days = durationDays(project.startDate, project.endDate);
@@ -92,24 +86,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       }`}
     >
       {/* Hero Left Column */}
-      <div
-        className="relative aspect-video overflow-hidden rounded-[16px]"
-        style={{
-          background: project.thumbnailUrl
-            ? undefined
-            : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-        }}
-      >
-        {project.thumbnailUrl ? (
+      <div className="relative aspect-video overflow-hidden rounded-[16px]">
+        {project.thumbnailUrl && !imgError ? (
           <img
             src={project.thumbnailUrl}
             alt={project.title}
+            onError={() => setImgError(true)}
+            ref={(node) => {
+              if (node && node.complete && node.naturalWidth === 0) {
+                setImgError(true);
+              }
+            }}
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[72px] font-semibold tracking-[-0.04em] text-[var(--po-ink-3)] opacity-80 select-none">
-            {initials}
-          </div>
+          <PlaceholderArt seed={project.id} className="h-full w-full object-cover" />
         )}
       </div>
 

@@ -13,6 +13,7 @@ import {
   formatPriority,
 } from "@/lib/format/production";
 import { Select, type SelectOption } from "@/components/app-shell/Select";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export interface SceneCardProps {
   scene: SceneV2;
@@ -67,10 +68,6 @@ export const SceneCard: React.FC<SceneCardProps> = ({
       ? "var(--po-accent)"
       : "var(--po-ink-3)";
 
-  const initials = useMemo(() => {
-    const clean = scene.sceneName.replace(/[^a-zA-Z0-9]/g, "");
-    return (clean.slice(0, 2) || "SC").toUpperCase();
-  }, [scene.sceneName]);
 
   const assigneeSelectOptions = useMemo<SelectOption[]>(() => {
     return [
@@ -104,14 +101,7 @@ export const SceneCard: React.FC<SceneCardProps> = ({
       }`}
     >
       {/* 16:7 Aspect Ratio Preview Image Hero */}
-      <div
-        className="relative aspect-[16/7] w-full overflow-hidden rounded-[12px] bg-[var(--po-sunken)]"
-        style={{
-          background: scene.previewImage
-            ? undefined
-            : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-        }}
-      >
+      <div className="relative aspect-[16/7] w-full overflow-hidden rounded-[12px] bg-[var(--po-sunken)]">
         {scene.previewImage ? (
           <img
             src={scene.previewImage}
@@ -119,9 +109,7 @@ export const SceneCard: React.FC<SceneCardProps> = ({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[44px] font-semibold tracking-[-0.03em] text-[var(--po-ink-3)] opacity-70 select-none">
-            {initials}
-          </div>
+          <PlaceholderArt seed={scene.id} className="h-full w-full object-cover" />
         )}
 
         {/* Top-left status pill badge */}

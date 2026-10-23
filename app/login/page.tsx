@@ -3,140 +3,190 @@
 import { useActionState, useState } from "react";
 import { loginAction, type AuthState } from "@/app/actions/auth";
 import Link from "next/link";
-import { Loader2, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  AtSign,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  ShieldCheck,
+} from "lucide-react";
+import { AuthLayout, AuthCard } from "@/components/auth";
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState<AuthState, FormData>(loginAction, { step: 1 });
+  const [state, formAction, isPending] = useActionState<AuthState, FormData>(
+    loginAction,
+    { step: 1 }
+  );
   const [showPassword, setShowPassword] = useState(false);
 
+  const isStep1 = state.step === 1;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black p-4 text-white">
-      <div className="w-full max-w-md space-y-8 rounded-xl border border-[#2a2a2a] bg-[#121212] p-8 shadow-2xl">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-bold italic text-black">
-            P
+    <AuthLayout>
+      <AuthCard
+        title={isStep1 ? "Log in" : "Enter your password"}
+        sub={
+          isStep1
+            ? "Welcome back. Start with your username."
+            : "Logging in to your Production OS workspace."
+        }
+        identity={
+          !isStep1 && state.username
+            ? {
+                name: state.username,
+                onChange: () => {
+                  window.location.href = "/login";
+                },
+              }
+            : undefined
+        }
+        errorMessage={state.message}
+        footer={
+          <div className="flex items-center gap-1.5">
+            <span>New to Production OS?</span>
+            <Link
+              href="/signup"
+              className="font-semibold text-[var(--po-accent)] hover:underline"
+            >
+              Create account
+            </Link>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Welcome Back</h2>
-        </div>
-
-        <form action={formAction} className="mt-8 space-y-6">
+        }
+        secondaryLink={
+          isStep1 ? (
+            <Link
+              href="/owner-login"
+              className="inline-flex items-center gap-2 h-[34px] px-3.5 rounded-full border border-[var(--po-line)] bg-[var(--po-panel)] text-[var(--po-ink-2)] text-[13px] font-medium hover:text-[var(--po-ink)] hover:bg-[var(--po-card)] transition-colors shadow-xs"
+            >
+              <ShieldCheck size={14} />
+              <span>Owner access</span>
+              <ChevronRight size={14} className="text-[var(--po-ink-3)]" />
+            </Link>
+          ) : undefined
+        }
+      >
+        <form action={formAction} className="flex flex-col gap-[22px] m-0">
           <input type="hidden" name="step" value={state.step} />
-          
-          {state.message && (
-            <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400 text-center">
-              {state.message}
-            </div>
-          )}
 
-          {state.step === 1 ? (
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-zinc-300">
+          {isStep1 ? (
+            <>
+              {/* Step 1: Username Field */}
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="username"
+                  className="text-[13px] font-medium text-[var(--po-ink)]"
+                >
                   Username
                 </label>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  defaultValue={state.username || ""}
-                  className="mt-2 block w-full rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Enter your username"
-                  autoComplete="username"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isPending}
-                className="flex w-full justify-center rounded bg-white px-4 py-2 text-sm font-bold text-black hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50"
-              >
-                {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continue"}
-              </button>
-
-              <div className="text-center text-sm text-zinc-400">
-                New to Production OS?{" "}
-                <Link href="/signup" className="font-bold text-white hover:underline">
-                  Create Account
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <input type="hidden" name="username" value={state.username || ""} />
-              
-              <div className="flex items-center justify-between rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 text-sm">
-                <div>
-                  <span className="text-zinc-500">Signing in as </span>
-                  <span className="font-bold text-white">{state.username}</span>
+                <div className="relative flex items-center">
+                  <AtSign
+                    size={16}
+                    className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+                  />
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    defaultValue={state.username || ""}
+                    placeholder="e.g. ana_lindqvist"
+                    autoComplete="username"
+                    autoFocus
+                    spellCheck={false}
+                    disabled={isPending}
+                    className="w-full h-[46px] rounded-[14px] border border-[var(--po-line-2)] bg-[var(--po-card)] text-[var(--po-ink)] text-[15px] pl-[42px] pr-[14px] outline-none transition-[border-color,box-shadow] focus:border-[var(--po-accent)] focus:ring-4 focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)] disabled:bg-[var(--po-sunken)] disabled:opacity-60"
+                  />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
+              {/* Submit Button */}
+              <div className="flex gap-2.5 pt-0.5">
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 h-[46px] rounded-full border-0 bg-[var(--po-ink)] text-[var(--po-panel)] font-semibold text-[14px] inline-flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 disabled:opacity-75 disabled:cursor-progress transition-opacity"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Checking…</span>
+                    </>
+                  ) : (
+                    <span>Continue</span>
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Step 2: Password Field */}
+              <input type="hidden" name="username" value={state.username || ""} />
+
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="password"
+                  className="text-[13px] font-medium text-[var(--po-ink)]"
+                >
                   Password
                 </label>
-                <div className="relative mt-2">
+                <div className="relative flex items-center">
+                  <Lock
+                    size={16}
+                    className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+                  />
                   <input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     required
-                    className="block w-full rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 pr-14 text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder="Enter your password"
                     autoComplete="current-password"
+                    autoFocus
+                    disabled={isPending}
+                    className="w-full h-[46px] rounded-[14px] border border-[var(--po-line-2)] bg-[var(--po-card)] text-[var(--po-ink)] text-[15px] pl-[42px] pr-[46px] outline-none transition-[border-color,box-shadow] focus:border-[var(--po-accent)] focus:ring-4 focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)] disabled:bg-[var(--po-sunken)] disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-xs font-medium text-zinc-400 hover:text-white"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-1.5 w-[34px] h-[34px] rounded-[10px] text-[var(--po-ink-3)] hover:bg-[var(--po-chip)] hover:text-[var(--po-ink)] flex items-center justify-center p-0 transition-colors cursor-pointer"
                   >
-                    {showPassword ? "Hide" : "Show"}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <a href="#" className="text-xs font-medium text-zinc-400 hover:text-white">
-                  Forgot Password?
-                </a>
-              </div>
-
-              <div className="flex gap-3 pt-2">
+              {/* Action Buttons */}
+              <div className="flex gap-2.5 pt-0.5">
                 <Link
                   href="/login"
-                  className="flex w-1/3 justify-center rounded border border-[#2a2a2a] bg-zinc-900 px-4 py-2 text-sm font-bold text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+                  className="h-[46px] px-4 rounded-full border border-[var(--po-line-2)] bg-transparent text-[var(--po-ink)] font-medium text-[14px] inline-flex items-center gap-2 hover:bg-[var(--po-chip)] transition-colors shrink-0"
                 >
-                  Back
+                  <ArrowLeft size={16} />
+                  <span>Back</span>
                 </Link>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex w-2/3 justify-center rounded bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50"
+                  className="flex-1 h-[46px] rounded-full border-0 bg-[var(--po-ink)] text-[var(--po-panel)] font-semibold text-[14px] inline-flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 disabled:opacity-75 disabled:cursor-progress transition-opacity"
                 >
-                  {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Login"}
+                  {isPending ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Logging in…</span>
+                    </>
+                  ) : (
+                    <span>Log in</span>
+                  )}
                 </button>
               </div>
-            </div>
+            </>
           )}
         </form>
-      </div>
-      
-      {state.step === 1 && (
-        <div className="w-full max-w-md mt-6 rounded-xl border border-[#2a2a2a] bg-[#121212] p-6 shadow-2xl">
-          <div className="flex flex-col items-center justify-center text-center">
-            <ShieldCheck className="h-8 w-8 text-zinc-400 mb-2" />
-            <h3 className="text-lg font-bold text-white">Owner Access</h3>
-            <p className="text-sm text-zinc-400 mt-1 mb-4">Secure administrative access</p>
-            <Link 
-              href="/owner-login" 
-              className="flex w-full justify-center rounded border border-[#2a2a2a] bg-zinc-900 px-4 py-2 text-sm font-bold text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
-            >
-              Continue as Owner
-            </Link>
-          </div>
-        </div>
-      )}
-    </div>
+      </AuthCard>
+    </AuthLayout>
   );
 }

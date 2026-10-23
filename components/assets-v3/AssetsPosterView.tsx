@@ -7,6 +7,7 @@ import {
   AppShell,
   type RailAction,
   type BreadcrumbItem,
+  PlaceholderArt,
 } from "@/components/app-shell";
 import { AssetFormDialog } from "@/components/forms/AssetFormDialog";
 import { projectAssetsHref } from "@/lib/routes/app";
@@ -120,13 +121,6 @@ export const AssetsPosterView: React.FC<AssetsPosterViewProps> = ({
               {visibleProjects.map((project) => {
                 const count = assetCounts[project.id] ?? 0;
                 const bytes = assetFileBytes[project.id] ?? 0;
-                const initials =
-                  project.title
-                    .split(/\s+/)
-                    .map((w) => w[0])
-                    .join("")
-                    .slice(0, 2)
-                    .toUpperCase() || project.projectCode.slice(0, 2);
 
                 const metaText =
                   bytes > 0
@@ -140,10 +134,8 @@ export const AssetsPosterView: React.FC<AssetsPosterViewProps> = ({
                     className="group flex flex-col gap-3 cursor-pointer"
                   >
                     {/* Poster Card: 3/4 aspect ratio */}
-                    <div className="relative aspect-3/4 w-full overflow-hidden rounded-[20px] bg-gradient-to-br from-[var(--po-ph1)] to-[var(--po-ph2)] shadow-[var(--po-shadow-sm)] border border-[var(--po-line)] transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-[var(--po-shadow-lift)]">
-                      <div className="absolute inset-0 flex items-center justify-center text-[52px] font-bold text-[var(--po-ink-3)]/60 select-none">
-                        {initials}
-                      </div>
+                    <div className="relative aspect-3/4 w-full overflow-hidden rounded-[20px] shadow-[var(--po-shadow-sm)] border border-[var(--po-line)] transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-[var(--po-shadow-lift)]">
+                      <PlaceholderArt seed={project.id} className="absolute inset-0 h-full w-full object-cover" />
                       {project.thumbnailUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img

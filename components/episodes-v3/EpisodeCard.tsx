@@ -12,6 +12,7 @@ import {
 } from "@/lib/format/production";
 import { episodeScenesHref, episodeManageHref } from "@/lib/routes/app";
 import { SceneTileRow } from "./SceneTileRow";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export interface EpisodeCardProps {
   episode: EpisodeV2;
@@ -38,13 +39,6 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({
 }) => {
   const router = useRouter();
 
-  // Episode initials fallback
-  const initials = useMemo(() => {
-    const words = episode.episodeName.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return "EP";
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }, [episode.episodeName]);
 
   // Duration and dates
   const days = durationDays(episode.startDate, episode.endDate);
@@ -107,14 +101,7 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({
       }`}
     >
       {/* Hero Left Column */}
-      <div
-        className="relative aspect-video overflow-hidden rounded-[16px]"
-        style={{
-          background: episode.previewImage
-            ? undefined
-            : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-        }}
-      >
+      <div className="relative aspect-video overflow-hidden rounded-[16px]">
         {episode.previewImage ? (
           <img
             src={episode.previewImage}
@@ -122,9 +109,7 @@ export const EpisodeCard: React.FC<EpisodeCardProps> = ({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[72px] font-semibold tracking-[-0.04em] text-[var(--po-ink-3)] opacity-80 select-none">
-            {initials}
-          </div>
+          <PlaceholderArt seed={episode.id} className="h-full w-full object-cover" />
         )}
       </div>
 

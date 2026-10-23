@@ -14,6 +14,7 @@ import {
 } from "@/lib/format/production";
 import { projectEpisodesHref } from "@/lib/routes/app";
 import { CommitHeatmap } from "./CommitHeatmap";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export interface ProjectDetailsPanelProps {
   project: ProjectV2;
@@ -56,13 +57,6 @@ export const ProjectDetailsPanel: React.FC<ProjectDetailsPanelProps> = ({
     };
   }, [onClose]);
 
-  // Initials fallback
-  const initials = useMemo(() => {
-    const words = project.title.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return "PR";
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }, [project.title]);
 
   const days = durationDays(project.startDate, project.endDate);
   const durLabel = formatDuration(days, Boolean(project.startDate));
@@ -107,14 +101,7 @@ export const ProjectDetailsPanel: React.FC<ProjectDetailsPanelProps> = ({
       {/* Scrollable Body */}
       <div className="flex flex-1 flex-col gap-[22px] overflow-auto p-5 text-[14px]">
         {/* Hero image or initials fallback */}
-        <div
-          className="relative aspect-video overflow-hidden rounded-[14px]"
-          style={{
-            background: project.thumbnailUrl
-              ? undefined
-              : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-          }}
-        >
+        <div className="relative aspect-video overflow-hidden rounded-[14px]">
           {project.thumbnailUrl ? (
             <img
               src={project.thumbnailUrl}
@@ -122,9 +109,7 @@ export const ProjectDetailsPanel: React.FC<ProjectDetailsPanelProps> = ({
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-[56px] font-semibold text-[var(--po-ink-3)] select-none">
-              {initials}
-            </div>
+            <PlaceholderArt seed={project.id} className="h-full w-full object-cover" />
           )}
         </div>
 

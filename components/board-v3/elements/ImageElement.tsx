@@ -2,8 +2,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import type { BoardElement } from "@/types/production-v2";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export type ImageElementProps = {
   element: BoardElement;
@@ -23,6 +24,7 @@ export const ImageElementComponent: React.FC<ImageElementProps> = ({
   const width = element.width || 339;
   const height = element.height || 198;
   const isStrayKeyframe = isProjectScoped && element.elementType === "keyframe";
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div
@@ -37,21 +39,15 @@ export const ImageElementComponent: React.FC<ImageElementProps> = ({
           : "border border-[var(--po-line)] hover:border-[var(--po-line-2)] shadow-[var(--po-shadow-sm)]"
       } bg-[var(--po-card)]`}
     >
-      {element.imageUrl ? (
+      {element.imageUrl && !imgError ? (
         <img
           src={element.imageUrl}
           alt={element.title || (element.elementType === "keyframe" ? "Keyframe" : "Asset")}
+          onError={() => setImgError(true)}
           className="w-full h-full object-cover pointer-events-none"
         />
       ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-4 font-mono text-[var(--po-ink-3)] text-[12px] text-center bg-[var(--po-sunken)]">
-          <span className="font-semibold text-[var(--po-ink-2)] truncate max-w-full">
-            {element.title || "[IMAGE]"}
-          </span>
-          <span className="text-[10px] uppercase tracking-wider opacity-70">
-            {element.elementType === "keyframe" ? "Keyframe" : "Asset"}
-          </span>
-        </div>
+        <PlaceholderArt seed={element.id} className="w-full h-full object-cover pointer-events-none" />
       )}
 
       {/* Stray Keyframe Badge */}

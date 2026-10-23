@@ -3,7 +3,7 @@
 import React from "react";
 import { Monitor } from "lucide-react";
 import { ActionRail, type RailAction } from "./ActionRail";
-import { PageSwitcher } from "./PageSwitcher";
+import { AvatarMenu } from "./AvatarMenu";
 import { Breadcrumb, type BreadcrumbItem } from "./Breadcrumb";
 import { PageHeader, type PageHeaderProps } from "./PageHeader";
 
@@ -78,8 +78,8 @@ export const AppShell: React.FC<AppShellProps> = ({
         </section>
       </main>
 
-      {/* Top-Right Page Switcher */}
-      <PageSwitcher />
+      {/* Top-Right Avatar Menu */}
+      <AvatarMenu />
     </div>
   );
 };

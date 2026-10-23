@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:420px;max-width:100%;display:flex;flex-direction:column;gap:20px;font-family:Inter,system-ui,sans-serif;color:var(--ink);">
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+    <span style="width:36px;height:36px;border-radius:18px;background:var(--rail);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 6px 16px rgba(0,0,0,.18);"><i class="icon-clapperboard"></i></span>
+    <span style="font-size:16px;font-weight:600;letter-spacing:-0.01em;">Production OS</span>
+    <sc-if value="{{ card.staging }}"><span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);border:1px dashed var(--line-2);padding:3px 8px;border-radius:999px;"><i class="icon-flask-conical" style="font-size:12px;"></i>Staging</span></sc-if>
+  </div>
+
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;">
+    <sc-if value="{{ card.owner }}">
+      <div style="background:var(--rail);color:#FFFFFF;padding:16px 20px 16px 18px;display:flex;align-items:center;gap:12px;">
+        <span style="width:36px;height:36px;border-radius:18px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex:none;"><i class="icon-shield-check"></i></span>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span style="font-size:14px;font-weight:600;">Owner access</span><span style="font-size:12px;color:rgba(255,255,255,.62);">Two-factor authentication required</span></div>
+        <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;">
+          <span style="font-size:11px;font-weight:500;color:rgba(255,255,255,.62);font-variant-numeric:tabular-nums;">{{ card.stepLabel }}</span>
+          <div style="display:flex;gap:4px;"><sc-for list="{{ card.steps }}" as="s"><span style="width:20px;height:4px;border-radius:2px;background:{{ s.bg }};"></span></sc-for></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <form onSubmit="{{ card.onSubmit }}" noValidate="{{ true }}" style="padding:30px 32px 32px;display:flex;flex-direction:column;gap:22px;margin:0;">
+      <sc-if value="{{ card.hasHero }}">
+        <span style="width:56px;height:56px;border-radius:28px;background:color-mix(in oklch, var(--accent) 14%, var(--card));color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;"><i class="{{ card.heroIcon }}"></i></span>
+      </sc-if>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <h1 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-0.02em;">{{ card.title }}</h1>
+        <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2);text-wrap:pretty;">{{ card.sub }}</p>
+      </div>
+
+      <sc-if value="{{ card.hasIdent }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:5px;border-radius:999px;background:var(--sunken);border:1px solid var(--line);">
+          <span style="width:30px;height:30px;border-radius:15px;background:color-mix(in oklch, var(--accent) 18%, var(--card));color:var(--accent);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;">{{ card.ident.ini }}</span>
+          <span style="flex:1;min-width:0;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ card.ident.name }}</span>
+          <button type="button" onClick="{{ card.ident.onChange }}" disabled="{{ card.loading }}" style="height:30px;padding:0 12px;border-radius:999px;border:none;background:transparent;color:var(--accent);font:600 13px Inter,sans-serif;cursor:pointer;" style-hover="background:color-mix(in oklch, var(--accent) 10%, transparent);">Change</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ card.hasBanner }}">
+        <div role="alert" style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:color-mix(in oklch, var(--danger) 9%, var(--card));border:1px solid color-mix(in oklch, var(--danger) 28%, transparent);">
+          <i class="icon-circle-alert" style="font-size:18px;color:var(--danger);margin-top:1px;flex:none;"></i>
+          <div style="display:flex;flex-direction:column;gap:3px;"><span style="font-size:13px;font-weight:600;">{{ card.banner.title }}</span><span style="font-size:13px;color:var(--ink-2);line-height:1.5;">{{ card.banner.body }}</span></div>
+        </div>
+      </sc-if>
+
+      <sc-for list="{{ card.fields }}" as="f" hint-placeholder-count="1">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label for="{{ f.id }}" style="font-size:13px;font-weight:500;">{{ f.label }}</label>
+          <sc-if value="{{ f.isInput }}">
+            <div style="position:relative;display:flex;align-items:center;">
+              <i class="{{ f.icon }}" style="position:absolute;left:15px;font-size:16px;color:var(--ink-3);pointer-events:none;"></i>
+              <input id="{{ f.id }}" type="{{ f.inputType }}" value="{{ f.value }}" onChange="{{ f.onChange }}" onFocus="{{ f.onFocus }}" onBlur="{{ f.onBlur }}" autoFocus="{{ f.autoFocus }}" autoComplete="{{ f.ac }}" placeholder="{{ f.ph }}" disabled="{{ card.loading }}" spellCheck="{{ false }}" style="width:100%;height:46px;padding:0 {{ f.padR }}px 0 42px;border-radius:14px;border:1px solid {{ f.bd }};box-shadow:{{ f.ring }};background:{{ f.bg }};color:var(--ink);font:400 15px Inter,sans-serif;letter-spacing:{{ f.ls }};outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;">
+              <sc-if value="{{ f.isPw }}"><button type="button" onClick="{{ f.onReveal }}" aria-label="{{ f.revealLabel }}" style="position:absolute;right:6px;width:34px;height:34px;border-radius:10px;border:none;background:transparent;color:var(--ink-3);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;padding:0;" style-hover="background:var(--chip);color:var(--ink);"><i class="{{ f.revealIcon }}"></i></button></sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ f.isOtp }}">
+            <div style="position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;">
+              <sc-for list="{{ f.boxes }}" as="b">
+                <div style="height:58px;border-radius:14px;border:1px solid {{ b.bd }};box-shadow:{{ b.ring }};background:{{ f.bg }};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;box-sizing:border-box;">{{ b.ch }}<sc-if value="{{ b.caret }}"><span style="width:1.5px;height:26px;background:var(--accent);"></span></sc-if></div>
+              </sc-for>
+              <input id="{{ f.id }}" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength="6" value="{{ f.value }}" onChange="{{ f.onChange }}" onFocus="{{ f.onFocus }}" onBlur="{{ f.onBlur }}" autoFocus="{{ f.autoFocus }}" disabled="{{ card.loading }}" aria-label="6-digit authentication code" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;font-size:16px;cursor:text;">
+            </div>
+          </sc-if>
+          <sc-if value="{{ f.hasErr }}"><span style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--danger);"><i class="icon-circle-alert" style="font-size:13px;"></i>{{ f.err }}</span></sc-if>
+          <sc-if value="{{ f.hasHelp }}"><span style="font-size:12.5px;color:var(--ink-3);line-height:1.45;">{{ f.help }}</span></sc-if>
+        </div>
+      </sc-for>
+
+      <div style="display:flex;gap:10px;margin-top:2px;">
+        <sc-if value="{{ card.hasBack }}">
+          <button type="button" onClick="{{ card.onBack }}" disabled="{{ card.loading }}" style="height:46px;padding:0 16px 0 14px;border-radius:999px;border:1px solid var(--line-2);background:transparent;color:var(--ink);font:500 14px Inter,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer;flex:none;" style-hover="background:var(--chip);"><i class="icon-arrow-left" style="font-size:16px;"></i>{{ card.backLabel }}</button>
+        </sc-if>
+        <button type="submit" style="flex:1;height:46px;border-radius:999px;border:none;background:var(--ink);color:var(--panel);font:600 14px Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:{{ card.btnCursor }};opacity:{{ card.btnOp }};">
+          <sc-if value="{{ card.btnLoading }}"><i class="icon-loader-circle" style="font-size:16px;animation:po-spin .9s linear infinite;"></i>{{ card.btnBusy }}</sc-if>
+          <sc-if value="{{ card.btnIdle }}" hint-placeholder-val="{{ true }}"><i class="{{ card.btnIcon }}" style="font-size:16px;"></i>{{ card.btnLabel }}</sc-if>
+        </button>
+      </div>
+
+      <sc-if value="{{ card.hasAlt }}">
+        <div style="display:flex;justify-content:center;gap:6px;font-size:13px;color:var(--ink-2);margin-top:-6px;">{{ card.alt.text }}<button type="button" onClick="{{ card.alt.onClick }}" style="border:none;background:none;padding:0;color:{{ card.alt.color }};font:600 13px Inter,sans-serif;cursor:pointer;">{{ card.alt.link }}</button></div>
+      </sc-if>
+    </form>
+
+    <sc-if value="{{ card.hasFoot }}">
+      <div style="border-top:1px solid var(--line);padding:16px 32px;display:flex;justify-content:center;gap:6px;font-size:13px;color:var(--ink-2);background:var(--panel);">{{ card.foot.text }}<button type="button" onClick="{{ card.foot.onClick }}" style="border:none;background:none;padding:0;color:var(--accent);font:600 13px Inter,sans-serif;cursor:pointer;">{{ card.foot.link }}</button></div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ card.hasOwnerLink }}">
+    <div style="display:flex;justify-content:center;">
+      <button type="button" onClick="{{ card.onOwner }}" style="display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font:500 13px Inter,sans-serif;cursor:pointer;" style-hover="color:var(--ink);background:var(--card);"><i class="icon-shield-check" style="font-size:14px;"></i>Owner access<i class="icon-chevron-right" style="font-size:14px;color:var(--ink-3);"></i></button>
+    </div>
+  </sc-if>
+  <sc-if value="{{ card.hasNote }}">
+    <div style="display:flex;justify-content:center;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-3);"><i class="icon-lock" style="font-size:13px;"></i>{{ card.note }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:640},&quot;card&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}"></script>
+</body>
+</html>

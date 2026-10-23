@@ -2,9 +2,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, memo } from "react";
-import { ArrowLeft, Clapperboard, FolderKanban, Inbox } from "lucide-react";
+import { ArrowLeft, FolderKanban } from "lucide-react";
 import type { ProjectV2, EpisodeV2 } from "@/types/production-v2";
 import { createClient } from "@/lib/supabase/client";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export type DropTarget =
   | { type: "project"; projectId: string }
@@ -168,7 +169,7 @@ export const AssetAssemblyProjectPanelComponent: React.FC<
                   }`}
                 >
                   {/* Poster / Thumbnail Area */}
-                  <div className="relative aspect-video w-full rounded-[10px] overflow-hidden bg-gradient-to-br from-[var(--po-ph1)] to-[var(--po-ph2)] border border-[var(--po-line)] flex items-center justify-center pointer-events-none">
+                  <div className="relative aspect-video w-full rounded-[10px] overflow-hidden bg-[var(--po-sunken)] border border-[var(--po-line)] flex items-center justify-center pointer-events-none">
                     {proj.thumbnailUrl ? (
                       <img
                         src={proj.thumbnailUrl}
@@ -176,18 +177,7 @@ export const AssetAssemblyProjectPanelComponent: React.FC<
                         className="w-full h-full object-cover pointer-events-none"
                       />
                     ) : (
-                      <div className="flex flex-col items-center justify-center gap-1 text-[var(--po-ink-3)]">
-                        {proj.isSystem ? (
-                          <Inbox size={24} className="opacity-60" />
-                        ) : (
-                          <span className="text-[20px] font-semibold opacity-70">
-                            {proj.title.slice(0, 2).toUpperCase()}
-                          </span>
-                        )}
-                        <span className="text-[10px] font-mono opacity-60">
-                          {proj.projectCode}
-                        </span>
-                      </div>
+                      <PlaceholderArt seed={proj.id} className="w-full h-full object-cover pointer-events-none" />
                     )}
 
                     {/* System / Inbox Badge */}
@@ -238,7 +228,7 @@ export const AssetAssemblyProjectPanelComponent: React.FC<
                       }`}
                     >
                       {/* Episode Thumbnail */}
-                      <div className="relative aspect-video w-full rounded-[10px] overflow-hidden bg-gradient-to-br from-[var(--po-ph1)] to-[var(--po-ph2)] border border-[var(--po-line)] flex items-center justify-center pointer-events-none">
+                      <div className="relative aspect-video w-full rounded-[10px] overflow-hidden bg-[var(--po-sunken)] border border-[var(--po-line)] flex items-center justify-center pointer-events-none">
                         {ep.previewImage ? (
                           <img
                             src={ep.previewImage}
@@ -246,12 +236,7 @@ export const AssetAssemblyProjectPanelComponent: React.FC<
                             className="w-full h-full object-cover pointer-events-none"
                           />
                         ) : (
-                          <div className="flex flex-col items-center justify-center gap-1 text-[var(--po-ink-3)]">
-                            <Clapperboard size={20} className="opacity-50" />
-                            <span className="text-[9px] font-mono opacity-70">
-                              {ep.code || "EPISODE"}
-                            </span>
-                          </div>
+                          <PlaceholderArt seed={ep.id} className="w-full h-full object-cover pointer-events-none" />
                         )}
                       </div>
 

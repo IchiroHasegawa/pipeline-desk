@@ -23,6 +23,7 @@ import type {
 import { AppShell } from "@/components/app-shell/AppShell";
 import type { RailAction } from "@/components/app-shell/ActionRail";
 import { Select, type SelectOption } from "@/components/app-shell/Select";
+import { PlaceholderArt } from "@/components/app-shell";
 import { DeleteSceneDialog } from "@/components/scenes-v3/DeleteSceneDialog";
 import { useTaskEditing } from "@/lib/hooks/useTaskEditing";
 import { createTodo, setTodoComplete } from "@/app/actions/todos";
@@ -236,10 +237,6 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
 
   const activePreviewUrl = selectedKeyframe?.previewUrl || scene.previewImage || null;
 
-  const initials = useMemo(() => {
-    const clean = scene.sceneName.replace(/[^a-zA-Z0-9]/g, "");
-    return (clean.slice(0, 2) || "SC").toUpperCase();
-  }, [scene.sceneName]);
 
   const handleOpenAssembly = useCallback(
     (keyframeId?: string | null) => {
@@ -335,11 +332,6 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
                     onDoubleClick={() => handleOpenAssembly()}
                     title="Double-click to open Assembly"
                     className="relative aspect-video w-full overflow-hidden rounded-[14px] bg-[var(--po-sunken)] cursor-pointer group shadow-xs"
-                    style={{
-                      background: activePreviewUrl
-                        ? undefined
-                        : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-                    }}
                   >
                     {activePreviewUrl ? (
                       <img
@@ -348,9 +340,10 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
                         className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-102"
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-[44px] font-semibold text-[var(--po-ink-3)] opacity-70 select-none">
-                        {initials}
-                      </div>
+                      <PlaceholderArt
+                        seed={selectedKeyframe?.id || scene.id}
+                        className="h-full w-full object-cover"
+                      />
                     )}
                   </div>
 
@@ -379,9 +372,10 @@ export const SceneManageView: React.FC<SceneManageViewProps> = ({
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <div className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-[var(--po-ink-3)]">
-                                {kf.name}
-                              </div>
+                              <PlaceholderArt
+                                seed={kf.id}
+                                className="h-full w-full object-cover"
+                              />
                             )}
                             <span className="absolute bottom-0.5 left-0.5 rounded-[3px] bg-black/65 px-1 py-0.2 text-[8.5px] font-semibold text-white">
                               {kf.name}

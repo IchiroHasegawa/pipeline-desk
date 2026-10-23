@@ -5,8 +5,8 @@ import {
   X,
   HardDrive,
   AlertTriangle,
-  FolderOpen,
 } from "lucide-react";
+import { PlaceholderArt } from "@/components/app-shell";
 import { Select, type SelectOption } from "@/components/app-shell/Select";
 import { formatBytes } from "@/lib/format/production";
 import { updateAssetTaskStatus, updateAssetTask } from "@/app/actions/production";
@@ -214,10 +214,7 @@ export const AssetDetailPanel: React.FC<AssetDetailPanelProps> = ({
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Asset Preview Thumbnail */}
           <div className="relative aspect-4/3 w-full overflow-hidden rounded-[16px] border border-[var(--po-line)] bg-[var(--po-sunken)] shadow-inner">
-            <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center gap-2 text-[var(--po-ink-3)]">
-              <FolderOpen size={36} className="opacity-40" />
-              <span className="text-[12px] font-medium">No preview image</span>
-            </div>
+            <PlaceholderArt seed={asset.id} className="absolute inset-0 h-full w-full object-cover" />
             {asset.previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

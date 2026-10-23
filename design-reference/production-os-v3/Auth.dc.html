@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/lucide-static@0.469.0/font/lucide.css">
+<style>
+:root,[data-theme="light"]{--bg:#E8E8E6;--panel:#F4F4F2;--card:#FFFFFF;--sunken:#ECECEA;--line:rgba(20,20,24,.07);--line-2:rgba(20,20,24,.13);--ink:#18181B;--ink-2:#56565D;--ink-3:#8B8B93;--chip:rgba(20,20,24,.05);--rail:#1F1F22;--accent:oklch(0.57 0.15 262);--ok:#2FA36B;--danger:#D64541;--shadow-sm:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.03);--shadow:0 1px 2px rgba(0,0,0,.05),0 12px 32px rgba(0,0,0,.06);--shadow-lg:0 24px 64px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.06)}
+[data-theme="dark"]{--bg:#0C0C0E;--panel:#141416;--card:#1B1B1E;--sunken:#111113;--line:rgba(255,255,255,.06);--line-2:rgba(255,255,255,.12);--ink:#EDEDEF;--ink-2:#A4A4AC;--ink-3:#6F6F77;--chip:rgba(255,255,255,.06);--rail:#2A2A2E;--accent:oklch(0.68 0.14 262);--ok:#3DB87C;--danger:#F06A63;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.35);--shadow-lg:0 24px 64px rgba(0,0,0,.6)}
+html,body{margin:0;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{color:var(--accent)}
+[class^="icon-"],[class*=" icon-"]{line-height:1;display:inline-block}
+input::placeholder{color:var(--ink-3)}
+@keyframes po-spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<sc-if value="{{ isFlow }}" hint-placeholder-val="{{ true }}">
+  <div data-theme="{{ theme }}" style="min-height:100vh;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:56px 24px;box-sizing:border-box;position:relative;color-scheme:{{ theme }};">
+    <button onClick="{{ toggleTheme }}" aria-label="{{ themeLabel }}" title="{{ themeLabel }}" style="position:absolute;top:28px;right:28px;width:48px;height:48px;border-radius:24px;border:1px solid var(--line);background:var(--card);color:var(--ink-2);font-size:18px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;padding:0;" style-hover="color:var(--ink);"><i class="{{ themeIcon }}"></i></button>
+    <dc-import name="AuthCard" card="{{ flowCard }}" hint-size="420px,520px"></dc-import>
+  </div>
+</sc-if>
+<sc-if value="{{ isStates }}" hint-placeholder-val="{{ false }}">
+  <div data-theme="light" style="background:#D6D6D3;color:#18181B;font-family:Inter,system-ui,sans-serif;padding:64px;display:flex;flex-direction:column;gap:80px;width:max-content;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <h1 style="margin:0;font-size:36px;font-weight:600;letter-spacing:-0.025em;">Production OS — Auth screens</h1>
+      <span style="font-size:15px;color:#56565D;">Default · focus · loading · error for each screen, light and dark. Same card component as the live flow in Auth.dc.html.</span>
+    </div>
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+      <section data-screen-label="{{ g.title }}" style="display:flex;flex-direction:column;gap:24px;">
+        <div style="display:flex;align-items:baseline;gap:14px;"><h2 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.02em;">{{ g.title }}</h2><span style="font-size:14px;color:#56565D;">{{ g.note }}</span></div>
+        <sc-for list="{{ g.rows }}" as="r">
+          <div style="display:flex;gap:20px;align-items:stretch;">
+            <div style="width:64px;flex:none;padding-top:30px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#56565D;">{{ r.label }}</div>
+            <sc-for list="{{ r.frames }}" as="f">
+              <div style="display:flex;flex-direction:column;gap:10px;flex:none;width:500px;">
+                <span style="font-size:13px;font-weight:600;color:#18181B;">{{ f.label }}</span>
+                <div data-theme="{{ r.theme }}" style="flex:1;background:var(--bg);border-radius:24px;border:1px solid rgba(0,0,0,.08);padding:44px 40px;box-sizing:border-box;display:flex;justify-content:center;align-items:flex-start;color-scheme:{{ r.theme }};">
+                  <dc-import name="AuthCard" card="{{ f.card }}" hint-size="420px,520px"></dc-import>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+  </div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gate&quot;,&quot;login&quot;,&quot;owner&quot;,&quot;signup&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;flow&quot;,&quot;states&quot;],&quot;default&quot;:&quot;flow&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const NOOP=()=>{};
+const OWNER='mika.kato';
+const iniOf=u=>{const p=String(u||'').split(/[._\-\s@]/).filter(Boolean);return (((p[0]||'?')[0]||'')+((p[1]||'')[0]||'')).toUpperCase();};
+const bad=x=>/^(wrong|nobody|000000)$/i.test(String(x||'').trim());
+const RING_A='0 0 0 4px color-mix(in oklch, var(--accent) 18%, transparent)';
+const RING_E='0 0 0 4px color-mix(in oklch, var(--danger) 14%, transparent)';
+const STAGE_ERR='That access code isn’t valid for this build.';
+const OTP_BANNER={title:'That code didn’t work',body:'Codes change every 30 seconds. Wait for a new one in your authenticator app and try again.'};
+
+function build(sc,step,st,h){
+  const v=st.vals||{},E=st.errors||{},L=!!st.loading,rv=st.reveal||{};
+  const F=(id,o)=>{const val=v[id]||'',err=E[id]||'',foc=st.focus===id,pw=!!o.pw,r=!!rv[id];return {
+    id:(h.uid||'')+sc+'-'+id,label:o.label,icon:o.icon||'',ph:o.ph||'',ac:o.ac||'off',value:val,isInput:!o.otp,isOtp:!!o.otp,isPw:pw,
+    inputType:pw&&!r?'password':(o.type||'text'),revealIcon:r?'icon-eye-off':'icon-eye',revealLabel:r?'Hide password':'Show password',onReveal:()=>h.reveal(id),
+    padR:pw?46:14,ls:o.mono&&val?'0.08em':'normal',hasErr:!!err.trim(),err,hasHelp:!!o.help&&!err,help:o.help||'',
+    bd:err?'var(--danger)':foc?'var(--accent)':'var(--line-2)',ring:err?RING_E:foc?RING_A:'none',bg:L?'var(--sunken)':'var(--card)',
+    autoFocus:!!h.live&&!!o.first,onChange:e=>h.set(id,o.otp?e.target.value.replace(/\D/g,'').slice(0,6):e.target.value),onFocus:()=>h.focus(id),onBlur:h.blur,
+    boxes:o.otp?[0,1,2,3,4,5].map(i=>{const ch=val[i]||'',cur=foc&&!err&&i===Math.min(val.length,5);return {ch,caret:foc&&!err&&i===val.length,bd:err?'var(--danger)':cur?'var(--accent)':ch?'var(--ink-3)':'var(--line-2)',ring:cur?RING_A:'none'};}):[]};};
+  const c={owner:false,staging:false,title:'',sub:'',hasIdent:false,ident:{},hasBanner:!!st.banner,banner:st.banner||{},fields:[],hasHero:false,heroIcon:'',
+    btnLabel:'Continue',btnIcon:'',btnBusy:'Checking…',btnLoading:L,btnIdle:!L,btnOp:L?0.75:1,btnCursor:L?'progress':'pointer',loading:L,
+    hasBack:false,backLabel:'Back',onBack:h.back,hasFoot:false,foot:{},hasOwnerLink:false,onOwner:()=>h.go('owner'),hasNote:false,note:'',
+    hasAlt:false,alt:{},steps:[],stepLabel:'',onSubmit:e=>{e.preventDefault();h.submit();}};
+  const ident=()=>{const u=v.username||OWNER;c.hasIdent=true;c.ident={name:u,ini:iniOf(u),onChange:h.change};};
+  const signupFoot={text:'New to Production OS?',link:'Create account',onClick:()=>h.go('signup')};
+  if(sc==='gate'){Object.assign(c,{staging:true,title:'Staging access',sub:'This is a pre-release build. Enter the access code from your team to continue.',fields:[F('code',{label:'Access code',icon:'icon-key-round',ph:'Enter access code',mono:true,first:true,help:'Ask your producer for this build’s code.'})]});}
+  if(sc==='login'){c.hasFoot=true;c.foot=signupFoot;c.hasOwnerLink=true;
+    if(step===1)Object.assign(c,{title:'Log in',sub:'Welcome back. Start with your username.',fields:[F('username',{label:'Username',icon:'icon-at-sign',ph:'e.g. ana.lindqvist',ac:'username',first:true})]});
+    else{ident();Object.assign(c,{title:'Enter your password',sub:'Logging in to your Production OS workspace.',btnLabel:'Log in',btnBusy:'Logging in…',fields:[F('password',{label:'Password',icon:'icon-lock',pw:true,ac:'current-password',first:true})]});}}
+  if(sc==='owner'){Object.assign(c,{owner:true,hasBack:true,backLabel:step===1?'Log in':'Back',title:'Owner log in',stepLabel:'Step '+step+' of 3',steps:[1,2,3].map(n=>({bg:n<=step?'#FFFFFF':'rgba(255,255,255,.2)'})),hasNote:true,note:'Only the workspace Owner can log in here.'});
+    if(step===1)Object.assign(c,{sub:'Use the account that owns this workspace.',fields:[F('username',{label:'Username',icon:'icon-at-sign',ph:'Owner username',ac:'username',first:true})]});
+    if(step===2){ident();Object.assign(c,{sub:'Enter the password for this Owner account.',fields:[F('password',{label:'Password',icon:'icon-lock',pw:true,ac:'current-password',first:true})]});}
+    if(step===3){ident();Object.assign(c,{sub:'Open your authenticator app and enter the code it shows for Production OS.',btnLabel:'Verify and log in',btnIcon:'icon-shield-check',btnBusy:'Verifying…',fields:[F('code',{label:'6-digit authentication code',otp:true,first:true})]});}}
+  if(sc==='signup'){
+    if(step===1)Object.assign(c,{title:'Create account',sub:'Join your studio’s Production OS workspace.',btnLabel:'Create account',btnBusy:'Creating account…',hasFoot:true,foot:{text:'Already have an account?',link:'Log in',onClick:()=>h.go('login')},
+      fields:[F('username',{label:'Username',icon:'icon-at-sign',ph:'e.g. ana.lindqvist',ac:'username',first:true}),F('email',{label:'Email',icon:'icon-mail',type:'email',ph:'you@studio.com',ac:'email'}),F('password',{label:'Password',icon:'icon-lock',pw:true,ac:'new-password',help:'At least 8 characters.'}),F('confirm',{label:'Confirm password',icon:'icon-lock',pw:true,ac:'new-password'})]});
+    else Object.assign(c,{hasHero:true,heroIcon:'icon-mail-check',title:'Check your email',sub:'We sent a verification link to '+(v.email||'your email')+'. Open it to activate your account, then log in.',btnLabel:'Back to log in',btnIcon:'icon-arrow-left',hasAlt:true,alt:{text:'Didn’t get it?',link:st.resent?'Sent again':'Resend email',color:st.resent?'var(--ok)':'var(--accent)',onClick:h.resend}});}
+  return c;
+}
+
+const U='ana.lindqvist';
+const GROUPS=[
+  {title:'Staging access gate',note:'Shown before log in on staging builds.',sc:'gate',states:[['Default',1,{}],['Focus',1,{focus:'code',vals:{code:'PO-ST'}}],['Loading',1,{loading:true,vals:{code:'PO-STAGE-26'}}],['Error',1,{vals:{code:'PO-STAGE-25'},errors:{code:STAGE_ERR}}]]},
+  {title:'Log in · Step 1',note:'Username first. Owner access stays a quiet secondary link.',sc:'login',states:[['Default',1,{}],['Focus',1,{focus:'username',vals:{username:'ana.lind'}}],['Loading',1,{loading:true,vals:{username:U}}],['Error',1,{vals:{username:'ana.lindqvst'},errors:{username:'We couldn’t find an account with that username.'}}]]},
+  {title:'Log in · Step 2',note:'Same card. The username is shown with a Change link.',sc:'login',states:[['Default',2,{vals:{username:U}}],['Focus',2,{focus:'password',vals:{username:U,password:'lantern'}}],['Loading',2,{loading:true,vals:{username:U,password:'lantern2026'}}],['Error',2,{vals:{username:U,password:'lantern'},errors:{password:'Incorrect password. Try again.'}}]]},
+  {title:'Owner log in',note:'Three steps, with a Back option and a darker secured header.',sc:'owner',states:[['Step 1 · Default',1,{}],['Step 1 · Focus',1,{focus:'username',vals:{username:'mika.k'}}],['Step 2 · Loading',2,{loading:true,vals:{username:OWNER,password:'tidechart-2026'}}],['Step 2 · Error',2,{vals:{username:OWNER,password:'tidechart'},errors:{password:'Incorrect password. Try again.'}}],['Step 3 · Default',3,{vals:{username:OWNER}}],['Step 3 · Focus',3,{focus:'code',vals:{username:OWNER,code:'482'}}],['Step 3 · Loading',3,{loading:true,vals:{username:OWNER,code:'482913'}}],['Step 3 · Error',3,{vals:{username:OWNER,code:''},errors:{code:' '},banner:OTP_BANNER}]]},
+  {title:'Sign up',note:'Four fields, then a “Check your email” confirmation.',sc:'signup',states:[['Default',1,{}],['Focus',1,{focus:'email',vals:{username:U,email:'ana@lantern'}}],['Loading',1,{loading:true,vals:{username:U,email:'ana@lanternworks.studio',password:'lantern2026',confirm:'lantern2026'}}],['Error',1,{vals:{username:U,email:'ana@lanternworks',password:'lantern2026',confirm:'lantern2025'},errors:{email:'That email address doesn’t look right.',confirm:'Passwords don’t match.'}}],['Success · Check your email',2,{vals:{email:'ana@lanternworks.studio'}}]]}
+];
+
+class Component extends DCLogic {
+  state={theme:this.props.theme||'light',screen:this.props.screen||'login',step:1,vals:{},errors:{},banner:null,loading:false,focus:null,reveal:{},resent:false};
+  componentDidUpdate(pp){if(pp.theme!==this.props.theme&&this.props.theme)this.setState({theme:this.props.theme});if(pp.screen!==this.props.screen&&this.props.screen)this.go(this.props.screen);}
+  componentWillUnmount(){clearTimeout(this._t);}
+  go(screen){clearTimeout(this._t);this.setState({screen,step:1,vals:{},errors:{},banner:null,loading:false,focus:null,reveal:{},resent:false});}
+  set(k,val){this.setState(s=>({vals:{...s.vals,[k]:val},errors:{...s.errors,[k]:undefined},banner:null}),()=>{const s=this.state;if(s.screen==='owner'&&s.step===3&&k==='code'&&val.length===6)this.submit();});}
+  back(){const s=this.state;if(s.loading)return;if(s.screen==='owner'&&s.step>1)return this.setState({step:s.step-1,errors:{},banner:null});this.go('login');}
+  submit(){const s=this.state;if(s.loading)return;const v=s.vals,sc=s.screen,st=s.step,e={};
+    if(sc==='signup'&&st===2)return this.go('login');
+    const need=(k,m)=>{if(!String(v[k]||'').trim())e[k]=m;};
+    if(sc==='gate')need('code','Enter the access code.');
+    if(sc==='login'||sc==='owner'){if(st===1)need('username','Enter your username.');if(st===2)need('password','Enter your password.');if(sc==='owner'&&st===3&&(v.code||'').length<6)e.code='Enter all 6 digits.';}
+    if(sc==='signup'){need('username','Choose a username.');if(v.username&&!/^[a-z0-9._-]{3,}$/i.test(v.username))e.username='Use 3 or more letters, numbers, dots or dashes.';if(!/^\S+@\S+\.\S+$/.test(v.email||''))e.email=v.email?'That email address doesn’t look right.':'Enter your email.';if((v.password||'').length<8)e.password='Use at least 8 characters.';if(!v.confirm)e.confirm='Repeat your password.';else if(v.confirm!==v.password)e.confirm='Passwords don’t match.';}
+    if(Object.keys(e).length)return this.setState({errors:e,banner:null});
+    this.setState({loading:true,errors:{},banner:null});clearTimeout(this._t);this._t=setTimeout(()=>this.resolve(),1000);}
+  resolve(){const s=this.state,v=s.vals,sc=s.screen,st=s.step;const fail=p=>this.setState({loading:false,...p}),ok=p=>this.setState({loading:false,errors:{},banner:null,focus:null,...p});
+    if(sc==='gate'){if(bad(v.code))return fail({errors:{code:STAGE_ERR}});return this.go('login');}
+    if(sc==='login'){if(st===1){if(bad(v.username))return fail({errors:{username:'We couldn’t find an account with that username.'}});return ok({step:2});}if(bad(v.password))return fail({errors:{password:'Incorrect password. Try again.'}});return this.enter();}
+    if(sc==='owner'){if(st===1){if(bad(v.username))return fail({errors:{username:'That account isn’t the workspace Owner.'}});return ok({step:2});}
+      if(st===2){if(bad(v.password))return fail({errors:{password:'Incorrect password. Try again.'}});return ok({step:3,vals:{...v,code:''}});}
+      if(bad(v.code))return fail({errors:{code:' '},banner:OTP_BANNER,vals:{...v,code:''}});return this.enter();}
+    if(sc==='signup'){if(String(v.username||'').toLowerCase()===OWNER)return fail({errors:{username:'That username is already taken.'}});return ok({step:2});}}
+  enter(){this.setState({loading:false});try{window.location.href='Production OS v2.dc.html';}catch(e){}}
+  renderVals(){
+    const S=this.state,view=this.props.view||'flow',dark=S.theme==='dark';
+    const live={live:true,uid:'flow-',set:(k,v)=>this.set(k,v),focus:k=>this.setState({focus:k}),blur:()=>this.setState({focus:null}),submit:()=>this.submit(),back:()=>this.back(),go:x=>this.go(x),change:()=>{if(!S.loading)this.setState({step:1,errors:{},banner:null});},reveal:k=>this.setState(s=>({reveal:{...s.reveal,[k]:!s.reveal[k]}})),resend:()=>this.setState({resent:true})};
+    const still={live:false,set:NOOP,focus:NOOP,blur:NOOP,submit:NOOP,back:NOOP,go:NOOP,change:NOOP,reveal:NOOP,resend:NOOP};
+    const groups=view==='states'?GROUPS.map((g,gi)=>({title:g.title,note:g.note,rows:['light','dark'].map(th=>({theme:th,label:th==='light'?'Light':'Dark',frames:g.states.map(([label,step,st],si)=>({label,card:build(g.sc,step,st,{...still,uid:'g'+gi+th+si+'-'})}))}))})):[];
+    return {isFlow:view!=='states',isStates:view==='states',theme:S.theme,themeIcon:dark?'icon-sun':'icon-moon',themeLabel:dark?'Light mode':'Dark mode',toggleTheme:()=>this.setState(s=>({theme:s.theme==='light'?'dark':'light'})),
+      flowCard:view!=='states'?build(S.screen,S.step,S,live):{},groups};
+  }
+}
+</script>
+</body>
+</html>

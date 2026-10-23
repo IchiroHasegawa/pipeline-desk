@@ -2,11 +2,12 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, Trash2, Search, X, Clapperboard, PanelRight } from "lucide-react";
+import { Plus, Trash2, Search, X, PanelRight } from "lucide-react";
 import {
   AppShell,
   type RailAction,
   type BreadcrumbItem,
+  PlaceholderArt,
 } from "@/components/app-shell";
 import { AssetTable } from "./AssetTable";
 import { AssetDetailPanel } from "./AssetDetailPanel";
@@ -252,11 +253,16 @@ export const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = ({
                       className="group flex flex-col gap-2.5 rounded-[18px] border border-[var(--po-line)] bg-[var(--po-card)] p-2 cursor-pointer shadow-[var(--po-shadow-sm)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--po-shadow-lift)]"
                     >
                       {/* 16:9 Thumbnail */}
-                      <div className="relative aspect-video w-full overflow-hidden rounded-[12px] bg-gradient-to-br from-[var(--po-ph1)] to-[var(--po-ph2)] border border-[var(--po-line)] flex items-center justify-center">
-                        <Clapperboard
-                          size={28}
-                          className="text-[var(--po-ink-3)] opacity-40 group-hover:scale-105 transition-transform"
-                        />
+                      <div className="relative aspect-video w-full overflow-hidden rounded-[12px] border border-[var(--po-line)] flex items-center justify-center">
+                        {ep.previewImage ? (
+                          <img
+                            src={ep.previewImage}
+                            alt={ep.episodeName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <PlaceholderArt seed={ep.id} className="h-full w-full object-cover" />
+                        )}
                       </div>
 
                       {/* Episode Title & Asset Count */}

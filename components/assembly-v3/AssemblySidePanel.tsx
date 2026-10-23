@@ -2,16 +2,14 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import Link from "next/navigation";
 import NextLink from "next/link";
 import {
-  Layers,
-  Box,
   ChevronLeft,
   GripVertical,
   Film,
-  Sparkles,
+  Box,
 } from "lucide-react";
+import { PlaceholderArt } from "@/components/app-shell";
 import { sceneAssemblyHref } from "@/lib/routes/app";
 import type { SceneV2, AssetV2 } from "@/types/production-v2";
 
@@ -175,16 +173,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--po-card)] to-[var(--po-chip)]">
-                        <span className="text-[20px] font-bold tracking-tight text-[var(--po-ink-2)] opacity-40">
-                          {currentScene.sceneName
-                            .split(" ")
-                            .map((w) => w[0])
-                            .slice(0, 2)
-                            .join("")
-                            .toUpperCase()}
-                        </span>
-                      </div>
+                      <PlaceholderArt seed={currentScene.id} className="h-full w-full object-cover" />
                     )}
                   </div>
                   {/* Details */}
@@ -226,16 +215,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--po-card)] to-[var(--po-chip)]">
-                            <span className="text-[12px] font-semibold text-[var(--po-ink-2)] opacity-50">
-                              {s.sceneName
-                                .split(" ")
-                                .map((w) => w[0])
-                                .slice(0, 2)
-                                .join("")
-                                .toUpperCase()}
-                            </span>
-                          </div>
+                          <PlaceholderArt seed={s.id} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
@@ -290,9 +270,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-[var(--po-sunken)] text-[var(--po-ink-2)]">
-                            <Box size={16} />
-                          </div>
+                          <PlaceholderArt seed={asset.id} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
@@ -348,9 +326,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-[var(--po-sunken)] text-[var(--po-ink-2)]">
-                            <Box size={16} />
-                          </div>
+                          <PlaceholderArt seed={asset.id} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">

@@ -3,146 +3,248 @@
 import { useActionState, useState } from "react";
 import { signupAction, type AuthState } from "@/app/actions/auth";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  AtSign,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  Mail,
+  MailCheck,
+} from "lucide-react";
+import { AuthLayout, AuthCard } from "@/components/auth";
 
 export default function SignupPage() {
-  const [state, formAction, isPending] = useActionState<AuthState, FormData>(signupAction, {});
+  const [state, formAction, isPending] = useActionState<AuthState, FormData>(
+    signupAction,
+    {}
+  );
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmTouched, setConfirmTouched] = useState(false);
+
+  const passwordsMismatch =
+    confirmTouched &&
+    confirmPassword.length > 0 &&
+    password.length > 0 &&
+    password !== confirmPassword;
 
   if (state.success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black p-4 text-white">
-        <div className="w-full max-w-md space-y-6 rounded-xl border border-[#2a2a2a] bg-[#121212] p-8 shadow-2xl text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/20 text-blue-400">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight">Check Your Email</h2>
-          <p className="text-zinc-400 text-sm">
-            We sent a confirmation link to your email address.
-          </p>
-          <p className="text-zinc-400 text-sm mt-2">
-            After confirming your email, return to Production OS and log in with your Username.
-          </p>
-          <div className="pt-4">
-            <Link href="/login" className="text-sm font-bold text-white hover:underline">
-              Return to Login
+      <AuthLayout>
+        <AuthCard
+          heroIcon={<MailCheck size={28} />}
+          title="Check your email"
+          sub="We sent a confirmation link to your email address. Open it to activate your account, then log in."
+        >
+          <div className="flex gap-2.5 pt-2">
+            <Link
+              href="/login"
+              className="flex-1 h-[46px] rounded-full border-0 bg-[var(--po-ink)] text-[var(--po-panel)] font-semibold text-[14px] inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            >
+              <ArrowLeft size={16} />
+              <span>Back to log in</span>
             </Link>
           </div>
-        </div>
-      </div>
+        </AuthCard>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black p-4 text-white">
-      <div className="w-full max-w-md space-y-8 rounded-xl border border-[#2a2a2a] bg-[#121212] p-8 shadow-2xl">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-bold italic text-black">
-            P
+    <AuthLayout>
+      <AuthCard
+        title="Create account"
+        sub="Join your studio’s Production OS workspace."
+        errorMessage={state.message}
+        footer={
+          <div className="flex items-center gap-1.5">
+            <span>Already have an account?</span>
+            <Link
+              href="/login"
+              className="font-semibold text-[var(--po-accent)] hover:underline"
+            >
+              Log in
+            </Link>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Create Production OS Account</h2>
-        </div>
-
-        <form action={formAction} className="mt-8 space-y-6">
-          {state.message && (
-            <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400 text-center">
-              {state.message}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-zinc-300">
+        }
+      >
+        <form action={formAction} className="flex flex-col gap-[22px] m-0">
+          <div className="flex flex-col gap-4">
+            {/* Username Field */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="username"
+                className="text-[13px] font-medium text-[var(--po-ink)]"
+              >
                 Username
               </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                pattern="[a-zA-Z0-9_]+"
-                minLength={3}
-                maxLength={30}
-                title="3 to 30 characters. Letters, numbers, and underscores only."
-                className="mt-2 block w-full rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="letters, numbers, underscores"
-                autoComplete="username"
-              />
+              <div className="relative flex items-center">
+                <AtSign
+                  size={16}
+                  className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+                />
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  pattern="[a-zA-Z0-9_]+"
+                  minLength={3}
+                  maxLength={30}
+                  placeholder="e.g. ana_lindqvist"
+                  autoComplete="username"
+                  autoFocus
+                  spellCheck={false}
+                  disabled={isPending}
+                  className="w-full h-[46px] rounded-[14px] border border-[var(--po-line-2)] bg-[var(--po-card)] text-[var(--po-ink)] text-[15px] pl-[42px] pr-[14px] outline-none transition-[border-color,box-shadow] focus:border-[var(--po-accent)] focus:ring-4 focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)] disabled:bg-[var(--po-sunken)] disabled:opacity-60"
+                />
+              </div>
+              <span className="text-[12.5px] text-[var(--po-ink-3)]">
+                3–30 letters, numbers or underscores
+              </span>
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
-                Email Address
+            {/* Email Field */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="email"
+                className="text-[13px] font-medium text-[var(--po-ink)]"
+              >
+                Email
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-2 block w-full rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
+              <div className="relative flex items-center">
+                <Mail
+                  size={16}
+                  className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+                />
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="you@studio.com"
+                  autoComplete="email"
+                  spellCheck={false}
+                  disabled={isPending}
+                  className="w-full h-[46px] rounded-[14px] border border-[var(--po-line-2)] bg-[var(--po-card)] text-[var(--po-ink)] text-[15px] pl-[42px] pr-[14px] outline-none transition-[border-color,box-shadow] focus:border-[var(--po-accent)] focus:ring-4 focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)] disabled:bg-[var(--po-sunken)] disabled:opacity-60"
+                />
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
+            {/* Password Field */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="password"
+                className="text-[13px] font-medium text-[var(--po-ink)]"
+              >
                 Password
               </label>
-              <div className="relative mt-2">
+              <div className="relative flex items-center">
+                <Lock
+                  size={16}
+                  className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+                />
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  className="block w-full rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 pr-14 text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
                   autoComplete="new-password"
+                  disabled={isPending}
+                  className="w-full h-[46px] rounded-[14px] border border-[var(--po-line-2)] bg-[var(--po-card)] text-[var(--po-ink)] text-[15px] pl-[42px] pr-[46px] outline-none transition-[border-color,box-shadow] focus:border-[var(--po-accent)] focus:ring-4 focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)] disabled:bg-[var(--po-sunken)] disabled:opacity-60"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-xs font-medium text-zinc-400 hover:text-white"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-1.5 w-[34px] h-[34px] rounded-[10px] text-[var(--po-ink-3)] hover:bg-[var(--po-chip)] hover:text-[var(--po-ink)] flex items-center justify-center p-0 transition-colors cursor-pointer"
                 >
-                  {showPassword ? "Hide" : "Show"}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              <span className="text-[12.5px] text-[var(--po-ink-3)]">
+                At least 8 characters
+              </span>
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-300">
-                Confirm Password
+            {/* Confirm Password Field */}
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="confirmPassword"
+                className="text-[13px] font-medium text-[var(--po-ink)]"
+              >
+                Confirm password
               </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showPassword ? "text" : "password"}
-                required
-                className="mt-2 block w-full rounded border border-[#2a2a2a] bg-zinc-900 px-3 py-2 text-white placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Repeat your password"
-                autoComplete="new-password"
-              />
+              <div className="relative flex items-center">
+                <Lock
+                  size={16}
+                  className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+                />
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setConfirmTouched(true);
+                  }}
+                  onBlur={() => setConfirmTouched(true)}
+                  placeholder="Repeat your password"
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  className={`w-full h-[46px] rounded-[14px] border bg-[var(--po-card)] text-[var(--po-ink)] text-[15px] pl-[42px] pr-[46px] outline-none transition-[border-color,box-shadow] focus:ring-4 disabled:bg-[var(--po-sunken)] disabled:opacity-60 ${
+                    passwordsMismatch
+                      ? "border-[var(--po-danger)] ring-4 ring-[color-mix(in_oklch,var(--po-danger)_14%,transparent)]"
+                      : "border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)]"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  aria-label={showConfirm ? "Hide password" : "Show password"}
+                  className="absolute right-1.5 w-[34px] h-[34px] rounded-[10px] text-[var(--po-ink-3)] hover:bg-[var(--po-chip)] hover:text-[var(--po-ink)] flex items-center justify-center p-0 transition-colors cursor-pointer"
+                >
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {passwordsMismatch && (
+                <span className="flex items-center gap-1.5 text-[12.5px] text-[var(--po-danger)] font-medium">
+                  <AlertCircle size={13} />
+                  Passwords do not match
+                </span>
+              )}
             </div>
+          </div>
 
+          {/* Submit Button */}
+          <div className="flex gap-2.5 pt-1">
             <button
               type="submit"
               disabled={isPending}
-              className="flex w-full justify-center rounded bg-blue-600 px-4 py-2 mt-4 text-sm font-bold text-white hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black disabled:opacity-50"
+              className="flex-1 h-[46px] rounded-full border-0 bg-[var(--po-ink)] text-[var(--po-panel)] font-semibold text-[14px] inline-flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 disabled:opacity-75 disabled:cursor-progress transition-opacity"
             >
-              {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
+              {isPending ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Creating account…</span>
+                </>
+              ) : (
+                <span>Create account</span>
+              )}
             </button>
-
-            <div className="text-center text-sm text-zinc-400 pt-2">
-              Already have an account?{" "}
-              <Link href="/login" className="font-bold text-white hover:underline">
-                Login
-              </Link>
-            </div>
           </div>
         </form>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   );
 }

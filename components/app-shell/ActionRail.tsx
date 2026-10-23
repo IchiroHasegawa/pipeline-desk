@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Clapperboard, type LucideIcon } from "lucide-react";
-import { projectsHref } from "@/lib/routes/app";
+import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
+import { PAGE_REGISTRY, getCurrentPage } from "./pageRegistry";
 
 export interface RailAction {
   key: string;
@@ -26,9 +27,36 @@ export interface ActionRailProps {
 export const ActionRail: React.FC<ActionRailProps> = ({
   actions,
   bottomAction,
-  railLabel,
+  // railLabel retained in props for compatibility, not rendered in v2 design
 }) => {
+  const pathname = usePathname() || "";
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  // Close when pathname changes
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setIsSwitcherOpen(false);
+  }
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isSwitcherOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsSwitcherOpen(false);
+        setActiveTooltip(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSwitcherOpen]);
+
+  // Determine current active page for top rail switcher
+  const matchedPage = getCurrentPage(pathname);
+  const CurrentIcon = matchedPage?.icon ?? PAGE_REGISTRY[0].icon;
+  const currentLabel = matchedPage?.label ?? "Projects";
 
   const renderActionButton = (action: RailAction, isBottom = false) => {
     const Icon = action.icon;
@@ -95,53 +123,148 @@ export const ActionRail: React.FC<ActionRailProps> = ({
   };
 
   return (
-    <aside
-      aria-label="Action Rail"
-      className="flex h-full w-[68px] flex-none flex-col gap-3"
-    >
-      {/* Upper action container */}
-      <div className="flex flex-1 min-h-0 flex-col items-center rounded-[34px] border border-[var(--po-line)] bg-[var(--po-panel)] p-[6px] shadow-[var(--po-shadow-sm)]">
-        {/* Inner dark pill for actions */}
-        <div className="flex w-[56px] flex-col items-center gap-1 rounded-[28px] bg-[var(--po-rail)] py-2 shadow-[0_8px_20px_rgba(0,0,0,0.18)]">
-          {/* Logo / Clapperboard */}
-          <Link
-            href={projectsHref()}
-            aria-label="Production OS Home"
-            className="flex h-[44px] w-[44px] items-center justify-center rounded-[22px] text-white transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)]"
+    <>
+      {/* Outside click backdrop for page switcher */}
+      {isSwitcherOpen && (
+        <div
+          onClick={() => {
+            setIsSwitcherOpen(false);
+            setActiveTooltip(null);
+          }}
+          className="fixed inset-0 z-[70]"
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        aria-label="Action Rail"
+        className="relative z-[75] flex h-full w-[56px] flex-none flex-col justify-between"
+      >
+        {/* Top floating pill: Page Switcher + Actions */}
+        <div className="flex w-[56px] flex-col items-center gap-1 rounded-[28px] bg-[var(--po-rail)] py-1.5 pb-2 shadow-[0_10px_28px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.2)]">
+          {/* Top Switcher Button (Current Page Icon) */}
+          <div
+            className="relative flex items-center justify-center"
+            onMouseEnter={() => !isSwitcherOpen && setActiveTooltip("page-switcher")}
+            onMouseLeave={() =>
+              setActiveTooltip((curr) => (curr === "page-switcher" ? null : curr))
+            }
           >
-            <Clapperboard size={20} />
-          </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSwitcherOpen((prev) => !prev);
+                setActiveTooltip(null);
+              }}
+              onFocus={() => !isSwitcherOpen && setActiveTooltip("page-switcher")}
+              onBlur={() =>
+                setActiveTooltip((curr) => (curr === "page-switcher" ? null : curr))
+              }
+              aria-label="Switch page"
+              aria-expanded={isSwitcherOpen}
+              className={`flex h-[44px] w-[44px] cursor-pointer items-center justify-center rounded-[22px] border-none p-0 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)] ${
+                isSwitcherOpen
+                  ? "bg-white text-[#18181B]"
+                  : "bg-white/[0.08] text-white hover:bg-white/[0.16]"
+              }`}
+            >
+              <CurrentIcon size={19} />
+            </button>
 
-          {/* Divider */}
-          <div className="my-1 h-[1px] w-[22px] bg-white/12" />
+            {activeTooltip === "page-switcher" && !isSwitcherOpen && (
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute left-[56px] top-1/2 z-[90] flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-[8px] bg-[var(--po-tip)] px-[10px] py-[7px] text-[12px] font-medium text-[var(--po-tip-ink)] shadow-[var(--po-shadow)]"
+              >
+                <span>{currentLabel}</span>
+                <span className="font-normal opacity-55">Switch page</span>
+              </div>
+            )}
+          </div>
 
-          {/* Rail actions */}
+          {/* Vertical Page List Attached to Rail */}
+          {isSwitcherOpen && (
+            <div className="my-0.5 flex w-[48px] flex-col items-center gap-1 rounded-[24px] bg-white/[0.06] py-1">
+              {PAGE_REGISTRY.map((p) => {
+                const Icon = p.icon;
+                const isCurrent = matchedPage?.key === p.key;
+                const tipKey = `p-${p.key}`;
+                const isHovered = activeTooltip === tipKey;
+
+                return (
+                  <div
+                    key={p.key}
+                    className="relative flex items-center justify-center"
+                    onMouseEnter={() => setActiveTooltip(tipKey)}
+                    onMouseLeave={() =>
+                      setActiveTooltip((curr) => (curr === tipKey ? null : curr))
+                    }
+                  >
+                    {p.enabled ? (
+                      <Link
+                        href={p.href}
+                        onClick={() => {
+                          setIsSwitcherOpen(false);
+                          setActiveTooltip(null);
+                        }}
+                        aria-label={p.label}
+                        className={`flex h-[40px] w-[40px] items-center justify-center rounded-[20px] border-none p-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)] ${
+                          isCurrent
+                            ? "bg-white text-[#18181B]"
+                            : "text-[var(--po-rail-ink)] hover:bg-[var(--po-rail-hover)] hover:text-white"
+                        }`}
+                      >
+                        <Icon size={17} />
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        aria-label={p.label}
+                        className="flex h-[40px] w-[40px] cursor-not-allowed items-center justify-center rounded-[20px] border-none bg-transparent p-0 text-[var(--po-rail-ink)] opacity-35"
+                      >
+                        <Icon size={17} />
+                      </button>
+                    )}
+
+                    {isHovered && (
+                      <div
+                        role="tooltip"
+                        className="pointer-events-none absolute left-[52px] top-1/2 z-[90] flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-[8px] bg-[var(--po-tip)] px-[10px] py-[7px] text-[12px] font-medium text-[var(--po-tip-ink)] shadow-[var(--po-shadow)]"
+                      >
+                        <span>{p.label}</span>
+                        {p.tooltip && (
+                          <span className="font-normal opacity-55">
+                            {p.tooltip}
+                          </span>
+                        )}
+                        {isCurrent && !p.tooltip && (
+                          <span className="font-normal opacity-55">Current</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Divider between switcher and page actions */}
+          <div className="my-[2px] mb-1 h-[1px] w-[22px] bg-white/12" />
+
+          {/* Page's own actions */}
           <div className="flex flex-col items-center gap-1">
             {actions.map((act) => renderActionButton(act, false))}
           </div>
         </div>
 
-        {/* Vertical page caption */}
-        {railLabel && (
-          <div className="flex flex-1 min-h-0 items-center justify-center">
-            <span
-              className="text-[10px] tracking-[0.26em] text-[var(--po-ink-3)] uppercase [writing-mode:vertical-rl] rotate-180"
-              style={{ fontFamily: "ui-monospace, Menlo, monospace" }}
-            >
-              {railLabel}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Bottom action container pill */}
-      {bottomAction && (
-        <div className="flex flex-none justify-center rounded-[34px] border border-[var(--po-line)] bg-[var(--po-panel)] p-[6px] shadow-[var(--po-shadow-sm)]">
-          <div className="flex h-[56px] w-[56px] items-center justify-center rounded-[28px] bg-[var(--po-rail)]">
+        {/* Bottom floating pill */}
+        {bottomAction && (
+          <div className="flex w-[56px] flex-col items-center gap-1 rounded-[28px] bg-[var(--po-rail)] py-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.2)]">
             {renderActionButton(bottomAction, true)}
           </div>
-        </div>
-      )}
-    </aside>
+        )}
+      </aside>
+    </>
   );
 };

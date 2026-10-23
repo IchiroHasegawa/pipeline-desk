@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowRight, Lock } from "lucide-react";
+import { KeyRound, Loader2 } from "lucide-react";
+import { AuthLayout, AuthCard } from "@/components/auth";
 
 export default function TestAccessPage() {
   const [accessCode, setAccessCode] = useState("");
@@ -33,35 +34,34 @@ export default function TestAccessPage() {
 
       router.push("/projects");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to verify access code");
+      setError(
+        err instanceof Error ? err.message : "Failed to verify access code"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black p-4">
-      <div className="w-full max-w-md space-y-8 rounded-xl border border-zinc-800 bg-zinc-950 p-8 shadow-2xl">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 border border-zinc-800">
-            <Lock className="h-6 w-6 text-zinc-400" />
-          </div>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Production OS</h2>
-          <p className="mt-2 text-sm text-zinc-400">Test Environment</p>
-        </div>
-
-        <div className="rounded-md bg-yellow-500/10 border border-yellow-500/20 p-4">
-          <p className="text-xs text-yellow-500/90 text-center">
-            Replace temporary staging access with Production OS Authentication before public production deployment.
-          </p>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="accessCode" className="block text-sm font-medium text-zinc-300">
-              Access Code
+    <AuthLayout isStaging={true}>
+      <AuthCard
+        title="Staging access"
+        sub="This is a pre-release build. Enter the access code from your team to continue."
+        errorMessage={error}
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col gap-[22px] m-0">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="accessCode"
+              className="text-[13px] font-medium text-[var(--po-ink)]"
+            >
+              Access code
             </label>
-            <div className="mt-2">
+            <div className="relative flex items-center">
+              <KeyRound
+                size={16}
+                className="absolute left-[15px] text-[var(--po-ink-3)] pointer-events-none"
+              />
               <input
                 id="accessCode"
                 name="accessCode"
@@ -69,29 +69,35 @@ export default function TestAccessPage() {
                 required
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
-                className="block w-full rounded-md border-0 bg-zinc-900 py-2.5 px-3.5 text-zinc-100 shadow-sm ring-1 ring-inset ring-zinc-800 placeholder:text-zinc-500 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm sm:leading-6 outline-none"
-                placeholder="Enter staging access code"
+                placeholder="Enter access code"
+                autoFocus
+                disabled={isLoading}
+                className="w-full h-[46px] rounded-[14px] border border-[var(--po-line-2)] bg-[var(--po-card)] text-[var(--po-ink)] font-mono text-[15px] tracking-wider pl-[42px] pr-[14px] outline-none transition-[border-color,box-shadow] focus:border-[var(--po-accent)] focus:ring-4 focus:ring-[color-mix(in_oklch,var(--po-accent)_18%,transparent)] disabled:bg-[var(--po-sunken)] disabled:opacity-60"
               />
             </div>
+            <span className="text-[12.5px] text-[var(--po-ink-3)]">
+              Ask your producer for this build’s code.
+            </span>
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 rounded-md bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading || !accessCode}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {isLoading ? "Verifying..." : "Enter"}
-            {!isLoading && <ArrowRight className="h-4 w-4" />}
-          </button>
+          <div className="flex gap-2.5 pt-0.5">
+            <button
+              type="submit"
+              disabled={isLoading || !accessCode}
+              className="flex-1 h-[46px] rounded-full border-0 bg-[var(--po-ink)] text-[var(--po-panel)] font-semibold text-[14px] inline-flex items-center justify-center gap-2 cursor-pointer hover:opacity-90 disabled:opacity-75 disabled:cursor-not-allowed transition-opacity"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Checking…</span>
+                </>
+              ) : (
+                <span>Enter</span>
+              )}
+            </button>
+          </div>
         </form>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   );
 }

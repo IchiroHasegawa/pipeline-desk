@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Clapperboard } from "lucide-react";
 import type { EpisodeV2, ProcessProgress } from "@/types/production-v2";
 import { episodeScenesHref, projectEpisodesHref } from "@/lib/routes/app";
+import { PlaceholderArt } from "@/components/app-shell";
 
 export interface EpisodeTileRowProps {
   projectId: string;
@@ -66,11 +67,6 @@ export const EpisodeTileRow: React.FC<EpisodeTileRowProps> = ({
               }
             }}
             className="group relative aspect-video cursor-pointer overflow-hidden rounded-[12px] border border-[var(--po-line)] bg-[var(--po-sunken)] transition-transform duration-150 hover:scale-[1.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--po-accent)]"
-            style={{
-              background: ep.previewImage
-                ? undefined
-                : "linear-gradient(145deg, var(--po-ph1), var(--po-ph2))",
-            }}
           >
             {ep.previewImage ? (
               <img
@@ -79,9 +75,10 @@ export const EpisodeTileRow: React.FC<EpisodeTileRowProps> = ({
                 className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-[18px] font-semibold tracking-[-0.02em] text-[var(--po-ink-3)] opacity-70">
-                {ep.code || ep.episodeName.slice(0, 4)}
-              </div>
+              <PlaceholderArt
+                seed={ep.id}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             )}
 
             {/* Dark gradient overlay at bottom for readability */}
