@@ -2,22 +2,28 @@
 
 import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { Film, X, AlertCircle, Loader2 } from "lucide-react";
 import { createSceneV2, getSceneWorkflows } from "@/app/actions/production";
+import { Select, type SelectOption } from "@/components/app-shell/Select";
+import { ImageDropzone } from "@/components/app-shell/ImageDropzone";
 import type { SceneV2 } from "@/types/production-v2";
 
 const emptySubscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
+const PRIORITY_LABELS: Record<string, string> = {
+  "1": "Lowest",
+  "2": "Low",
+  "3": "Normal",
+  "4": "High",
+  "5": "Highest",
+};
+
 export type SceneFormDialogProps = {
   isOpen: boolean;
   episodeId: string;
-  /**
-   * The parent episode's scene_workflow, preselected when set. Null on every
-   * episode created before episodes carried one, in which case the picker
-   * behaves exactly as it did before — first active workflow auto-selected.
-   * The user can always override; the field is never locked.
-   */
+  episodeName?: string;
   defaultSceneWorkflowId?: string | null;
   onClose: () => void;
   onSuccess: (newScene: SceneV2) => void;
@@ -26,6 +32,7 @@ export type SceneFormDialogProps = {
 export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
   isOpen,
   episodeId,
+  episodeName,
   defaultSceneWorkflowId = null,
   onClose,
   onSuccess,
@@ -61,8 +68,6 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
         const data = await getSceneWorkflows();
         if (!cancelled) {
           setWorkflows(data);
-          // Inherit the episode's default when it is set AND still active;
-          // otherwise fall back to the previous first-active behaviour.
           const inherited =
             defaultSceneWorkflowId &&
             data.some((wf) => wf.id === defaultSceneWorkflowId)
@@ -104,7 +109,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
       }, 50);
 
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
+        if (e.key === "Escape" && !isSubmitting) {
           onClose();
         }
       };
@@ -116,7 +121,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!isClient || !isOpen) return null;
 
@@ -143,7 +148,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
         description: description.trim() || undefined,
         workflowId,
         numberOfFrames: numberOfFrames ? parseInt(numberOfFrames, 10) : undefined,
-        priority: priority ? parseInt(priority, 10) : undefined,
+        priority: parseInt(priority, 10),
       });
 
       // Reset form
@@ -151,7 +156,7 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
       setDescription("");
       setNumberOfFrames("");
       setPriority("1");
-      
+
       onSuccess(newScene);
       onClose();
     } catch (err: unknown) {
@@ -162,166 +167,216 @@ export const SceneFormDialog: React.FC<SceneFormDialogProps> = ({
     }
   };
 
-  const isSubmitDisabled =
-    isSubmitting ||
-    isLoadingWorkflows ||
-    workflows.length === 0 ||
-    !sceneName.trim() ||
-    !workflowId;
+  const workflowOptions: SelectOption[] = workflows.map((w) => ({
+    value: w.id,
+    label: w.name,
+  }));
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scene-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+    >
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="scene-dialog-title"
-        className="w-full max-w-md bg-[var(--color-canvas,#ffffff)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] p-6 shadow-xl text-[var(--color-ink,#000000)] font-sans"
+        className="w-[900px] max-w-full max-h-[calc(100vh-48px)] flex flex-col rounded-[26px] border border-[var(--po-line)] bg-[var(--po-card)] text-[var(--po-ink)] shadow-[var(--po-shadow-lg)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        style={{ fontFamily: "var(--font-inter), Inter, system-ui, sans-serif" }}
       >
-        <div className="flex flex-row items-center justify-between pb-4 border-b border-[var(--color-line-soft,#a9a9a9)]">
-          <h2
-            id="scene-dialog-title"
-            className="text-[var(--text-section,18px)] font-medium tracking-tight"
-          >
-            Create New Scene
-          </h2>
+        {/* Header */}
+        <div className="flex items-center gap-3.5 px-6 pt-5 pb-4 border-b border-[var(--po-line)]">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[var(--po-chip)] text-[var(--po-ink-2)]">
+            <Film size={20} />
+          </span>
+          <div className="flex flex-col min-w-0">
+            <h2 id="scene-dialog-title" className="text-[18px] font-semibold tracking-[-0.015em] text-[var(--po-ink)]">
+              Create scene
+            </h2>
+            <span className="text-[13px] text-[var(--po-ink-3)]">
+              {episodeName ? `In ${episodeName}` : "Adds a scene to this episode"}
+            </span>
+          </div>
           <button
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
             aria-label="Close dialog"
-            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-[var(--color-ink)] cursor-pointer font-mono"
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[var(--po-chip)] text-[var(--po-ink-2)] hover:bg-[var(--po-line)] transition-colors cursor-pointer disabled:opacity-50"
           >
-            [ESC]
+            <X size={15} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
-          {formError && (
-            <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
-              {formError}
-            </div>
-          )}
-
-          <div>
-            <label
-              htmlFor="scene-name-input"
-              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
-            >
-              Scene Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="scene-name-input"
-              ref={firstInputRef}
-              type="text"
-              required
-              value={sceneName}
-              onChange={(e) => setSceneName(e.target.value)}
-              placeholder="e.g. Scene 01"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="scene-workflow-select"
-              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
-            >
-              Workflow <span className="text-red-500">*</span>
-            </label>
-            {isLoadingWorkflows ? (
-              <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono py-1.5">
-                Loading scene workflows...
-              </div>
-            ) : workflows.length === 0 ? (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
-                A scene workflow must be created in Settings first before creating a scene.
-              </div>
-            ) : (
-              <select
-                id="scene-workflow-select"
-                required
-                value={workflowId}
-                onChange={(e) => setWorkflowId(e.target.value)}
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+          <div className="p-6 flex flex-col gap-5">
+            {/* Form Error Banner */}
+            {formError && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 p-3.5 rounded-[14px] bg-[color-mix(in_oklch,var(--po-danger)_9%,var(--po-card))] border border-[color-mix(in_oklch,var(--po-danger)_28%,transparent)] text-[var(--po-danger)]"
               >
-                {workflows.map((wf) => (
-                  <option key={wf.id} value={wf.id}>
-                    {wf.name}
-                  </option>
-                ))}
-              </select>
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                <div className="flex-1 flex flex-col gap-0.5">
+                  <span className="text-[13px] font-semibold">Couldn’t create scene</span>
+                  <span className="text-[13px] text-[var(--po-ink-2)] leading-relaxed">{formError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormError(null)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--po-ink-3)] hover:text-[var(--po-ink)] cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
             )}
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label
-                htmlFor="scene-frames-input"
-                className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
-              >
-                Number of Frames (Optional)
-              </label>
-              <input
-                id="scene-frames-input"
-                type="number"
-                min="0"
-                value={numberOfFrames}
-                onChange={(e) => setNumberOfFrames(e.target.value)}
-                placeholder="e.g. 120"
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
-              />
+            {/* Two-column layout matching prototype */}
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] gap-7 items-start">
+              {/* Left Column: Form Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                {/* Scene Name */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Scene name <span className="text-[var(--po-danger)]">*</span>
+                  </label>
+                  <input
+                    ref={firstInputRef}
+                    type="text"
+                    required
+                    value={sceneName}
+                    onChange={(e) => setSceneName(e.target.value)}
+                    placeholder="e.g. 104_017"
+                    disabled={isSubmitting}
+                    className="h-10 px-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all placeholder:text-[var(--po-ink-3)] disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Frames */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Number of frames <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={numberOfFrames}
+                    onChange={(e) => setNumberOfFrames(e.target.value)}
+                    placeholder="e.g. 120"
+                    disabled={isSubmitting}
+                    className="h-10 px-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all placeholder:text-[var(--po-ink-3)] disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Priority (Segmented 1-5 control matching prototype) */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Priority <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex gap-1 p-1 rounded-[12px] bg-[var(--po-chip)]">
+                      {["1", "2", "3", "4", "5"].map((n) => {
+                        const isSelected = priority === n;
+                        return (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setPriority(n)}
+                            disabled={isSubmitting}
+                            className={`h-[32px] w-[34px] rounded-[9px] border-none text-[13px] font-semibold transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-[var(--po-card)] text-[var(--po-ink)] shadow-xs"
+                                : "bg-transparent text-[var(--po-ink-2)] hover:text-[var(--po-ink)]"
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span className="text-[12px] text-[var(--po-ink-3)]">
+                      {PRIORITY_LABELS[priority]}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Scene Workflow */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Scene workflow <span className="text-[var(--po-danger)]">*</span>
+                  </label>
+                  <Select
+                    value={workflowId}
+                    options={workflowOptions}
+                    onChange={setWorkflowId}
+                    placeholder={isLoadingWorkflows ? "Loading workflows..." : "Select workflow..."}
+                    ariaLabel="Scene workflow"
+                    size="md"
+                    disabled={isSubmitting || isLoadingWorkflows}
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Description <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Action, camera and timing notes"
+                    disabled={isSubmitting}
+                    className="p-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all placeholder:text-[var(--po-ink-3)] resize-y min-h-[84px] disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Preview Image Dropzone (Disabled placeholder) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                  Preview image <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                </label>
+                <ImageDropzone
+                  disabled={true}
+                  disabledNote="Image upload will be available after the storage update."
+                />
+              </div>
             </div>
+          </div>
 
-            <div>
-              <label
-                htmlFor="scene-priority-input"
-                className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
+          {/* Dialog Footer */}
+          <div className="mt-auto flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--po-line)] bg-[var(--po-card)]">
+            <span className="text-[12px] text-[var(--po-ink-3)]">
+              <span className="text-[var(--po-danger)]">*</span> Required
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="h-10 px-5 rounded-full border border-[var(--po-line-2)] hover:bg-[var(--po-chip)] text-[13px] font-medium text-[var(--po-ink)] transition-colors cursor-pointer disabled:opacity-50"
               >
-                Priority (Optional)
-              </label>
-              <input
-                id="scene-priority-input"
-                type="number"
-                min="1"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                placeholder="1"
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
-              />
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 min-w-[140px] px-5 rounded-full bg-[var(--po-ink)] text-[var(--po-panel)] text-[13px] font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Creating…
+                  </>
+                ) : (
+                  "Create scene"
+                )}
+              </button>
             </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="scene-description-textarea"
-              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
-            >
-              Description (Optional)
-            </label>
-            <textarea
-              id="scene-description-textarea"
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief scene description..."
-              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
-            />
-          </div>
-
-          <div className="flex flex-row items-center justify-end gap-3 pt-3 border-t border-[var(--color-line-soft,#a9a9a9)]">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-[var(--color-panel)] cursor-pointer font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitDisabled}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:opacity-90 cursor-pointer font-medium disabled:opacity-50"
-            >
-              {isSubmitting ? "Creating..." : "Create Scene"}
-            </button>
           </div>
         </form>
       </div>

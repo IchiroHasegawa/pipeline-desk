@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
 import { PlaceholderArt } from "@/components/app-shell";
 import { resolveTaskStatus } from "@/lib/format/production";
+import { assetPreviewSrc } from "@/lib/format/assets";
 import type {
   AssetV2,
   AssetBoardTask,
@@ -126,17 +127,20 @@ export const AssetTable: React.FC<AssetTableProps> = ({
                 {/* 1. Preview */}
                 <div className="relative flex h-[44px] w-[72px] items-center justify-center overflow-hidden rounded-[8px] border border-[var(--po-line)] bg-[var(--po-sunken)]">
                   <PlaceholderArt seed={asset.id} className="absolute inset-0 h-full w-full object-cover" />
-                  {asset.previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={asset.previewUrl}
-                      alt={asset.name}
-                      onError={(e) => {
-                        (e.currentTarget as HTMLElement).style.display = "none";
-                      }}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  ) : null}
+                  {(() => {
+                    const src = assetPreviewSrc(asset);
+                    return src ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={src}
+                        alt={asset.name}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                        }}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : null;
+                  })()}
                 </div>
 
                 {/* 2. Name */}

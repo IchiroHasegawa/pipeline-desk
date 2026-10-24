@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Trash2, Search, X, PanelRight } from "lucide-react";
 import {
@@ -62,6 +62,16 @@ export const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = ({
 
   const [assets, setAssets] = useState<AssetV2[]>(initialAssets);
   const [tasksMap, setTasksMap] = useState<Record<string, AssetBoardTask[]>>(initialTasksMap);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAssets(initialAssets);
+  }, [initialAssets]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTasksMap(initialTasksMap);
+  }, [initialTasksMap]);
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [detailAsset, setDetailAsset] = useState<AssetV2 | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);

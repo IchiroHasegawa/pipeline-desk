@@ -23,6 +23,7 @@ import ImageElement from "@/components/board-v3/elements/ImageElement";
 import FolderElement from "@/components/board-v3/elements/FolderElement";
 import CommentElement from "@/components/board-v3/elements/CommentElement";
 import ArrowElement from "@/components/board-v3/elements/ArrowElement";
+import { assetPreviewSrc } from "@/lib/format/assets";
 
 export interface BoardCanvasHandle {
   deleteSelection: () => void;
@@ -814,7 +815,11 @@ const BoardCanvasInner = forwardRef<BoardCanvasHandle, BoardCanvasProps>(
                 elementType: "asset",
                 assetId: assetData.assetId,
                 title: assetData.name,
-                imageUrl: assetData.previewUrl || undefined,
+                imageUrl:
+                  assetPreviewSrc({
+                    id: assetData.assetId,
+                    previewUrl: assetData.previewUrl || null,
+                  }) || undefined,
                 x: Math.round(dropPos.x),
                 y: Math.round(dropPos.y),
               });

@@ -11,4 +11,6 @@ export * from "./EmptyState";
 export * from "./ErrorState";
 export * from "./Select";
 export * from "./ConfirmDialog";
+export * from "./ImageDropzone";
+export * from "./FileUploadList";
 

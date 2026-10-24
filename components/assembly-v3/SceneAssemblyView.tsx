@@ -29,6 +29,7 @@ import {
 import { AssemblySidePanel } from "@/components/assembly-v3/AssemblySidePanel";
 import { AssemblyLayout } from "@/components/assembly-v3/AssemblyLayout";
 import { ZoomControls } from "@/components/assembly-v3/ZoomControls";
+import { assetPreviewSrc } from "@/lib/format/assets";
 import {
   createElement,
   deleteElement,
@@ -350,6 +351,17 @@ export const SceneAssemblyView: React.FC<SceneAssemblyViewProps> = ({
             projectId={project.id}
             episodeId={episode.id}
             searchQuery={searchQuery}
+            onAddAsset={async (asset) => {
+              await handleCreateElement({
+                boardId: boardId,
+                elementType: "asset",
+                assetId: asset.id,
+                title: asset.name,
+                imageUrl: assetPreviewSrc(asset) || undefined,
+                x: 500,
+                y: 350,
+              });
+            }}
             onClose={() => setIsSidebarHidden(true)}
           />
         }

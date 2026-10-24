@@ -94,7 +94,7 @@ async function queryUploadStatus(sessionUri: string, totalSize: number, signal?:
   return 0; // Start from beginning if can't determine
 }
 
-export async function uploadAssetFile(options: UploadOptions): Promise<void> {
+export async function uploadAssetFile(options: UploadOptions): Promise<{ driveFileId: string; assetFileId?: string }> {
   const { assetId, file, destination, sourceFileId, onProgress, signal } = options;
   let sessionUri = "";
   
@@ -204,11 +204,21 @@ export async function uploadAssetFile(options: UploadOptions): Promise<void> {
        throw new Error("Upload completed but Drive File ID was not returned.");
     }
     
-    updateProgress({ status: "Finalizing", bytesUploaded: file.size, percentage: 100 });
     const finalResult = await finalizeUpload(assetId, driveFileId, destination, sourceFileId, signal);
     
     updateProgress({ status: "Complete", bytesUploaded: file.size, percentage: 100 });
-    return finalResult;
+    return {
+      driveFileId,
+      assetFileId:
+        finalResult &&
+        typeof finalResult === "object" &&
+        "file" in finalResult &&
+        finalResult.file &&
+        typeof finalResult.file === "object" &&
+        "id" in finalResult.file
+          ? String((finalResult.file as { id: unknown }).id)
+          : undefined,
+    };
     
   } catch (error: unknown) {
     if (error instanceof Error && (error.name === "AbortError" || error.message === "Upload cancelled")) {

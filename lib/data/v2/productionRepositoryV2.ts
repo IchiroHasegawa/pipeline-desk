@@ -1325,4 +1325,40 @@ export async function getAssetLinkCounts(): Promise<{
   return { byProject, byEpisode };
 }
 
+export type AssetFileV2 = {
+  id: string;
+  name: string;
+  mimeType: string | null;
+  sizeBytes: number;
+  role: string | null;
+  versionNumber: number | null;
+  driveFileId: string | null;
+  createdAt: string;
+};
 
+export async function getAssetFiles(assetId: string): Promise<AssetFileV2[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("asset_files")
+    .select(
+      "id, file_name, original_file_name, mime_type, file_size_bytes, file_role, version_number, drive_file_id, created_at"
+    )
+    .eq("asset_id", assetId)
+    .eq("record_status", "Active")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw formatPostgrestError("getAssetFiles", error);
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    name: row.original_file_name ?? row.file_name,
+    mimeType: row.mime_type ?? null,
+    sizeBytes: row.file_size_bytes ?? 0,
+    role: row.file_role ?? null,
+    versionNumber: row.version_number ?? null,
+    driveFileId: row.drive_file_id ?? null,
+    createdAt: row.created_at,
+  }));
+}

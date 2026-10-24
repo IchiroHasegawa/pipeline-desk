@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { PlaceholderArt } from "@/components/app-shell";
 import { sceneAssemblyHref } from "@/lib/routes/app";
+import { assetPreviewSrc } from "@/lib/format/assets";
 import type { SceneV2, AssetV2 } from "@/types/production-v2";
 
 export interface AssemblySidePanelProps {
@@ -21,6 +22,7 @@ export interface AssemblySidePanelProps {
   projectId: string;
   episodeId: string;
   searchQuery?: string;
+  onAddAsset?: (asset: AssetV2) => void;
   onClose?: () => void;
 }
 
@@ -32,6 +34,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
   projectId,
   episodeId,
   searchQuery = "",
+  onAddAsset,
   onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<"scenes" | "assets">("scenes");
@@ -78,7 +81,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
     const payload = JSON.stringify({
       assetId: asset.id,
       name: asset.name,
-      previewUrl: asset.previewUrl,
+      previewUrl: assetPreviewSrc(asset),
     });
     e.dataTransfer.setData("application/x-production-asset", payload);
     e.dataTransfer.setData("text/plain", asset.name);
@@ -256,6 +259,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                       key={asset.id}
                       draggable={true}
                       onDragStart={(e) => handleAssetDragStart(e, asset)}
+                      onDoubleClick={() => onAddAsset?.(asset)}
                       className="group flex cursor-grab items-center gap-2.5 rounded-[10px] border border-[var(--po-line)] bg-[var(--po-card)] p-2 transition-all hover:border-[var(--po-accent)] hover:bg-[var(--po-chip)] active:cursor-grabbing"
                     >
                       <GripVertical
@@ -263,15 +267,18 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                         className="text-[var(--po-ink-2)] opacity-40 group-hover:opacity-100"
                       />
                       <div className="relative h-9 w-9 flex-none overflow-hidden rounded-[7px] bg-[var(--po-chip)]">
-                        {asset.previewUrl ? (
-                          <img
-                            src={asset.previewUrl}
-                            alt={asset.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <PlaceholderArt seed={asset.id} className="h-full w-full object-cover" />
-                        )}
+                        {(() => {
+                          const src = assetPreviewSrc(asset);
+                          return src ? (
+                            <img
+                              src={src}
+                              alt={asset.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <PlaceholderArt seed={asset.id} className="h-full w-full object-cover" />
+                          );
+                        })()}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate text-[12px] font-medium text-[var(--po-ink)]">
@@ -312,6 +319,7 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                       key={asset.id}
                       draggable={true}
                       onDragStart={(e) => handleAssetDragStart(e, asset)}
+                      onDoubleClick={() => onAddAsset?.(asset)}
                       className="group flex cursor-grab items-center gap-2.5 rounded-[10px] border border-[var(--po-line)] bg-[var(--po-card)] p-2 transition-all hover:border-[var(--po-accent)] hover:bg-[var(--po-chip)] active:cursor-grabbing"
                     >
                       <GripVertical
@@ -319,15 +327,18 @@ export const AssemblySidePanel: React.FC<AssemblySidePanelProps> = ({
                         className="text-[var(--po-ink-2)] opacity-40 group-hover:opacity-100"
                       />
                       <div className="relative h-9 w-9 flex-none overflow-hidden rounded-[7px] bg-[var(--po-chip)]">
-                        {asset.previewUrl ? (
-                          <img
-                            src={asset.previewUrl}
-                            alt={asset.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <PlaceholderArt seed={asset.id} className="h-full w-full object-cover" />
-                        )}
+                        {(() => {
+                          const src = assetPreviewSrc(asset);
+                          return src ? (
+                            <img
+                              src={src}
+                              alt={asset.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <PlaceholderArt seed={asset.id} className="h-full w-full object-cover" />
+                          );
+                        })()}
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate text-[12px] font-medium text-[var(--po-ink)]">

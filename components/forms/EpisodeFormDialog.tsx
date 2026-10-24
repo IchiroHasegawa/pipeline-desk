@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { Clapperboard, X, AlertCircle, Loader2 } from "lucide-react";
 import { getJobWorkflows, getSceneWorkflows } from "@/app/actions/production";
+import { Select, type SelectOption } from "@/components/app-shell/Select";
+import { ImageDropzone } from "@/components/app-shell/ImageDropzone";
 
 const emptySubscribe = () => () => {};
 const getClientSnapshot = () => true;
@@ -11,6 +14,7 @@ const getServerSnapshot = () => false;
 export type EpisodeFormDialogProps = {
   isOpen: boolean;
   projectId: string;
+  projectTitle?: string;
   onClose: () => void;
   onSubmit: (data: {
     projectId: string;
@@ -29,6 +33,7 @@ type WorkflowOption = { id: string; name: string };
 export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
   isOpen,
   projectId,
+  projectTitle,
   onClose,
   onSubmit,
 }) => {
@@ -72,9 +77,11 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
         if (!cancelled) {
           setJobWorkflows(jobs);
           setSceneWorkflows(scenes);
-          // The episode workflow is optional, so it stays blank ("None") until
-          // chosen. The scene workflow is required, so it auto-selects.
-          setSceneWorkflowId(scenes.length > 0 ? scenes[0].id : "");
+          // The episode workflow is optional, so it stays blank ("None") until chosen.
+          // The scene workflow is required, so it auto-selects first if available.
+          if (scenes.length > 0) {
+            setSceneWorkflowId((prev) => prev || scenes[0].id);
+          }
         }
       } catch (err: unknown) {
         if (!cancelled) {
@@ -102,7 +109,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
       }, 50);
 
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
+        if (e.key === "Escape" && !isSubmitting) {
           onClose();
         }
       };
@@ -114,7 +121,7 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, isSubmitting, onClose]);
 
   if (!isClient || !isOpen) return null;
 
@@ -139,10 +146,10 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
         episodeName: episodeName.trim(),
         code: code.trim() || undefined,
         description: description.trim() || undefined,
-        startDate,
+        startDate: startDate || undefined,
         endDate: endDate || undefined,
         jobWorkflowId: jobWorkflowId || undefined,
-        sceneWorkflowId,
+        sceneWorkflowId: sceneWorkflowId || undefined,
       });
 
       // Reset form
@@ -159,194 +166,236 @@ export const EpisodeFormDialog: React.FC<EpisodeFormDialogProps> = ({
     }
   };
 
-  // The scene workflow is what makes the process-card denominator well-defined,
-  // so an episode cannot be created without one.
-  const isSubmitDisabled =
-    isSubmitting ||
-    isLoadingWorkflows ||
-    sceneWorkflows.length === 0 ||
-    !episodeName.trim() ||
-    !sceneWorkflowId;
+  const jobOptions: SelectOption[] = [
+    { value: "", label: "None — no episode tasks" },
+    ...jobWorkflows.map((w) => ({ value: w.id, label: w.name })),
+  ];
+
+  const sceneOptions: SelectOption[] = sceneWorkflows.map((w) => ({
+    value: w.id,
+    label: w.name,
+  }));
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="episode-dialog-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
+    >
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="episode-dialog-title"
-        className="w-full max-w-md bg-[var(--color-canvas,#ffffff)] border border-[var(--color-line,#000000)] rounded-[var(--radius-card,7px)] p-6 shadow-xl text-[var(--color-ink,#000000)] font-sans"
+        className="w-[980px] max-w-full max-h-[calc(100vh-48px)] flex flex-col rounded-[26px] border border-[var(--po-line)] bg-[var(--po-card)] text-[var(--po-ink)] shadow-[var(--po-shadow-lg)] overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        style={{ fontFamily: "var(--font-inter), Inter, system-ui, sans-serif" }}
       >
-        <div className="flex flex-row items-center justify-between pb-4 border-b border-[var(--color-line-soft,#a9a9a9)]">
-          <h2
-            id="episode-dialog-title"
-            className="text-[var(--text-section,18px)] font-medium tracking-tight"
-          >
-            Create New Episode
-          </h2>
+        {/* Header */}
+        <div className="flex items-center gap-3.5 px-6 pt-5 pb-4 border-b border-[var(--po-line)]">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[var(--po-chip)] text-[var(--po-ink-2)]">
+            <Clapperboard size={20} />
+          </span>
+          <div className="flex flex-col min-w-0">
+            <h2 id="episode-dialog-title" className="text-[18px] font-semibold tracking-[-0.015em] text-[var(--po-ink)]">
+              Create episode
+            </h2>
+            <span className="text-[13px] text-[var(--po-ink-3)]">
+              {projectTitle ? `In ${projectTitle}` : "Adds an episode to this project"}
+            </span>
+          </div>
           <button
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
             aria-label="Close dialog"
-            className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] hover:text-[var(--color-ink)] cursor-pointer font-mono"
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-[var(--po-chip)] text-[var(--po-ink-2)] hover:bg-[var(--po-line)] transition-colors cursor-pointer disabled:opacity-50"
           >
-            [ESC]
+            <X size={15} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
-          {formError && (
-            <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
-              {formError}
+        {/* Scrollable Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+          <div className="p-6 flex flex-col gap-5">
+            {/* Form Error Banner */}
+            {formError && (
+              <div
+                role="alert"
+                className="flex items-start gap-3 p-3.5 rounded-[14px] bg-[color-mix(in_oklch,var(--po-danger)_9%,var(--po-card))] border border-[color-mix(in_oklch,var(--po-danger)_28%,transparent)] text-[var(--po-danger)]"
+              >
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                <div className="flex-1 flex flex-col gap-0.5">
+                  <span className="text-[13px] font-semibold">Couldn’t create episode</span>
+                  <span className="text-[13px] text-[var(--po-ink-2)] leading-relaxed">{formError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormError(null)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--po-ink-3)] hover:text-[var(--po-ink)] cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Two-column layout matching prototype */}
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-7 items-start">
+              {/* Left Column: Form Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                {/* Episode Name */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Episode name <span className="text-[var(--po-danger)]">*</span>
+                  </label>
+                  <input
+                    ref={firstInputRef}
+                    type="text"
+                    required
+                    value={episodeName}
+                    onChange={(e) => setEpisodeName(e.target.value)}
+                    placeholder="e.g. EP_113"
+                    disabled={isSubmitting}
+                    className="h-10 px-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all placeholder:text-[var(--po-ink-3)] disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Episode Code */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Episode code <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. LNF_E113"
+                    disabled={isSubmitting}
+                    className="h-10 px-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 font-mono uppercase bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all placeholder:text-[var(--po-ink-3)] disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Start Date */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Start date <span className="text-[var(--po-danger)]">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    disabled={isSubmitting}
+                    className="h-10 px-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all disabled:opacity-50"
+                  />
+                </div>
+
+                {/* End Date */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    End date <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    disabled={isSubmitting}
+                    className="h-10 px-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all disabled:opacity-50"
+                  />
+                </div>
+
+                {/* Job Workflow */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Job workflow <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <Select
+                    value={jobWorkflowId}
+                    options={jobOptions}
+                    onChange={setJobWorkflowId}
+                    placeholder="None — no episode tasks"
+                    ariaLabel="Job workflow"
+                    size="md"
+                    disabled={isSubmitting || isLoadingWorkflows}
+                  />
+                </div>
+
+                {/* Scene Workflow */}
+                <div className="flex flex-col gap-1.5 sm:col-span-1">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Scene workflow <span className="text-[var(--po-danger)]">*</span>
+                  </label>
+                  <Select
+                    value={sceneWorkflowId}
+                    options={sceneOptions}
+                    onChange={setSceneWorkflowId}
+                    placeholder={isLoadingWorkflows ? "Loading workflows..." : "Select workflow..."}
+                    ariaLabel="Scene workflow"
+                    size="md"
+                    disabled={isSubmitting || isLoadingWorkflows}
+                  />
+                  <span className="text-[11px] text-[var(--po-ink-3)]">
+                    Applies to every scene in this episode.
+                  </span>
+                </div>
+
+                {/* Description */}
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                    Description <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Synopsis or production notes"
+                    disabled={isSubmitting}
+                    className="p-3 rounded-[12px] border border-[var(--po-line-2)] focus:border-[var(--po-accent)] focus:ring-2 focus:ring-[var(--po-accent)]/20 bg-[var(--po-card)] text-[var(--po-ink)] text-[14px] outline-none transition-all placeholder:text-[var(--po-ink-3)] resize-y min-h-[84px] disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Preview Image Dropzone (Disabled placeholder) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="flex items-center gap-1 text-[13px] font-medium text-[var(--po-ink)]">
+                  Preview image <span className="text-[12px] text-[var(--po-ink-3)] font-normal">Optional</span>
+                </label>
+                <ImageDropzone
+                  disabled={true}
+                  disabledNote="Image upload will be available after the storage update."
+                />
+              </div>
             </div>
-          )}
-
-          <div>
-            <label className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1">
-              Episode Name *
-            </label>
-            <input
-              ref={firstInputRef}
-              type="text"
-              required
-              value={episodeName}
-              onChange={(e) => setEpisodeName(e.target.value)}
-              placeholder="e.g. Episode 01"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
-            />
           </div>
 
-          <div>
-            <label className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1">
-              Episode Code
-            </label>
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="e.g. EP01"
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono uppercase"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1">
-              Start Date *
-            </label>
-            <input
-              type="date"
-              required
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1">
-              End Date (Optional)
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] font-mono"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="episode-job-workflow-select"
-              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
-            >
-              Episode Workflow
-            </label>
-            {isLoadingWorkflows ? (
-              <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono py-1.5">
-                Loading episode workflows...
-              </div>
-            ) : jobWorkflows.length === 0 ? (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
-                No episode workflow exists yet. The episode will be created
-                without episode-level Main Tasks.
-              </div>
-            ) : (
-              <select
-                id="episode-job-workflow-select"
-                value={jobWorkflowId}
-                onChange={(e) => setJobWorkflowId(e.target.value)}
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+          {/* Dialog Footer */}
+          <div className="mt-auto flex items-center justify-between gap-3 px-6 py-4 border-t border-[var(--po-line)] bg-[var(--po-card)]">
+            <span className="text-[12px] text-[var(--po-ink-3)]">
+              <span className="text-[var(--po-danger)]">*</span> Required
+            </span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="h-10 px-5 rounded-full border border-[var(--po-line-2)] hover:bg-[var(--po-chip)] text-[13px] font-medium text-[var(--po-ink)] transition-colors cursor-pointer disabled:opacity-50"
               >
-                <option value="">None</option>
-                {jobWorkflows.map((wf) => (
-                  <option key={wf.id} value={wf.id}>
-                    {wf.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="episode-scene-workflow-select"
-              className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1"
-            >
-              Scene Workflow <span className="text-red-500">*</span>
-            </label>
-            {isLoadingWorkflows ? (
-              <div className="text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-mono py-1.5">
-                Loading scene workflows...
-              </div>
-            ) : sceneWorkflows.length === 0 ? (
-              <div className="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-[var(--text-caption,11px)] rounded-[var(--radius-sm,3px)]">
-                A scene workflow must be created in Settings first before
-                creating an episode.
-              </div>
-            ) : (
-              <select
-                id="episode-scene-workflow-select"
-                required
-                value={sceneWorkflowId}
-                onChange={(e) => setSceneWorkflowId(e.target.value)}
-                className="w-full px-3 py-1.5 text-[var(--text-body,15px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)]"
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 min-w-[140px] px-5 rounded-full bg-[var(--po-ink)] text-[var(--po-panel)] text-[13px] font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
               >
-                {sceneWorkflows.map((wf) => (
-                  <option key={wf.id} value={wf.id}>
-                    {wf.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-[var(--text-caption,11px)] text-[var(--color-ink-muted,#707070)] font-medium mb-1">
-              Description
-            </label>
-            <textarea
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief episode description..."
-              className="w-full px-3 py-1.5 text-[var(--text-list,12px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] bg-transparent outline-none focus:ring-1 focus:ring-[var(--color-ink)] resize-none"
-            />
-          </div>
-
-          <div className="flex flex-row items-center justify-end gap-3 pt-3 border-t border-[var(--color-line-soft,#a9a9a9)]">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] border border-[var(--color-line,#000000)] rounded-[var(--radius-sm,3px)] hover:bg-[var(--color-panel)] cursor-pointer font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitDisabled}
-              className="px-4 py-1.5 text-[var(--text-caption,11px)] bg-[var(--color-ink,#000000)] text-[var(--color-canvas,#ffffff)] rounded-[var(--radius-sm,3px)] hover:opacity-90 cursor-pointer font-medium disabled:opacity-50"
-            >
-              {isSubmitting ? "Creating..." : "Create Episode"}
-            </button>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Creating…
+                  </>
+                ) : (
+                  "Create episode"
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

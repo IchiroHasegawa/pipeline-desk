@@ -23,6 +23,8 @@ import {
   getSceneWorkflows as repoGetSceneWorkflows,
   getJobWorkflows as repoGetJobWorkflows,
   getEpisodeProcessProgress as repoGetEpisodeProcessProgress,
+  getAssetFiles as repoGetAssetFiles,
+  type AssetFileV2,
 } from "@/lib/data/v2/productionRepositoryV2";
 
 function formatPostgrestError(
@@ -1091,4 +1093,6 @@ export async function deleteAssetV2(id: string): Promise<void> {
   revalidatePath("/projects", "layout");
 }
 
-
+export async function listAssetFiles(assetId: string): Promise<AssetFileV2[]> {
+  return repoGetAssetFiles(assetId);
+}
