@@ -95,7 +95,7 @@ export const ProjectAssetsView: React.FC<ProjectAssetsViewProps> = ({
   };
 
   const handleAssetCreated = (newAsset: AssetV2) => {
-    setAssets((prev) => [newAsset, ...prev]);
+    setAssets((prev) => [newAsset, ...prev.filter((a) => a.id !== newAsset.id)]);
     setSelectedAssetId(newAsset.id);
     router.refresh();
   };

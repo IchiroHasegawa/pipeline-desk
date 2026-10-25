@@ -70,6 +70,7 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
   const [previewState, setPreviewState] = useState<ImageDropzoneState>("idle");
+  const [previewUploaded, setPreviewUploaded] = useState(false);
   const [previewProgress, setPreviewProgress] = useState(0);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [showUrlField, setShowUrlField] = useState(false);
@@ -209,6 +210,7 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
     setPreviewFile(file);
     setPreviewBlobUrl(blobUrl);
     setPreviewState("done");
+    setPreviewUploaded(false);
     setPreviewError(null);
   };
 
@@ -219,6 +221,7 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
     setPreviewFile(null);
     setPreviewBlobUrl(null);
     setPreviewState("idle");
+    setPreviewUploaded(false);
     setPreviewProgress(0);
     setPreviewError(null);
   };
@@ -286,8 +289,8 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
 
     let uploadHadError = false;
 
-    // Step 2: Upload preview image if chosen as file
-    if (previewFile && previewState !== "done") {
+    // Step 2: Upload preview image if chosen as file and not yet uploaded
+    if (previewFile && !previewUploaded) {
       try {
         setPreviewState("uploading");
         setPreviewProgress(0);
@@ -314,6 +317,7 @@ export const AssetFormDialog: React.FC<AssetFormDialogProps> = ({
           throw new Error(errData?.error || "Failed to set asset preview image");
         }
 
+        setPreviewUploaded(true);
         setPreviewState("done");
         targetAsset.previewUrl = result.driveFileId;
       } catch (err: unknown) {
