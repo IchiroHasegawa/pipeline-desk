@@ -1,0 +1,6 @@
+# Shell scripts and the Dockerfile run on Linux — CRLF breaks the shebang
+# ("/usr/bin/env bash^M: bad interpreter"). Force LF regardless of the
+# committer's core.autocrlf setting.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf

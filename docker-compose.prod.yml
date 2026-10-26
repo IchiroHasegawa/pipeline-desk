@@ -1,0 +1,49 @@
+# Production OS — self-hosted app container.
+#
+# The Supabase stack is a SEPARATE compose project (productionos-db) so that
+# redeploying the app never recreates the database. This app joins its network
+# read-only to reach the Supabase gateway at http://api-gw:8000.
+#
+# Deploy with ./deploy.sh (never `docker compose up` directly — see that script).
+
+name: productionos
+
+services:
+  app:
+    container_name: po_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+        SUPABASE_INTERNAL_URL: ${SUPABASE_INTERNAL_URL}
+        APP_URL: ${APP_URL}
+        PRODUCTION_OS_DEPLOYMENT_MODE: ${PRODUCTION_OS_DEPLOYMENT_MODE}
+        PRODUCTION_OS_TEST_ACCESS_ENABLED: ${PRODUCTION_OS_TEST_ACCESS_ENABLED}
+        PRODUCTION_OS_TEST_ACCESS_CODE: ${PRODUCTION_OS_TEST_ACCESS_CODE}
+    restart: unless-stopped
+    env_file: .env
+    # Loopback only: the Cloudflare Tunnel on the host is the sole way in.
+    # Not reachable over LAN or the tailnet.
+    ports:
+      - "127.0.0.1:8093:3000"
+    networks:
+      - default
+      - supabase
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/test-access"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  supabase:
+    external: true
+    name: productionos-db_default

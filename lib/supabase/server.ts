@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/supabase";
+import { SUPABASE_SERVER_URL } from "@/lib/supabase/server-url";
 
 function requireEnv(value: string | undefined, name: string) {
   if (!value) {
@@ -13,7 +14,7 @@ export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
-    requireEnv(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL"),
+    requireEnv(SUPABASE_SERVER_URL, "NEXT_PUBLIC_SUPABASE_URL"),
     requireEnv(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
     {
       cookies: {

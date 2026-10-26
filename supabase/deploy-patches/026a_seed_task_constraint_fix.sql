@@ -1,0 +1,36 @@
+-- Applied between migrations 026 and 027 when building a database from
+-- scratch. See scripts/apply-migrations.sh.
+--
+-- PROBLEM
+-- 027_workflow_task_safety.sql adds:
+--   ALTER TABLE public.production_tasks ADD CONSTRAINT uq_production_task_process
+--     UNIQUE NULLS NOT DISTINCT
+--     (environment_id, episode_id, scene_id, source_workflow_process_id);
+--
+-- 003_seed_production_data.sql seeds 11 hand-authored demo tasks
+-- (Layout, Layout Check, Setup, Rough Animation, Cleanup Animation,
+-- Compositing, Render) across two demo scenes, every one of them with
+-- source_workflow_process_id = NULL. Because the constraint is
+-- NULLS NOT DISTINCT, that is 7 collisions on one scene and 4 on the other:
+--
+--   ERROR: could not create unique index "uq_production_task_process"
+--   DETAIL: Key (environment_id, episode_id, scene_id, source_workflow_process_id)
+--           =(null, null, 20000000-0000-4000-8000-000000000001, null) is duplicated.
+--
+-- So 027 can never apply to a database built by replaying these migrations in
+-- order. The constraint is not optional: generate_workflow_tasks() relies on
+-- uq_production_task_process / uq_asset_task_process for its idempotent
+-- ON CONFLICT upserts.
+--
+-- FIX
+-- Drop the demo task rows only. Demo projects, episodes, scenes and assets are
+-- all kept. Tasks are meant to be produced by generate_workflow_tasks(), which
+-- always sets source_workflow_process_id, so no legitimately-created task is
+-- affected by this DELETE.
+--
+-- Note for upstream: a tidier long-term fix is to give the seeded demo tasks
+-- real workflow processes in 003, or to make the constraint partial
+-- (WHERE source_workflow_process_id IS NOT NULL). Both change existing
+-- migrations, which is why this is a deploy patch instead.
+
+DELETE FROM public.production_tasks WHERE source_workflow_process_id IS NULL;

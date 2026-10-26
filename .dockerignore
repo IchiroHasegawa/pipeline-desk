@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.github
+.vercel
+npm-debug.log*
+.env*
+design-reference
+docs
+*.md
+!README.md
+coverage
+.DS_Store
