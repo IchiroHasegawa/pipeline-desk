@@ -1,0 +1,1900 @@
+{
+    "views": [
+        "project_asset_stats",
+        "project_commit_days",
+        "project_episode_status"
+    ],
+    "tables": {
+        "days": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "title": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "day_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "episode_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX days_pkey ON public.days USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "episode_id",
+                    "refTable": "episodes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "todos": {
+            "checks": [
+                "CHECK ((((episode_id IS NOT NULL) AND (scene_id IS NULL)) OR ((episode_id IS NULL) AND (scene_id IS NOT NULL))))",
+                "CHECK ((length(btrim(title)) > 0))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "title": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "task_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "user_id": {
+                    "type": "uuid",
+                    "default": "auth.uid()",
+                    "nullable": false
+                },
+                "scene_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "episode_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "completed_at": {
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX todos_pkey ON public.todos USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "episode_id",
+                    "refTable": "episodes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "scene_id",
+                    "refTable": "scenes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "task_id",
+                    "refTable": "production_tasks",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "user_id",
+                    "refTable": "profiles",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "assets": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "tags": {
+                    "type": "ARRAY",
+                    "default": "'{}'::text[]",
+                    "nullable": true
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'Active'::text",
+                    "nullable": false
+                },
+                "priority": {
+                    "type": "integer",
+                    "default": "4",
+                    "nullable": false
+                },
+                "workflow": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "asset_code": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "asset_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "asset_type": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "category_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "preview_url": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "asset_number": {
+                    "type": "integer",
+                    "default": "nextval('asset_number_seq'::regclass)",
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX assets_asset_number_uniq ON public.assets USING btree (asset_number)",
+                "CREATE UNIQUE INDEX assets_pkey ON public.assets USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "category_id",
+                    "refTable": "asset_categories",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "boards": {
+            "checks": [
+                "CHECK ((((scene_id IS NOT NULL) AND (project_id IS NULL)) OR ((scene_id IS NULL) AND (project_id IS NOT NULL))))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "scene_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "project_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX boards_pkey ON public.boards USING btree (id)",
+                "CREATE UNIQUE INDEX boards_project_uniq ON public.boards USING btree (project_id) WHERE (project_id IS NOT NULL)",
+                "CREATE UNIQUE INDEX boards_scene_uniq ON public.boards USING btree (scene_id) WHERE (scene_id IS NOT NULL)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "project_id",
+                    "refTable": "projects",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "scene_id",
+                    "refTable": "scenes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "scenes": {
+            "checks": [
+                "CHECK ((number_of_frames >= 1))",
+                "CHECK ((priority = ANY (ARRAY[1, 2, 3, 4, 5])))",
+                "CHECK ((status = ANY (ARRAY['Active'::text, 'Retired'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'Active'::text",
+                    "nullable": false
+                },
+                "priority": {
+                    "type": "integer",
+                    "default": "4",
+                    "nullable": false
+                },
+                "workflow": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "episode_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "scene_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "preview_image": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "number_of_frames": {
+                    "type": "integer",
+                    "default": "1",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX scenes_pkey ON public.scenes USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "episode_id",
+                    "refTable": "episodes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "episodes": {
+            "checks": [
+                "CHECK ((status = ANY (ARRAY['Active'::text, 'Retired'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "code": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'Active'::text",
+                    "nullable": false
+                },
+                "end_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "project_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "start_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "episode_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "job_workflow": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "preview_image": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "scene_workflow": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX episodes_pkey ON public.episodes USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "project_id",
+                    "refTable": "projects",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "profiles": {
+            "checks": [
+                "CHECK (((char_length(username) >= 3) AND (char_length(username) <= 30)))",
+                "CHECK ((account_status = ANY (ARRAY['active'::text, 'suspended'::text, 'disabled'::text])))",
+                "CHECK ((system_role = ANY (ARRAY['user'::text, 'owner'::text])))",
+                "CHECK ((username ~ '^[a-zA-Z0-9_]+$'::text))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "username": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "avatar_url": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "system_role": {
+                    "type": "text",
+                    "default": "'user'::text",
+                    "nullable": false
+                },
+                "display_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "account_status": {
+                    "type": "text",
+                    "default": "'active'::text",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)",
+                "CREATE UNIQUE INDEX profiles_username_lower_idx ON public.profiles USING btree (lower(username))"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "id",
+                    "refTable": "users",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "projects": {
+            "checks": [
+                "CHECK ((project_code ~ '^[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*$'::text))",
+                "CHECK ((status = ANY (ARRAY['Active'::text, 'Retired'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "title": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'Active'::text",
+                    "nullable": false
+                },
+                "end_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "is_system": {
+                    "type": "boolean",
+                    "default": "false",
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "start_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "board_layout": {
+                    "type": "jsonb",
+                    "default": "'{}'::jsonb",
+                    "nullable": false
+                },
+                "project_code": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "thumbnail_url": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "asset_code_prefix": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "default_asset_workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)",
+                "CREATE UNIQUE INDEX projects_project_code_key ON public.projects USING btree (project_code)",
+                "CREATE UNIQUE INDEX projects_single_system_idx ON public.projects USING btree ((true)) WHERE is_system"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "default_asset_workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "workflows": {
+            "checks": [
+                "CHECK ((workflow_type = ANY (ARRAY['job'::text, 'scene'::text, 'asset'::text, 'task_status'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "colour": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'active'::text",
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "created_by": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "description": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "workflow_code": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "workflow_type": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX workflows_pkey ON public.workflows USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "created_by",
+                    "refTable": "users",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_files": {
+            "checks": [
+                "CHECK (((file_role = 'Source'::text) OR (current_file_id IS NULL)))",
+                "CHECK ((file_role = ANY (ARRAY['Source'::text, 'Preview'::text, 'Version'::text, 'Versions'::text])))",
+                "CHECK ((provider = 'google_drive'::text))",
+                "CHECK ((record_status = ANY (ARRAY['Queued'::text, 'Preparing'::text, 'Uploading'::text, 'Active'::text, 'Retired'::text, 'Trashed'::text, 'Failed'::text, 'Cancelled'::text, 'Missing'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "file_url": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "provider": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "extension": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "file_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "file_role": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "mime_type": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": true
+                },
+                "file_format": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "display_name": {
+                    "type": "character varying",
+                    "default": null,
+                    "nullable": true
+                },
+                "drive_file_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "record_status": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "source_file_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "version_number": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "current_file_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "file_size_bytes": {
+                    "type": "bigint",
+                    "default": "0",
+                    "nullable": false
+                },
+                "drive_created_time": {
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": true
+                },
+                "original_file_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "restored_from_file_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "drive_parent_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_files_drive_file_id_key ON public.asset_files USING btree (drive_file_id)",
+                "CREATE UNIQUE INDEX asset_files_pkey ON public.asset_files USING btree (id)",
+                "CREATE UNIQUE INDEX asset_files_unique_version ON public.asset_files USING btree (source_file_id, version_number)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "current_file_id",
+                    "refTable": "asset_files",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "restored_from_file_id",
+                    "refTable": "asset_files",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "source_file_id",
+                    "refTable": "asset_files",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_tasks": {
+            "checks": [
+                "CHECK (((progress >= 0) AND (progress <= 100)))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'Unassigned'::text",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "assignee": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "end_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "progress": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "start_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "effort_hours": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": true
+                },
+                "duration_days": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": true
+                },
+                "take_retake_mode": {
+                    "type": "text",
+                    "default": "'Take'::text",
+                    "nullable": true
+                },
+                "assignee_group_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "take_retake_count": {
+                    "type": "integer",
+                    "default": "1",
+                    "nullable": true
+                },
+                "source_workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "task_status_workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "task_status_definition_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "source_workflow_process_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_tasks_pkey ON public.asset_tasks USING btree (id)",
+                "CREATE UNIQUE INDEX uq_asset_task_process ON public.asset_tasks USING btree (asset_id, source_workflow_process_id) NULLS NOT DISTINCT"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "source_workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "source_workflow_process_id",
+                    "refTable": "workflow_processes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "task_status_definition_id",
+                    "refTable": "workflow_task_statuses",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "task_status_workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "scene_notes": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "content": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "scene_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX scene_notes_pkey ON public.scene_notes USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "scene_id",
+                    "refTable": "scenes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "board_elements": {
+            "checks": [
+                "CHECK (((element_type <> 'arrow'::text) OR ((from_element_id IS NOT NULL) AND (to_element_id IS NOT NULL) AND (from_element_id <> to_element_id))))",
+                "CHECK (((element_type <> 'keyframe'::text) OR ((asset_id IS NOT NULL) OR (asset_file_id IS NOT NULL) OR (image_url IS NOT NULL))))",
+                "CHECK (((parent_folder_id IS NULL) OR (parent_folder_id <> id)))",
+                "CHECK ((element_type = ANY (ARRAY['keyframe'::text, 'asset'::text, 'folder'::text, 'comment'::text, 'arrow'::text])))"
+            ],
+            "columns": {
+                "x": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": false
+                },
+                "y": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": false
+                },
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "body": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "title": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "width": {
+                    "type": "numeric",
+                    "default": null,
+                    "nullable": true
+                },
+                "colour": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "height": {
+                    "type": "numeric",
+                    "default": null,
+                    "nullable": true
+                },
+                "z_index": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "board_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "image_url": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "created_by": {
+                    "type": "uuid",
+                    "default": "auth.uid()",
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "element_type": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "asset_file_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "to_element_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "from_element_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "keyframe_number": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "parent_folder_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX board_elements_keyframe_number_uniq ON public.board_elements USING btree (board_id, keyframe_number) WHERE ((element_type = 'keyframe'::text) AND (keyframe_number IS NOT NULL))",
+                "CREATE UNIQUE INDEX board_elements_pkey ON public.board_elements USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_file_id",
+                    "refTable": "asset_files",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "board_id",
+                    "refTable": "boards",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "created_by",
+                    "refTable": "profiles",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "from_element_id",
+                    "refTable": "board_elements",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "parent_folder_id",
+                    "refTable": "board_elements",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "to_element_id",
+                    "refTable": "board_elements",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_job_links": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "episode_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_job_links_pkey ON public.asset_job_links USING btree (id)",
+                "CREATE UNIQUE INDEX asset_job_links_unique ON public.asset_job_links USING btree (asset_id, episode_id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "episode_id",
+                    "refTable": "episodes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_categories": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_categories_name_key ON public.asset_categories USING btree (name)",
+                "CREATE UNIQUE INDEX asset_categories_pkey ON public.asset_categories USING btree (id)"
+            ],
+            "foreignKeys": [
+            ]
+        },
+        "production_tasks": {
+            "checks": [
+                "CHECK ((((contributes_to_task_id IS NULL) OR (contributes_to_task_id <> id)) AND ((branches_from_task_id IS NULL) OR (branches_from_task_id <> id))))",
+                "CHECK (((progress >= 0) AND (progress <= 100)))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "day_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'Unassigned'::text",
+                    "nullable": false
+                },
+                "assignee": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "end_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "progress": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "scene_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "episode_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "default": null,
+                    "nullable": true
+                },
+                "start_date": {
+                    "type": "date",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "effort_hours": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": true
+                },
+                "duration_days": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": true
+                },
+                "take_retake_mode": {
+                    "type": "text",
+                    "default": "'Take'::text",
+                    "nullable": true
+                },
+                "assignee_group_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "take_retake_count": {
+                    "type": "integer",
+                    "default": "1",
+                    "nullable": true
+                },
+                "source_workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "branches_from_task_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "contributes_to_task_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "task_status_workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "task_status_definition_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "source_workflow_process_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX production_tasks_pkey ON public.production_tasks USING btree (id)",
+                "CREATE UNIQUE INDEX uq_production_task_process ON public.production_tasks USING btree (episode_id, scene_id, day_id, source_workflow_process_id) NULLS NOT DISTINCT WHERE (source_workflow_process_id IS NOT NULL)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "branches_from_task_id",
+                    "refTable": "production_tasks",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "contributes_to_task_id",
+                    "refTable": "production_tasks",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "day_id",
+                    "refTable": "days",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "episode_id",
+                    "refTable": "episodes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "scene_id",
+                    "refTable": "scenes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "source_workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "source_workflow_process_id",
+                    "refTable": "workflow_processes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "task_status_definition_id",
+                    "refTable": "workflow_task_statuses",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "task_status_workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_assignments": {
+            "checks": [
+                "CHECK ((((project_id IS NOT NULL) AND (episode_id IS NULL) AND (scene_id IS NULL)) OR ((project_id IS NULL) AND (episode_id IS NOT NULL) AND (scene_id IS NULL)) OR ((project_id IS NULL) AND (episode_id IS NULL) AND (scene_id IS NOT NULL))))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "scene_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "episode_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "project_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_assignments_pkey ON public.asset_assignments USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "episode_id",
+                    "refTable": "episodes",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "project_id",
+                    "refTable": "projects",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "scene_id",
+                    "refTable": "scenes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_scene_links": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "scene_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_scene_links_pkey ON public.asset_scene_links USING btree (id)",
+                "CREATE UNIQUE INDEX asset_scene_links_unique ON public.asset_scene_links USING btree (asset_id, scene_id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "scene_id",
+                    "refTable": "scenes",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "workflow_processes": {
+            "checks": [
+                "CHECK (((default_completion >= 0) AND (default_completion <= 100)))",
+                "CHECK ((duration_days >= (0)::numeric))",
+                "CHECK ((effort_hours >= (0)::numeric))",
+                "CHECK ((process_type = ANY (ARRAY['Manual'::text, 'Approval'::text, 'Asset Progress'::text])))",
+                "CHECK ((take_retake_count > 0))",
+                "CHECK ((take_retake_mode = ANY (ARRAY['Take'::text, 'Retake'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "colour": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'active'::text",
+                    "nullable": false
+                },
+                "position": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "effort_hours": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": true
+                },
+                "process_type": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "duration_days": {
+                    "type": "numeric",
+                    "default": "0",
+                    "nullable": true
+                },
+                "take_retake_mode": {
+                    "type": "text",
+                    "default": "'Take'::text",
+                    "nullable": false
+                },
+                "assignee_group_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "take_retake_count": {
+                    "type": "integer",
+                    "default": "1",
+                    "nullable": false
+                },
+                "default_completion": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": true
+                },
+                "default_task_status_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                },
+                "task_status_workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": true
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX workflow_processes_pkey ON public.workflow_processes USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "default_task_status_id",
+                    "refTable": "workflow_task_statuses",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "task_status_workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_project_links": {
+            "checks": [
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "project_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_project_links_pkey ON public.asset_project_links USING btree (id)",
+                "CREATE UNIQUE INDEX asset_project_links_unique ON public.asset_project_links USING btree (asset_id, project_id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                },
+                {
+                    "column": "project_id",
+                    "refTable": "projects",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "storage_connections": {
+            "checks": [
+                "CHECK ((provider = 'google_drive'::text))",
+                "CHECK ((status = ANY (ARRAY['Connected'::text, 'Disconnected'::text, 'Error'::text])))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "provider": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "last_error": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "account_label": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "root_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "connection_name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "last_connected_at": {
+                    "type": "timestamp with time zone",
+                    "default": null,
+                    "nullable": true
+                },
+                "encrypted_refresh_token": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX storage_connections_pkey ON public.storage_connections USING btree (id)"
+            ],
+            "foreignKeys": [
+            ]
+        },
+        "workflow_task_statuses": {
+            "checks": [
+                "CHECK (((completion_percentage >= 0) AND (completion_percentage <= 100)))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "name": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "colour": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "status": {
+                    "type": "text",
+                    "default": "'active'::text",
+                    "nullable": false
+                },
+                "position": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "status_code": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "workflow_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "completion_percentage": {
+                    "type": "integer",
+                    "default": "0",
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX workflow_task_statuses_pkey ON public.workflow_task_statuses USING btree (id)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "workflow_id",
+                    "refTable": "workflows",
+                    "refColumn": "id"
+                }
+            ]
+        },
+        "asset_storage_locations": {
+            "checks": [
+                "CHECK ((provider = 'google_drive'::text))"
+            ],
+            "columns": {
+                "id": {
+                    "type": "uuid",
+                    "default": "gen_random_uuid()",
+                    "nullable": false
+                },
+                "asset_id": {
+                    "type": "uuid",
+                    "default": null,
+                    "nullable": false
+                },
+                "provider": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "created_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "updated_at": {
+                    "type": "timestamp with time zone",
+                    "default": "now()",
+                    "nullable": false
+                },
+                "root_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "asset_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "source_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "preview_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                },
+                "project_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "category_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": true
+                },
+                "versions_folder_id": {
+                    "type": "text",
+                    "default": null,
+                    "nullable": false
+                }
+            },
+            "uniques": [
+                "CREATE UNIQUE INDEX asset_storage_locations_pkey ON public.asset_storage_locations USING btree (id)",
+                "CREATE UNIQUE INDEX asset_storage_locations_unique_asset_provider ON public.asset_storage_locations USING btree (asset_id, provider)"
+            ],
+            "foreignKeys": [
+                {
+                    "column": "asset_id",
+                    "refTable": "assets",
+                    "refColumn": "id"
+                }
+            ]
+        }
+    },
+    "generatedFrom": "public schema of the self-hosted Supabase Postgres"
+}
