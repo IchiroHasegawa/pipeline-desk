@@ -173,3 +173,60 @@ becomes a `pre("validate")` hook.
 
 Kept as collections, not embedded arrays: the relationships are many-to-many
 and queried from both directions, so embedding would duplicate and drift.
+
+## workflows · workflow_processes · workflow_task_statuses
+
+| Postgres | Mongo |
+|---|---|
+| `workflow_code` / `workflow_type` | `workflowCode` / `workflowType` |
+| `created_by` | `createdBy` |
+| `sort_order` | `sortOrder` |
+| `workflow_id` | `workflowId` |
+| `process_type` | `processType` — `Manual`, `Approval`, `Asset Progress` |
+| `duration_days` / `effort_hours` | `durationDays` / `effortHours` (both `>= 0`) |
+| `default_completion` | `defaultCompletion` (0–100) |
+| `take_retake_mode` / `take_retake_count` | `takeRetakeMode` (`Take`\|`Retake`) / `takeRetakeCount` (`> 0`) |
+| `assignee_group_id` | `assigneeGroupId` |
+| `default_task_status_id` | `defaultTaskStatusId` |
+| `task_status_workflow_id` | `taskStatusWorkflowId` |
+| `status_code` | `statusCode` |
+| `completion_percentage` | `completionPercentage` (0–100) |
+
+`workflowType` has **four** values: `job`, `scene`, `asset`, `task_status`.
+Only the first three are generated against an entity.
+
+Note the live schema is inconsistent about status casing: workflows and their
+children use lowercase `'active'`, while projects/episodes/scenes use
+`'Active'`. Preserved as-is — queries filter on the literal value.
+
+## production_tasks · asset_tasks
+
+| Postgres | Mongo |
+|---|---|
+| `episode_id` / `scene_id` / `day_id` | `episodeId` / `sceneId` / `dayId` |
+| `source_workflow_id` | `sourceWorkflowId` |
+| `source_workflow_process_id` | `sourceWorkflowProcessId` |
+| `task_status_workflow_id` | `taskStatusWorkflowId` |
+| `task_status_definition_id` | `taskStatusDefinitionId` |
+| `branches_from_task_id` | `branchesFromTaskId` |
+| `contributes_to_task_id` | `contributesToTaskId` |
+| `start_date` / `end_date` | `startDate` / `endDate` |
+
+**`production_tasks` has no `environment_id`** — migration 033 dropped it.
+
+The two uniqueness rules differ, and the difference matters:
+
+| Index | Columns | Partial? |
+|---|---|---|
+| `uq_production_task_process` | `(episodeId, sceneId, dayId, sourceWorkflowProcessId)` | **yes** — `WHERE sourceWorkflowProcessId IS NOT NULL` |
+| `uq_asset_task_process` | `(assetId, sourceWorkflowProcessId)` | **no** |
+
+So a scene may carry many hand-made (process-less) tasks, but an asset may
+carry only **one**. That asymmetry is in the live schema and is reproduced
+rather than tidied.
+
+`NULLS NOT DISTINCT` needs no translation: Mongo compound unique indexes
+already treat a missing field as null and compare nulls as equal.
+
+The self-reference CHECK (`contributes_to_task_id <> id`,
+`branches_from_task_id <> id`) becomes a `pre("validate")` hook.
