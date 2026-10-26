@@ -13,6 +13,7 @@ import { uuidPk, refTo, timestamped } from "./_shared";
  * rather than tidied, because queries filter on the literal value.
  */
 export const WORKFLOW_TYPES = ["job", "scene", "asset", "task_status"] as const;
+export type WorkflowType = (typeof WORKFLOW_TYPES)[number];
 
 const WorkflowSchema = new Schema(
   {

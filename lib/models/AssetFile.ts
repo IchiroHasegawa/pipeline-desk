@@ -28,6 +28,9 @@ export const RECORD_STATUSES = [
   "Missing",
 ] as const;
 
+export type FileRole = (typeof FILE_ROLES)[number];
+export type RecordStatus = (typeof RECORD_STATUSES)[number];
+
 const AssetFileSchema = new Schema(
   {
     _id: uuidPk,
