@@ -1,5 +1,6 @@
 import type { QueryFilter, Model, SortOrder } from "mongoose";
 import { requireActiveUser, type Actor } from "@/lib/permissions";
+import { ForbiddenError } from "@/lib/permissions/errors";
 
 export type ListOptions = {
   sort?: Record<string, SortOrder>;
@@ -7,7 +8,7 @@ export type ListOptions = {
   skip?: number;
 };
 
-export type BaseRepoOptions = {
+export type BaseRepoOptions<TDoc> = {
   /**
    * Fields a generic create/update may never set.
    *
@@ -20,6 +21,23 @@ export type BaseRepoOptions = {
    * so a mistaken call site is loud.
    */
   immutable?: readonly string[];
+
+  /**
+   * A mandatory filter derived from the acting user, ANDed into **every**
+   * query this repository makes — the replacement for a per-row RLS policy
+   * such as `auth.uid() = id` (profiles) or `user_id = auth.uid()` (todos).
+   *
+   * This is deliberately structural rather than a check inside each method.
+   * Spreading the base repo and overriding only the methods that looked like
+   * reads is exactly how `profiles.updateById` and `todos.deleteById` ended up
+   * reaching other people's rows: the guard has to live where a newly added
+   * method inherits it automatically, not where someone has to remember it.
+   *
+   * Scoped repositories distinguish missing from forbidden: an id that exists
+   * but falls outside the scope raises ForbiddenError, while an id that does
+   * not exist at all still reads as absent.
+   */
+  scope?: (actor: Actor) => QueryFilter<TDoc>;
 };
 
 export type BaseRepo<TDoc> = {
@@ -47,7 +65,7 @@ export type BaseRepo<TDoc> = {
  */
 export function baseRepo<TDoc>(
   model: Model<TDoc>,
-  options: BaseRepoOptions = {}
+  options: BaseRepoOptions<TDoc> = {}
 ): BaseRepo<TDoc> {
   const immutable = options.immutable ?? [];
 
@@ -61,10 +79,42 @@ export function baseRepo<TDoc>(
     }
   }
 
+  /**
+   * The caller's filter ANDed with the actor's scope. The scope is spread last
+   * so a caller cannot widen it by passing the same key.
+   */
+  function scoped(actor: Actor, filter: QueryFilter<TDoc> = {}): QueryFilter<TDoc> {
+    if (!options.scope) return filter;
+    return { ...filter, ...options.scope(actor) } as QueryFilter<TDoc>;
+  }
+
+  /**
+   * For id-addressed operations on a scoped repository: resolves whether the
+   * row is reachable by this actor. Returns "ok" when it is, "missing" when no
+   * such row exists at all, and throws ForbiddenError when the row exists but
+   * belongs to someone else — so "not found" and "not yours" stay distinct.
+   */
+  async function reachable(actor: Actor, id: string): Promise<"ok" | "missing"> {
+    if (!options.scope) return "ok";
+
+    const inScope = await model
+      .findOne(scoped(actor, { _id: id } as QueryFilter<TDoc>))
+      .select("_id")
+      .lean()
+      .exec();
+    if (inScope) return "ok";
+
+    const existsAtAll = await model.exists({ _id: id } as QueryFilter<TDoc>);
+    if (existsAtAll) {
+      throw new ForbiddenError("That record belongs to someone else.");
+    }
+    return "missing";
+  }
+
   return {
     async list(actor, filter = {}, opts = {}) {
       requireActiveUser(actor);
-      let q = model.find(filter);
+      let q = model.find(scoped(actor, filter));
       if (opts.sort) q = q.sort(opts.sort);
       if (opts.skip) q = q.skip(opts.skip);
       if (opts.limit) q = q.limit(opts.limit);
@@ -73,12 +123,13 @@ export function baseRepo<TDoc>(
 
     async getById(actor, id) {
       requireActiveUser(actor);
+      if ((await reachable(actor, id)) === "missing") return null;
       return model.findById(id).lean<TDoc>().exec();
     },
 
     async getOne(actor, filter) {
       requireActiveUser(actor);
-      return model.findOne(filter).lean<TDoc>().exec();
+      return model.findOne(scoped(actor, filter)).lean<TDoc>().exec();
     },
 
     async create(actor, data) {
@@ -97,6 +148,7 @@ export function baseRepo<TDoc>(
     async updateById(actor, id, patch) {
       requireActiveUser(actor);
       rejectImmutable(patch);
+      if ((await reachable(actor, id)) === "missing") return null;
       return model
         .findByIdAndUpdate(id, patch, { new: true, runValidators: true })
         .lean<TDoc>()
@@ -105,19 +157,20 @@ export function baseRepo<TDoc>(
 
     async deleteById(actor, id) {
       requireActiveUser(actor);
+      if ((await reachable(actor, id)) === "missing") return false;
       const { deletedCount } = await model.deleteOne({ _id: id } as QueryFilter<TDoc>);
       return deletedCount > 0;
     },
 
     async deleteMany(actor, filter) {
       requireActiveUser(actor);
-      const { deletedCount } = await model.deleteMany(filter);
+      const { deletedCount } = await model.deleteMany(scoped(actor, filter));
       return deletedCount;
     },
 
     async count(actor, filter = {}) {
       requireActiveUser(actor);
-      return model.countDocuments(filter);
+      return model.countDocuments(scoped(actor, filter));
     },
   };
 }

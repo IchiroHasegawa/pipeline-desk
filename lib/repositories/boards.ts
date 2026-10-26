@@ -71,7 +71,13 @@ export const boardElements = {
  * acting user rather than trusting a caller-supplied id, so there is no shape
  * of call that reads someone else's todos.
  */
-const todoBase = baseRepo<TodoDoc>(Todo, { immutable: ["profileId"] });
+const todoBase = baseRepo<TodoDoc>(Todo, {
+  immutable: ["profileId"],
+  // Scoped structurally, so the inherited list/getById/updateById/deleteById
+  // are as safe as the explicit *Mine methods. Without this, a call site
+  // reaching for the shorter name would silently bypass ownership.
+  scope: (actor) => ({ profileId: actor._id }),
+});
 
 export const todos = {
   ...todoBase,

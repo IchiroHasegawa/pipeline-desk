@@ -16,8 +16,18 @@ import {
  *   - accountStatus is listed too: suspending an account must revoke its
  *     sessions, which a bare field write would skip.
  */
+/**
+ * Scoped to the actor's own row, because the RLS policy it replaces was
+ * `auth.uid() = id AND is_active_user()` — which governed every access to a
+ * profile, not reads alone. Without the scope the inherited `updateById` /
+ * `deleteById` / `list` reach anyone's profile.
+ *
+ * `listAllAsOwner` and `getByEmail` deliberately query the model directly so
+ * they sit outside the scope; both are owner-gated.
+ */
 const base = baseRepo<ProfileDoc>(Profile, {
   immutable: ["systemRole", "passwordHash", "accountStatus"],
+  scope: (actor) => ({ _id: actor._id }),
 });
 
 export const profiles = {
