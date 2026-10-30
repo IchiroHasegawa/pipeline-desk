@@ -2,7 +2,7 @@
  * Seeds MongoDB with the reference and demo data.
  *
  *   MONGODB_URI=mongodb://po_mongo:27017/productionos?replicaSet=rs0 \
- *     node --experimental-strip-types scripts/seed-mongo.ts
+ *     npx tsx scripts/seed-mongo.ts
  *
  * Idempotent — safe to run on every deploy. Creates the indexes first, so a
  * fresh database gets its unique and partial indexes before any row lands.

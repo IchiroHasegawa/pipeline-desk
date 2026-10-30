@@ -1,7 +1,7 @@
 /**
  * Promotes an account to owner.
  *
- *   MONGODB_URI=... node --experimental-strip-types scripts/grant-owner.ts <email>
+ *   MONGODB_URI=... npx tsx scripts/grant-owner.ts <email>
  *
  * This is the Mongo equivalent of the raw SQL UPDATE that bootstraps the first
  * owner, and it exists for the same reason: `systemRole` is deliberately

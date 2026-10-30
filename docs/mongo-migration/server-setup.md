@@ -72,7 +72,7 @@ a committed transaction inserted 2 documents, an aborted one left the count at
 
 ```bash
 MONGODB_URI='mongodb://po_mongo:27017/productionos?replicaSet=rs0' \
-  node --experimental-strip-types scripts/seed-mongo.ts
+  npx tsx scripts/seed-mongo.ts
 ```
 
 Creates the indexes first, then upserts the 84 reference/demo rows by `_id`,
