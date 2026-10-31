@@ -32,7 +32,7 @@ export async function getOrCreateBoard(actor: Actor, ref: BoardRef): Promise<Boa
   const board = await Board.findOneAndUpdate(
     filter,
     { $setOnInsert: { _id: crypto.randomUUID(), ...filter } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   )
     .lean<BoardDoc>()
     .exec();

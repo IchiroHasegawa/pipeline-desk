@@ -150,7 +150,7 @@ export function baseRepo<TDoc>(
       rejectImmutable(patch);
       if ((await reachable(actor, id)) === "missing") return null;
       return model
-        .findByIdAndUpdate(id, patch, { new: true, runValidators: true })
+        .findByIdAndUpdate(id, patch, { returnDocument: 'after', runValidators: true })
         .lean<TDoc>()
         .exec();
     },

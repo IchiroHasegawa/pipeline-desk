@@ -59,7 +59,7 @@ export const productionTasks = {
     return ProductionTask.findByIdAndUpdate(
       id,
       { progress },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     )
       .lean<ProductionTaskDoc>()
       .exec();
@@ -88,7 +88,7 @@ export const assetTasks = {
 
   async setProgress(actor: Actor, id: string, progress: number): Promise<AssetTaskDoc | null> {
     requireActiveUser(actor);
-    return AssetTask.findByIdAndUpdate(id, { progress }, { new: true, runValidators: true })
+    return AssetTask.findByIdAndUpdate(id, { progress }, { returnDocument: 'after', runValidators: true })
       .lean<AssetTaskDoc>()
       .exec();
   },

@@ -45,7 +45,7 @@ export const boardElements = {
     position: { x: number; y: number; zIndex?: number }
   ): Promise<BoardElementDoc | null> {
     requireActiveUser(actor);
-    return BoardElement.findByIdAndUpdate(id, position, { new: true, runValidators: true })
+    return BoardElement.findByIdAndUpdate(id, position, { returnDocument: 'after', runValidators: true })
       .lean<BoardElementDoc>()
       .exec();
   },
@@ -131,7 +131,7 @@ export const todos = {
     return Todo.findByIdAndUpdate(
       id,
       completed ? { completedAt: new Date() } : { $unset: { completedAt: 1 } },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     )
       .lean<TodoDoc>()
       .exec();

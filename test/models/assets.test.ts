@@ -107,11 +107,16 @@ describe("AssetFile", () => {
     );
   });
 
-  // CHECK (provider = 'google_drive')
-  it("rejects a provider other than google_drive", async () => {
-    await expect(AssetFile.create({ ...file, provider: "cloudinary" })).rejects.toThrow(
-      /validation/i
-    );
+  // Postgres had CHECK (provider = 'google_drive'). Cloudinary was added
+  // deliberately; see test/models/storage-providers.test.ts. Anything outside
+  // the two is still refused.
+  it("rejects a provider outside the supported two", async () => {
+    await expect(AssetFile.create({ ...file, provider: "s3" })).rejects.toThrow(/validation/i);
+  });
+
+  it("accepts both supported providers", async () => {
+    await expect(AssetFile.create({ ...file, provider: "google_drive" })).resolves.toBeTruthy();
+    await expect(AssetFile.create({ ...file, provider: "cloudinary" })).resolves.toBeTruthy();
   });
 
   // CHECK ((file_role = 'Source') OR (current_file_id IS NULL))
