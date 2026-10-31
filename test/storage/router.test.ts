@@ -179,3 +179,67 @@ describe("Cloudinary resource type", () => {
     expect(cloudinaryResourceType(mimeType)).toBe(expected);
   });
 });
+
+describe("routeUpload — Cloudinary's pixel ceiling", () => {
+  /**
+   * Found by querying the live account: `media_limits.image_max_px` is 25 MP,
+   * enforced independently of file size. A well-compressed 8000x4000 JPEG can
+   * be 5 MB and 32 MP — comfortably under the size limit and still rejected.
+   *
+   * Dimensions are optional because only the browser knows them before upload.
+   * When they are absent the size rule alone applies, which is the behaviour
+   * that existed before this check.
+   */
+  it("sends an over-megapixel image to drive despite a small file size", () => {
+    const r = routeUpload({
+      fileRole: "Source",
+      mimeType: "image/jpeg",
+      sizeBytes: 5 * MB,
+      widthPx: 8000,
+      heightPx: 4000, // 32 MP
+    });
+    expect(r.provider).toBe("drive");
+    expect(r.derivePreview).toBe(true);
+    expect(r.reason).toMatch(/megapixel|pixel/i);
+  });
+
+  it("keeps an image at exactly the pixel ceiling on cloudinary", () => {
+    const r = routeUpload({
+      fileRole: "Source",
+      mimeType: "image/jpeg",
+      sizeBytes: 1 * MB,
+      widthPx: 5000,
+      heightPx: 5000, // exactly 25 MP
+    });
+    expect(r.provider).toBe("cloudinary");
+  });
+
+  it("applies the size rule alone when dimensions are unknown", () => {
+    const r = routeUpload({ fileRole: "Source", mimeType: "image/jpeg", sizeBytes: 5 * MB });
+    expect(r.provider).toBe("cloudinary");
+  });
+
+  it("ignores dimensions for video, which has no such ceiling", () => {
+    const r = routeUpload({
+      fileRole: "Source",
+      mimeType: "video/mp4",
+      sizeBytes: 1 * MB,
+      widthPx: 7680,
+      heightPx: 4320, // 33 MP of 8K video
+    });
+    expect(r.provider).toBe("cloudinary");
+  });
+
+  // A Preview is Cloudinary's by definition, but an oversized one would still
+  // be rejected on arrival, so the ceiling has to apply there too.
+  it("sends an over-megapixel Preview to drive rather than promising Cloudinary", () => {
+    const r = routeUpload({
+      fileRole: "Preview",
+      mimeType: "image/png",
+      sizeBytes: 1 * MB,
+      widthPx: 9000,
+      heightPx: 9000,
+    });
+    expect(r.provider).toBe("drive");
+  });
+});

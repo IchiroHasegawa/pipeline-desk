@@ -17,6 +17,16 @@ export type UploadFacts = {
   fileRole: FileRole;
   mimeType: string;
   sizeBytes: number;
+  /**
+   * Pixel dimensions, when the caller knows them.
+   *
+   * Optional because only the browser can measure an image before uploading
+   * it. When absent the size rules alone apply — which is right, but means an
+   * over-megapixel image slips through to Cloudinary and is rejected there.
+   * Pass them whenever they are available.
+   */
+  widthPx?: number;
+  heightPx?: number;
 };
 
 export type RoutingDecision = {
@@ -45,10 +55,16 @@ function envBytes(name: string, fallback: number): number {
 /**
  * Account-plan limits, not design truths — hence overridable.
  *
- * These defaults assume the free tier. **Verify against the real account
- * before the cutover:** set too high, the router promises Cloudinary an upload
- * Cloudinary will then reject, which is the worst failure mode because it
- * happens after the user has waited.
+ * **Verified against the live account on 2026-10-31** (Free plan), which
+ * reports them under `media_limits` on the Admin API's `/usage` endpoint:
+ *
+ *   image_max_size_bytes  10485760   (10 MB)
+ *   video_max_size_bytes  104857600  (100 MB)
+ *   image_max_px          25000000   (25 MP)
+ *
+ * Re-check after any plan change. Set too high, the router promises Cloudinary
+ * an upload Cloudinary then rejects — the worst failure mode, because it
+ * happens after the user has already waited through the transfer.
  */
 export const CLOUDINARY_IMAGE_MAX_BYTES = envBytes(
   "CLOUDINARY_IMAGE_MAX_BYTES",
@@ -59,6 +75,15 @@ export const CLOUDINARY_VIDEO_MAX_BYTES = envBytes(
   "CLOUDINARY_VIDEO_MAX_BYTES",
   100 * 1024 * 1024
 );
+
+/**
+ * Cloudinary caps image *area* independently of file size. A well-compressed
+ * 8000×4000 JPEG is 32 MP and can sit comfortably under 10 MB, so the size
+ * check alone would wave it through to a rejection.
+ *
+ * Applies to images only; video has no equivalent ceiling.
+ */
+export const CLOUDINARY_IMAGE_MAX_PX = envBytes("CLOUDINARY_IMAGE_MAX_PX", 25_000_000);
 
 /** Strips any `; charset=…` parameter and lowercases. */
 function baseMime(mimeType: string): string {
@@ -84,11 +109,36 @@ export function cloudinaryResourceType(mimeType: string): "image" | "video" | "r
   return "raw";
 }
 
+/**
+ * True when we know the dimensions and they exceed what Cloudinary will
+ * accept. Unknown dimensions are not treated as over the limit — that would
+ * send every image to Drive.
+ */
+function exceedsPixelCeiling(facts: UploadFacts): boolean {
+  if (!isImage(facts.mimeType)) return false;
+  const { widthPx, heightPx } = facts;
+  if (!widthPx || !heightPx) return false;
+  return widthPx * heightPx > CLOUDINARY_IMAGE_MAX_PX;
+}
+
 export function routeUpload(facts: UploadFacts): RoutingDecision {
   const { fileRole, mimeType, sizeBytes } = facts;
 
   if (!Number.isFinite(sizeBytes) || sizeBytes < 0) {
     throw new Error(`Invalid file size: ${sizeBytes}`);
+  }
+
+  // Checked before everything else, including the Preview shortcut: an
+  // over-megapixel image is rejected by Cloudinary whatever its role, so
+  // promising Cloudinary would just move the failure later.
+  if (exceedsPixelCeiling(facts)) {
+    return {
+      provider: "drive",
+      derivePreview: true,
+      reason: `Stored on Google Drive because it exceeds Cloudinary's ${Math.round(
+        CLOUDINARY_IMAGE_MAX_PX / 1_000_000
+      )} megapixel ceiling; a preview will be derived for fast browsing.`,
+    };
   }
 
   // Previews are Cloudinary's whole purpose, and the upload route already

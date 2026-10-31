@@ -14,6 +14,7 @@ export {
   isMedia,
   CLOUDINARY_IMAGE_MAX_BYTES,
   CLOUDINARY_VIDEO_MAX_BYTES,
+  CLOUDINARY_IMAGE_MAX_PX,
   type StorageProvider,
   type UploadFacts,
   type RoutingDecision,
